@@ -30,13 +30,15 @@ public class World {
     private ArrayList<Room> rooms;
     private ArrayList<Hallway> hallways;
     private Set<Point> usedSpaces;
+    private Player player;
 
     public World() {
         this(SEEDDefault);
     }
 
-    public World(Long seed) {
+    public World(Long seed,Player player) {
         this.seed = seed;
+        this.player = player;
         initializeWorldComponents();
     }
 
@@ -46,7 +48,7 @@ public class World {
         random = new Random(seed);
         usedSpaces = new HashSet<>();
         map = new TETile[WIDTH][HEIGHT];
-        initializeWorld();
+        initializeWorldWithTiles();
         placeAvatar();
         placeChaser();
     }
@@ -119,7 +121,7 @@ public class World {
         map[avatarX][avatarY] = AVATAR;
     }
 
-    private void initializeWorld() {
+    private void initializeWorldWithTiles() {
         for (int i = 0; i < WIDTH; i++) {
             for (int j = 0; j < HEIGHT; j++) {
                 map[i][j] = UNUSED;
@@ -169,8 +171,12 @@ public class World {
     }
 
     public void generateRoom() {
-        int roomNums = random.nextInt(50) + 5;
-        //room should be within the boundaries of the world grid.
+        int difficulty = player.calculateDifficulty(); // Get difficulty based on player points
+        int minRooms = 5 + (difficulty * 2);
+        int maxRooms = 50 + (difficulty * 5);
+        int roomNums = random.nextInt(maxRooms - minRooms + 1) + minRooms;
+
+        //Generate rooms within the grid boundaries
         while (rooms.size() < roomNums) {
             int width = random.nextInt(10) + 5;
             int height = random.nextInt(7) + 4;
