@@ -24,11 +24,12 @@ public class GameMenu {
     private long lastChaserMoveTime = 0; // Variable to track the last time the chaser moved
     private static final long CHASER_MOVE_INTERVAL = 500; // Interval in milliseconds between chaser movements
 
+    private static Player player = null;
+
 
     public void createGameMenu() {
         StdDraw.setCanvasSize(800, 600);
         ter = new TERenderer();
-        Player player = null;
 
         while (true) {
             if (redraw) {
@@ -38,19 +39,19 @@ public class GameMenu {
                     drawLoginMenu(); // Initial menu
                 } else if (!gameStarted) {
                     drawPostLoginMenu(player); // Menu after login
-                    redraw = false;
                 } else {
                     ter.renderFrame(world.getMap());
                     updateHUD();
                     if (world.isShowPath() && world.getPathToAvatar() != null) {
                         drawPath();
                     }
-                    redraw = false;
                 }
 
                 StdDraw.show();
+                redraw = false;
             }
-            handleInput(player);
+
+            handleInput();
             detectMouseMove();
             StdDraw.pause(20);
 
@@ -69,6 +70,8 @@ public class GameMenu {
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(0.5, 0.65, "Log In / Create Profile (P)");
         StdDraw.text(0.5, 0.5, "Quit (Q)");
+        StdDraw.show();
+
     }
 
     private static void drawPostLoginMenu(Player player) {
@@ -78,6 +81,8 @@ public class GameMenu {
         StdDraw.text(0.5, 0.6, "New Game (N)");
         StdDraw.text(0.5, 0.5, "Load Game (L)");
         StdDraw.text(0.5, 0.4, "Quit (Q)");
+        StdDraw.show();
+
     }
 
     private void drawPath() {
@@ -121,7 +126,7 @@ public class GameMenu {
     }
 
 
-    private static void handleInput(Player player) {
+    private static void handleInput() {
         if (StdDraw.hasNextKeyTyped()) {
             char key = Character.toLowerCase(StdDraw.nextKeyTyped());
             redraw = true;
@@ -131,6 +136,7 @@ public class GameMenu {
                 switch (key) {
                     case 'p': // Login or create a player
                         player = loginOrCreateProfile();
+                        redraw = true;
                         break;
                     case 'q':
                         System.exit(0);
@@ -211,7 +217,7 @@ public class GameMenu {
         while (true) {
             if (StdDraw.hasNextKeyTyped()) {
                 char key = StdDraw.nextKeyTyped();
-                if (key == 'r' || key == 'R') {
+                if (key == 'r' || key == 'R') {//reaches
                     randomSeed = true;
                     break;
                 } else if (Character.isDigit(key)) {
