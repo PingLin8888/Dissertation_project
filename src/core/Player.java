@@ -9,6 +9,11 @@ public class Player {
         this.points = 0; // Start with 0 points
     }
 
+    public Player(String username, int points) {
+        this.username = username;
+        this.points = points;
+    }
+
     public String getUsername() {
         return username;
     }
@@ -30,4 +35,6 @@ public class Player {
             return 3; // Hard
         }
     }
+
+
 }

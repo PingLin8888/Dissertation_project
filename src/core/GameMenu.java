@@ -14,9 +14,9 @@ import java.awt.*;
 public class GameMenu {
     private static World world;
     private static TERenderer ter;
-    private static StringBuilder seedBuilder = new StringBuilder();
+//    private static StringBuilder seedBuilder = new StringBuilder();
     private static StringBuilder quitSignBuilder = new StringBuilder();
-    private static boolean enteringSeed = false;
+//    private static boolean enteringSeed = false;
     private static boolean gameStarted = false;
     private static boolean redraw = true;
     private double prevMouseX = 0;
@@ -28,24 +28,29 @@ public class GameMenu {
     public void createGameMenu() {
         StdDraw.setCanvasSize(800, 600);
         ter = new TERenderer();
+        Player player = null;
+
         while (true) {
             if (redraw) {
                 StdDraw.clear(StdDraw.BLACK);
-                if (!enteringSeed && !gameStarted) {
-                    drawMenu();
-                } else if (enteringSeed) {
-                    drawSeedEntry();
+
+                if (player == null) {
+                    drawLoginMenu(); // Initial menu
+                } else if (!gameStarted) {
+                    drawPostLoginMenu(player); // Menu after login
+                    redraw = false;
                 } else {
                     ter.renderFrame(world.getMap());
                     updateHUD();
                     if (world.isShowPath() && world.getPathToAvatar() != null) {
                         drawPath();
                     }
+                    redraw = false;
                 }
+
                 StdDraw.show();
-                redraw = false;
             }
-            handleInput();
+            handleInput(player);
             detectMouseMove();
             StdDraw.pause(20);
 
@@ -58,6 +63,21 @@ public class GameMenu {
                 }
             }
         }
+    }
+
+    private static void drawLoginMenu() {
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.text(0.5, 0.65, "Log In / Create Profile (P)");
+        StdDraw.text(0.5, 0.5, "Quit (Q)");
+    }
+
+    private static void drawPostLoginMenu(Player player) {
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.text(0.5, 0.8, "Welcome, " + player.getUsername());
+        StdDraw.text(0.5, 0.7, "Points: " + player.getPoints());
+        StdDraw.text(0.5, 0.6, "New Game (N)");
+        StdDraw.text(0.5, 0.5, "Load Game (L)");
+        StdDraw.text(0.5, 0.4, "Quit (Q)");
     }
 
     private void drawPath() {
@@ -101,51 +121,43 @@ public class GameMenu {
     }
 
 
-    private static void drawMenu() {
-        StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.text(0.5, 0.75, "CS61B: THE GAME");
-        StdDraw.text(0.5, 0.5, "New Game (N)");
-        StdDraw.text(0.5, 0.45, "Load Game (L)");
-        StdDraw.text(0.5, 0.4, "Quit (Q)");
-    }
-
-    private static void drawSeedEntry() {
-        StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.text(0.5, 0.5, "Enter seed: " + seedBuilder.toString());
-    }
-
-    private static void handleInput() {
+    private static void handleInput(Player player) {
         if (StdDraw.hasNextKeyTyped()) {
             char key = Character.toLowerCase(StdDraw.nextKeyTyped());
-            redraw = true; // Set redraw flag to true for any key press
-            if (!enteringSeed && !gameStarted) {
+            redraw = true;
+
+            if (player == null) {
+                // Initial menu for login or quit
                 switch (key) {
-                    case 'n':
-                        enteringSeed = true;
-                        seedBuilder.setLength(0);
-                        break;
-                    case 'l':
-                        loadGame();
+                    case 'p': // Login or create a player
+                        player = loginOrCreateProfile();
                         break;
                     case 'q':
                         System.exit(0);
                         break;
                 }
-            } else if (enteringSeed) {
-                if (Character.isDigit(key)) {
-                    seedBuilder.append(key);
-                } else if (key == 's') {
-                    finalizeSeed();
+            } else if (!gameStarted) {
+                // Post-login menu options
+                switch (key) {
+                    case 'n':
+                        createNewGame(player);
+                        break;
+                    case 'l':
+                        loadGame(player);
+                        break;
+                    case 'q':
+                        System.exit(0);
+                        break;
                 }
             } else {
+                // Game started: Handle in-game inputs
                 if (key == ':') {
                     quitSignBuilder.setLength(0);
                     quitSignBuilder.append(key);
                 } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
-                    saveGame();
+                    saveGame(player);
                     System.exit(0);
-                }
-                if (key == 'p') {
+                } else if (key == 'p') {
                     world.togglePathDisplay();
                 }
                 handleMovement(key);
@@ -153,20 +165,75 @@ public class GameMenu {
         }
     }
 
-    private static void finalizeSeed() {
-        if (!seedBuilder.isEmpty()) {
-            enteringSeed = false;
-            gameStarted = true;
-            long seed = Long.parseLong(seedBuilder.toString());
-            world = new World(seed);
-            System.out.println("starting to draw world.");
-            drawWorld();
 
-            redraw = true; // Set redraw flag to true after seed entry
+    private static Player loginOrCreateProfile() {
+        StdDraw.clear();
+        StdDraw.text(0.5, 0.6, "Enter Username: ");
+        StdDraw.show();
+        StringBuilder usernameBuilder = new StringBuilder();
+
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char key = StdDraw.nextKeyTyped();
+                if (key == '\n' || key == '\r') {
+                    break;
+                }
+                usernameBuilder.append(key);
+                StdDraw.clear();
+                StdDraw.text(0.5, 0.6, "Enter Username: " + usernameBuilder);
+                StdDraw.show();
+            }
+        }
+
+        String username = usernameBuilder.toString().trim();
+        Player loadedPlayer = PlayerStorage.loadPlayer(username);
+
+        StdDraw.clear();
+        if (loadedPlayer == null) {
+            StdDraw.text(0.5, 0.5, "Creating new profile for: " + username);
+            StdDraw.show();
+            return new Player(username);
         } else {
-            StdDraw.text(0.5, 0.5, "Seed cannot be empty. Please enter a valid seed.");
+            StdDraw.text(0.5, 0.5, "Welcome back, " + username + "! Points: " + loadedPlayer.getPoints());
+            StdDraw.show();
+            return loadedPlayer;
         }
     }
+
+    private static void createNewGame(Player player) {
+        StdDraw.clear();
+        StdDraw.text(0.5, 0.6, "Enter seed for world generation or press R for a random world: ");
+        StdDraw.show();
+
+        StringBuilder seedInput = new StringBuilder();
+        boolean randomSeed = false;
+
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char key = StdDraw.nextKeyTyped();
+                if (key == 'r' || key == 'R') {
+                    randomSeed = true;
+                    break;
+                } else if (Character.isDigit(key)) {
+                    seedInput.append(key);
+                    StdDraw.clear();
+                    StdDraw.text(0.5, 0.6, "Enter seed: " + seedInput);
+                    StdDraw.show();
+                } else if (key == '\n' || key == '\r') {
+                    break;
+                }
+            }
+        }
+
+        long seed = randomSeed
+                ? System.currentTimeMillis() // Generate a random seed if player skips
+                : Long.parseLong(seedInput.toString());
+
+        world = new World(player, seed); // Pass seed and player
+        gameStarted = true;
+        drawWorld();
+    }
+
 
     private static void drawWorld() {
 //        StdDraw.clear();
@@ -188,38 +255,36 @@ public class GameMenu {
         }
     }
 
-    public static void saveGame() {
+    public static void saveGame(Player player) {
         String fileName = "save-file.txt";
         try {
-            // Serialize seed, avatarX, and avatarY directly
-            String contents = world.getSeed() + "\n" + world.getAvatarX() + "\n" + world.getAvatarY() + "\n"+ world.getChaseX() + "\n" + world.getChaseY() + "\n";
-            // Write contents to file using FileUtils
+            String contents = world.getSeed() + "\n" + world.getAvatarX() + "\n" +
+                    world.getAvatarY() + "\n" + world.getChaseX() + "\n" +
+                    world.getChaseY() + "\n" + player.getUsername() + "\n" +
+                    player.getPoints();
             FileUtils.writeFile(fileName, contents);
-
-            // Print the path where the file is saved
+            PlayerStorage.savePlayer(player); // Save player data
         } catch (RuntimeException e) {
             e.printStackTrace();
         }
     }
 
-    public static void loadGame() {
-        String fileName = "save-file.txt";
-        try {
-            // Read contents from file using FileUtils
-            String contents = FileUtils.readFile(fileName);
 
-            // Parse seed, avatarX, and avatarY
+    public static void loadGame(Player player) {
+        String fileName = "save-file-" + player.getUsername() + ".txt";
+        try {
+            String contents = FileUtils.readFile(fileName);
             String[] lines = contents.split("\n");
-            world = new World(Long.parseLong(lines[0]));
+            world = new World(player, Long.parseLong(lines[0])); // Pass the player
             world.setAvatarToNewPosition(Integer.parseInt(lines[1]), Integer.parseInt(lines[2]));
             world.setChaserToNewPosition(Integer.parseInt(lines[3]), Integer.parseInt(lines[4]));
-            drawWorld();
             gameStarted = true;
-            // Print the path where the file is read from
+            drawWorld();
         } catch (RuntimeException e) {
             e.printStackTrace();
         }
     }
+
 
 }
 

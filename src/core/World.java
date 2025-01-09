@@ -33,10 +33,10 @@ public class World {
     private Player player;
 
     public World() {
-        this(SEEDDefault);
+        this(null,SEEDDefault);
     }
 
-    public World(Long seed,Player player) {
+    public World(Player player,Long seed) {
         this.seed = seed;
         this.player = player;
         initializeWorldComponents();
