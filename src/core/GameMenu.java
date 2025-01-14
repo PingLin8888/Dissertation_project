@@ -169,8 +169,8 @@ public class GameMenu {
     }
 
     private static Player loginOrCreateProfile() {
-        StdDraw.clear();
-        StdDraw.setPenColor(StdDraw.BLACK);
+        StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(0.5, 0.6, "Enter Username: ");
         StdDraw.show();
         StringBuilder usernameBuilder = new StringBuilder();
@@ -185,8 +185,8 @@ public class GameMenu {
             }
 
             // Clear and redraw the screen with the current username input
-            StdDraw.clear();
-            StdDraw.setPenColor(StdDraw.BLACK);
+            StdDraw.clear(StdDraw.BLACK);
+            StdDraw.setPenColor(StdDraw.WHITE);
             StdDraw.text(0.5, 0.6, "Enter Username: " + usernameBuilder);
             StdDraw.show();
 
@@ -197,8 +197,8 @@ public class GameMenu {
         String username = usernameBuilder.toString().trim();
         Player loadedPlayer = PlayerStorage.loadPlayer(username);
 
-        StdDraw.clear();
-        StdDraw.setPenColor(StdDraw.BLACK);
+        StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(StdDraw.WHITE);
         if (loadedPlayer == null) {
             StdDraw.text(0.5, 0.5, "Creating new profile for: " + username);
             StdDraw.show();
@@ -211,7 +211,8 @@ public class GameMenu {
     }
 
     private static void createNewGame(Player player) {
-        StdDraw.clear();
+        StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(0.5, 0.6, "Enter seed for world generation or press R for a random world: ");
         StdDraw.show();
 
@@ -221,12 +222,13 @@ public class GameMenu {
         while (true) {
             if (StdDraw.hasNextKeyTyped()) {
                 char key = StdDraw.nextKeyTyped();
-                if (key == 'r' || key == 'R') {// reaches
+                if (key == 'r' || key == 'R') {
                     randomSeed = true;
                     break;
                 } else if (Character.isDigit(key)) {
                     seedInput.append(key);
-                    StdDraw.clear();
+                    StdDraw.clear(StdDraw.BLACK);
+                    StdDraw.setPenColor(StdDraw.WHITE);
                     StdDraw.text(0.5, 0.6, "Enter seed: " + seedInput);
                     StdDraw.show();
                 } else if (key == '\n' || key == '\r') {
