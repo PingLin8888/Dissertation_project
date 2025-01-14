@@ -27,6 +27,8 @@ public class GameMenu {
 
     public void createGameMenu() {
         StdDraw.setCanvasSize(800, 600);
+        StdDraw.setXscale(0, 1);
+        StdDraw.setYscale(0, 1);
         ter = new TERenderer();
 
         while (true) {
@@ -73,6 +75,7 @@ public class GameMenu {
     }
 
     private static void drawPostLoginMenu(Player player) {
+        StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(0.5, 0.8, "Welcome, " + player.getUsername());
         StdDraw.text(0.5, 0.7, "Points: " + player.getPoints());
@@ -80,7 +83,6 @@ public class GameMenu {
         StdDraw.text(0.5, 0.5, "Load Game (L)");
         StdDraw.text(0.5, 0.4, "Quit (Q)");
         StdDraw.show();
-
     }
 
     private void drawPath() {
@@ -269,6 +271,10 @@ public class GameMenu {
     private static void checkObjectiveCompletion() {
         if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
             player.addPoints(100); // Award points for reaching the door
+
+            // Reapply coordinate system before drawing
+            StdDraw.setXscale(0, 1);
+            StdDraw.setYscale(0, 1);
 
             // Display the completion message on the screen
             StdDraw.clear(StdDraw.BLACK);

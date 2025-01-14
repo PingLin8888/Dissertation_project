@@ -53,7 +53,8 @@ public class World {
         initializeWorldWithTiles();
         placeAvatar();
         placeChaser();
-        placeDoorNearChaser();
+        // placeDoorNearChaser();
+        placeDoorNearPlayer();
     }
 
     private void placeAvatar() {
@@ -82,6 +83,20 @@ public class World {
         }
     }
 
+    private void placeDoorNearPlayer() {
+        // Attempt to place the door one move away from the player
+        for (int i = avatarX - 1; i <= avatarX + 1; i++) {
+            for (int j = avatarY - 1; j <= avatarY + 1; j++) {
+                if (isValidDoorPosition(i, j) && isAdjacentToFloor(i, j) && (i != avatarX || j != avatarY)) {
+                    doorX = i;
+                    doorY = j;
+                    map[doorX][doorY] = Tileset.LOCKED_DOOR;
+                    return;
+                }
+            }
+        }
+    }
+
     private void placeDoorNearChaser() {
         // Calculate the midpoint between the avatar and the chaser
         int midX = (avatarX + chaseX) / 2;
@@ -90,7 +105,7 @@ public class World {
         // Attempt to place the door near the calculated midpoint
         for (int i = midX - 1; i <= midX + 1; i++) {
             for (int j = midY - 1; j <= midY + 1; j++) {
-                if (isValidDoorPosition(i, j)) {
+                if (isValidDoorPosition(i, j) && isAdjacentToFloor(i, j)) {
                     doorX = i;
                     doorY = j;
                     map[doorX][doorY] = Tileset.LOCKED_DOOR;
@@ -98,6 +113,14 @@ public class World {
                 }
             }
         }
+    }
+
+    private boolean isAdjacentToFloor(int x, int y) {
+        // Check if the wall tile is adjacent to a floor tile
+        return (x > 0 && map[x - 1][y] == FLOOR) ||
+                (x < WIDTH - 1 && map[x + 1][y] == FLOOR) ||
+                (y > 0 && map[x][y - 1] == FLOOR) ||
+                (y < HEIGHT - 1 && map[x][y + 1] == FLOOR);
     }
 
     private boolean isValidDoorPosition(int x, int y) {
@@ -132,10 +155,14 @@ public class World {
             case 's' -> newY -= 1;
             case 'd' -> newX += 1;
         }
-        if (newX >= 0 && newX <= WIDTH && newY >= 0 && newY <= HEIGHT && map[newX][newY] == FLOOR) {
-            setAvatarToNewPosition(newX, newY);
+        if (newX >= 0 && newX < WIDTH && newY >= 0 && newY < HEIGHT) {
+            if (map[newX][newY] == FLOOR || map[newX][newY] == Tileset.LOCKED_DOOR) {
+                if (map[newX][newY] == Tileset.LOCKED_DOOR) {
+                    map[newX][newY] = Tileset.UNLOCKED_DOOR; // Change to unlocked door
+                }
+                setAvatarToNewPosition(newX, newY);
+            }
         }
-
     }
 
     void setAvatarToNewPosition(int newX, int newY) {
