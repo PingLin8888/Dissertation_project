@@ -7,16 +7,15 @@ import utils.FileUtils;
 
 import java.awt.*;
 
-
 /**
  * Inspired by GPT.
  */
 public class GameMenu {
     private static World world;
     private static TERenderer ter;
-//    private static StringBuilder seedBuilder = new StringBuilder();
+    // private static StringBuilder seedBuilder = new StringBuilder();
     private static StringBuilder quitSignBuilder = new StringBuilder();
-//    private static boolean enteringSeed = false;
+    // private static boolean enteringSeed = false;
     private static boolean gameStarted = false;
     private static boolean redraw = true;
     private double prevMouseX = 0;
@@ -25,7 +24,6 @@ public class GameMenu {
     private static final long CHASER_MOVE_INTERVAL = 500; // Interval in milliseconds between chaser movements
 
     private static Player player = null;
-
 
     public void createGameMenu() {
         StdDraw.setCanvasSize(800, 600);
@@ -125,7 +123,6 @@ public class GameMenu {
         StdDraw.textLeft(0.01, 0.99, description);
     }
 
-
     private static void handleInput() {
         if (StdDraw.hasNextKeyTyped()) {
             char key = Character.toLowerCase(StdDraw.nextKeyTyped());
@@ -171,9 +168,9 @@ public class GameMenu {
         }
     }
 
-
     private static Player loginOrCreateProfile() {
         StdDraw.clear();
+        StdDraw.setPenColor(StdDraw.BLACK);
         StdDraw.text(0.5, 0.6, "Enter Username: ");
         StdDraw.show();
         StringBuilder usernameBuilder = new StringBuilder();
@@ -185,16 +182,23 @@ public class GameMenu {
                     break;
                 }
                 usernameBuilder.append(key);
-                StdDraw.clear();
-                StdDraw.text(0.5, 0.6, "Enter Username: " + usernameBuilder);
-                StdDraw.show();
             }
+
+            // Clear and redraw the screen with the current username input
+            StdDraw.clear();
+            StdDraw.setPenColor(StdDraw.BLACK);
+            StdDraw.text(0.5, 0.6, "Enter Username: " + usernameBuilder);
+            StdDraw.show();
+
+            // Add a small pause to prevent excessive CPU usage
+            StdDraw.pause(20);
         }
 
         String username = usernameBuilder.toString().trim();
         Player loadedPlayer = PlayerStorage.loadPlayer(username);
 
         StdDraw.clear();
+        StdDraw.setPenColor(StdDraw.BLACK);
         if (loadedPlayer == null) {
             StdDraw.text(0.5, 0.5, "Creating new profile for: " + username);
             StdDraw.show();
@@ -217,7 +221,7 @@ public class GameMenu {
         while (true) {
             if (StdDraw.hasNextKeyTyped()) {
                 char key = StdDraw.nextKeyTyped();
-                if (key == 'r' || key == 'R') {//reaches
+                if (key == 'r' || key == 'R') {// reaches
                     randomSeed = true;
                     break;
                 } else if (Character.isDigit(key)) {
@@ -240,15 +244,13 @@ public class GameMenu {
         drawWorld();
     }
 
-
     private static void drawWorld() {
-//        StdDraw.clear();
+        // StdDraw.clear();
         int width = world.getMap().length;
         int height = world.getMap()[0].length;
         ter.initialize(width, height);
         ter.renderFrame(world.getMap());
     }
-
 
     private static void handleMovement(char key) {
         switch (Character.toLowerCase(key)) {
@@ -275,7 +277,6 @@ public class GameMenu {
         }
     }
 
-
     public static void loadGame(Player player) {
         String fileName = "save-file-" + player.getUsername() + ".txt";
         try {
@@ -291,7 +292,4 @@ public class GameMenu {
         }
     }
 
-
 }
-
-
