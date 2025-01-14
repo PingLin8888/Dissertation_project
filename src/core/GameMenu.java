@@ -266,12 +266,11 @@ public class GameMenu {
     }
 
     public static void saveGame(Player player) {
-        String fileName = "save-file.txt";
+        String fileName = "game_data.txt";
         try {
-            String contents = world.getSeed() + "\n" + world.getAvatarX() + "\n" +
+            String contents = player.getUsername() + "\n" + world.getSeed() + "\n" + world.getAvatarX() + "\n" +
                     world.getAvatarY() + "\n" + world.getChaseX() + "\n" +
-                    world.getChaseY() + "\n" + player.getUsername() + "\n" +
-                    player.getPoints();
+                    world.getChaseY() + "\n" + player.getPoints();
             FileUtils.writeFile(fileName, contents);
             PlayerStorage.savePlayer(player); // Save player data
         } catch (RuntimeException e) {
@@ -280,17 +279,29 @@ public class GameMenu {
     }
 
     public static void loadGame(Player player) {
-        String fileName = "save-file-" + player.getUsername() + ".txt";
+        String fileName = "game_data.txt";
         try {
             String contents = FileUtils.readFile(fileName);
             String[] lines = contents.split("\n");
-            world = new World(player, Long.parseLong(lines[0])); // Pass the player
-            world.setAvatarToNewPosition(Integer.parseInt(lines[1]), Integer.parseInt(lines[2]));
-            world.setChaserToNewPosition(Integer.parseInt(lines[3]), Integer.parseInt(lines[4]));
+
+            // Check if the saved game belongs to the current player
+            if (!lines[0].equals(player.getUsername())) {
+                // Clear the screen and display the message
+                StdDraw.clear(StdDraw.BLACK);
+                StdDraw.setPenColor(StdDraw.WHITE);
+                StdDraw.text(0.5, 0.5, "No saved gamefound for this player.");
+                StdDraw.show();
+                StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
+                return;
+            }
+
+            world = new World(player, Long.parseLong(lines[1])); // Pass the player
+            world.setAvatarToNewPosition(Integer.parseInt(lines[2]), Integer.parseInt(lines[3]));
+            world.setChaserToNewPosition(Integer.parseInt(lines[4]), Integer.parseInt(lines[5]));
             gameStarted = true;
             drawWorld();
         } catch (RuntimeException e) {
-            e.printStackTrace();
+            e.printStackTrace(); // Ensure exceptions are printed
         }
     }
 
