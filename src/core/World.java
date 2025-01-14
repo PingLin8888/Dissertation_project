@@ -32,11 +32,13 @@ public class World {
     private Set<Point> usedSpaces;
     private Player player;
 
+    private int doorX, doorY;
+
     public World() {
-        this(null,SEEDDefault);
+        this(null, SEEDDefault);
     }
 
-    public World(Player player,Long seed) {
+    public World(Player player, Long seed) {
         this.seed = seed;
         this.player = player;
         initializeWorldComponents();
@@ -51,6 +53,7 @@ public class World {
         initializeWorldWithTiles();
         placeAvatar();
         placeChaser();
+        placeDoorNearChaser();
     }
 
     private void placeAvatar() {
@@ -79,6 +82,28 @@ public class World {
         }
     }
 
+    private void placeDoorNearChaser() {
+        // Calculate the midpoint between the avatar and the chaser
+        int midX = (avatarX + chaseX) / 2;
+        int midY = (avatarY + chaseY) / 2;
+
+        // Attempt to place the door near the calculated midpoint
+        for (int i = midX - 1; i <= midX + 1; i++) {
+            for (int j = midY - 1; j <= midY + 1; j++) {
+                if (isValidDoorPosition(i, j)) {
+                    doorX = i;
+                    doorY = j;
+                    map[doorX][doorY] = Tileset.LOCKED_DOOR;
+                    return;
+                }
+            }
+        }
+    }
+
+    private boolean isValidDoorPosition(int x, int y) {
+        return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT && map[x][y] == WALL;
+    }
+
     public void moveChaser() {
         pathToAvatar = findPath(new Point(chaseX, chaseY), new Point(avatarX, avatarY));
         if (pathToAvatar != null && !pathToAvatar.isEmpty()) {
@@ -97,7 +122,6 @@ public class World {
     public void togglePathDisplay() {
         isShowPath = !isShowPath;
     }
-
 
     public void moveAvatar(char direction) {
         int newX = avatarX;
@@ -176,7 +200,7 @@ public class World {
         int maxRooms = 50 + (difficulty * 5);
         int roomNums = random.nextInt(maxRooms - minRooms + 1) + minRooms;
 
-        //Generate rooms within the grid boundaries
+        // Generate rooms within the grid boundaries
         while (rooms.size() < roomNums) {
             int width = random.nextInt(10) + 5;
             int height = random.nextInt(7) + 4;
@@ -194,7 +218,8 @@ public class World {
 
     private ArrayList<Point> findPath(Point start, Point goal) {
         Map<Point, Double> gScore = new HashMap<>();
-        PriorityQueue<Point> openSet = new PriorityQueue<>(Comparator.comparingDouble(p -> gScore.getOrDefault(p, Double.POSITIVE_INFINITY)));
+        PriorityQueue<Point> openSet = new PriorityQueue<>(
+                Comparator.comparingDouble(p -> gScore.getOrDefault(p, Double.POSITIVE_INFINITY)));
         Set<Point> closedSet = new HashSet<>();
         Map<Point, Point> comeFrom = new HashMap<>();
         openSet.add(start);
@@ -238,7 +263,7 @@ public class World {
         if (x < WIDTH - 1 && (map[x + 1][y] == FLOOR || map[x + 1][y] == AVATAR)) {
             neighbour.add(new Point(x + 1, y));
         }
-        if (y > 0 && (map[x][y - 1] == FLOOR||map[x][y - 1] == AVATAR)) {
+        if (y > 0 && (map[x][y - 1] == FLOOR || map[x][y - 1] == AVATAR)) {
             neighbour.add(new Point(x, y - 1));
         }
         if (y < HEIGHT - 1 && (map[x][y + 1] == FLOOR || map[x][y + 1] == AVATAR)) {
@@ -266,7 +291,6 @@ public class World {
         }
     }
 
-
     private boolean isColliding(Iterable<Point> points) {
         for (Point p : points) {
             if (usedSpaces.contains(p)) {
@@ -275,7 +299,6 @@ public class World {
         }
         return false;
     }
-
 
     private void placeRoom(Room room) {
         int x = room.getPositionX();
@@ -297,7 +320,8 @@ public class World {
         }
     }
 
-    //should check if place hallway is successful, if not. connect in another hallway.
+    // should check if place hallway is successful, if not. connect in another
+    // hallway.
     public void connectRooms(Room room1, Room room2) {
         Hallway hallway;
         if (room1.getPositionY() > room2.getPositionY()) {
@@ -310,50 +334,52 @@ public class World {
         hallways.add(hallway);
     }
 
-
     private Hallway createHallway(Room room1, Room room2) {
         int x1 = room1.getPositionX() + room1.getWidth() / 2;
         int y1 = room1.getPositionY() + room1.getHeight() / 2;
         Hallway hallway = new Hallway();
-        //vertical straight hallway
+        // vertical straight hallway
         if (x1 >= room2.getPositionX() + 2 && x1 <= room2.getPositionX() + room2.getWidth() - 2) {
-            //room2 is above room1
+            // room2 is above room1
             if (y1 < room2.getPositionY()) {
                 hallway = new StraightHallway(x1, y1 + room1.getHeight() / 2, x1, room2.getPositionY());
             } else if (y1 > room2.getPositionY()) {
-                hallway = new StraightHallway(x1, y1 - room1.getHeight() / 2, x1, room2.getPositionY() + room2.getHeight());
+                hallway = new StraightHallway(x1, y1 - room1.getHeight() / 2, x1,
+                        room2.getPositionY() + room2.getHeight());
             }
-            //horizontal straight hallway
+            // horizontal straight hallway
         } else if (y1 >= room2.getPositionY() + 2 && y1 <= room2.getPositionY() + room2.getHeight() - 2) {
-            //room2 is on the left of room1
+            // room2 is on the left of room1
             if (x1 > room2.getPositionX()) {
-                hallway = new StraightHallway(x1 - room1.getWidth() / 2, y1, room2.getPositionX() + room2.getWidth(), y1);
+                hallway = new StraightHallway(x1 - room1.getWidth() / 2, y1, room2.getPositionX() + room2.getWidth(),
+                        y1);
             } else if (x1 < room2.getPositionX()) {
                 hallway = new StraightHallway(x1 + room1.getWidth() / 2, y1, room2.getPositionX(), y1);
             }
         }
-        //create turn hallway
+        // create turn hallway
         else {
             int midX = room2.getPositionX();
             int midY = room1.getPositionY();
             if (room1.getPositionX() <= room2.getPositionX()) {
-                //room2 is on the right of room1
-                hallway = new TurnHallway(room1.getPositionX() + room1.getWidth() - 1, room1.getPositionY(), midX, midY, room2.getPositionX(), room2.getPositionY());
+                // room2 is on the right of room1
+                hallway = new TurnHallway(room1.getPositionX() + room1.getWidth() - 1, room1.getPositionY(), midX, midY,
+                        room2.getPositionX(), room2.getPositionY());
 
             } else {
-                //room2 is on the left of room1
-                hallway = new TurnHallway(room1.getPositionX(), room1.getPositionY(), midX, midY, room2.getPositionX(), room2.getPositionY());
+                // room2 is on the left of room1
+                hallway = new TurnHallway(room1.getPositionX(), room1.getPositionY(), midX, midY, room2.getPositionX(),
+                        room2.getPositionY());
             }
         }
         return hallway;
     }
 
-
     private void placeHallway(Hallway hallway) {
         if (hallway instanceof StraightHallway) {
             placeStraightHallway(hallway);
         } else {
-            //turn hallway
+            // turn hallway
             TurnHallway turnHallway = (TurnHallway) hallway;
             placeTurnHallway(turnHallway);
         }
@@ -365,27 +391,27 @@ public class World {
         int y1 = hallway.startY;
         int y2 = hallway.endY;
         if (x1 <= x2) {
-            //room2 is on the right,above room1
-            //floor
+            // room2 is on the right,above room1
+            // floor
             drawLShape(x1, x2 + 1, y1 + 1, y2, FLOOR, false);
-            //lower wall
+            // lower wall
             drawLShape(x1, x2 + 2, y1, y2, WALL, false);
-            //upper wall
+            // upper wall
             drawLShape(x1, x2, y1 + 2, y2, WALL, false);
         } else {
-            //room2 is on the left, above room1
-            //floor
+            // room2 is on the left, above room1
+            // floor
             drawLShape(x2 + 1, x1, y1 + 1, y2, FLOOR, true);
-            //lower wall
+            // lower wall
             drawLShape(x2, x1, y1, y2, WALL, true);
-            //upper wall
+            // upper wall
             drawLShape(x2 + 2, x1, y1 + 2, y2, WALL, true);
         }
 
     }
 
     private void drawLShape(int smallX, int bigX, int smallY, int bigY, TETile tileSet, boolean isBasedOnSmallX) {
-        //draw the horizontal first
+        // draw the horizontal first
         int i, j;
         for (i = smallX; i <= bigX; i++) {
             if (tileSet == FLOOR) {
@@ -394,7 +420,7 @@ public class World {
                 map[i][smallY] = tileSet;
             }
         }
-        //then the vertical part
+        // then the vertical part
         for (j = smallY; j <= bigY; j++) {
             int x = smallX;
             if (!isBasedOnSmallX) {
@@ -449,11 +475,9 @@ public class World {
         return avatarX;
     }
 
-
     public int getAvatarY() {
         return avatarY;
     }
-
 
     public long getSeed() {
         return seed;
@@ -474,4 +498,13 @@ public class World {
     public int getChaseY() {
         return chaseY;
     }
+
+    public int getDoorX() {
+        return doorX;
+    }
+
+    public int getDoorY() {
+        return doorY;
+    }
+
 }

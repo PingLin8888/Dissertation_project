@@ -261,7 +261,25 @@ public class GameMenu {
             case 's':
             case 'd':
                 world.moveAvatar(key);
+                checkObjectiveCompletion();
                 break;
+        }
+    }
+
+    private static void checkObjectiveCompletion() {
+        if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
+            player.addPoints(100); // Award points for reaching the door
+
+            // Display the completion message on the screen
+            StdDraw.clear(StdDraw.BLACK);
+            StdDraw.setPenColor(StdDraw.WHITE);
+            StdDraw.text(0.5, 0.5, "Objective completed! You've reached the door.");
+            StdDraw.show();
+            StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
+
+            // Reset game state to show the post-login menu
+            gameStarted = false;
+            redraw = true;
         }
     }
 
