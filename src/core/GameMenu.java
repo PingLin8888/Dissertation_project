@@ -33,6 +33,7 @@ public class GameMenu {
 
         while (true) {
             if (redraw) {
+                System.out.println("Redrawing the screen...");
                 StdDraw.clear(StdDraw.BLACK);
 
                 if (player == null) {
@@ -40,6 +41,7 @@ public class GameMenu {
                 } else if (!gameStarted) {
                     drawPostLoginMenu(player); // Menu after login
                 } else {
+                    System.out.println("Rendering game world...");
                     ter.renderFrame(world.getMap());
                     updateHUD();
                     if (world.isShowPath() && world.getPathToAvatar() != null) {
@@ -226,26 +228,40 @@ public class GameMenu {
                 char key = StdDraw.nextKeyTyped();
                 if (key == 'r' || key == 'R') {
                     randomSeed = true;
+                    System.out.println("Random seed selected.");
                     break;
-                } else if (Character.isDigit(key)) {
+                } else if (Character.isDigit(key) && seedInput.length() < 18) { // Limit seed length
                     seedInput.append(key);
                     StdDraw.clear(StdDraw.BLACK);
                     StdDraw.setPenColor(StdDraw.WHITE);
                     StdDraw.text(0.5, 0.6, "Enter seed: " + seedInput);
                     StdDraw.show();
                 } else if (key == '\n' || key == '\r') {
+                    System.out.println("Seed entered: " + seedInput.toString());
                     break;
                 }
             }
         }
 
-        long seed = randomSeed
-                ? System.currentTimeMillis() // Generate a random seed if player skips
-                : Long.parseLong(seedInput.toString());
+        long seed;
+        try {
+            seed = randomSeed
+                    ? System.currentTimeMillis() // Generate a random seed if player skips
+                    : Long.parseLong(seedInput.toString());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid seed entered. Using random seed.");
+            seed = System.currentTimeMillis();
+        }
 
-        world = new World(player, seed); // Pass seed and player
+        // Reset the game state
         gameStarted = true;
+        redraw = true;
+
+        // Initialize a new world with the given seed and player
+        world = new World(player, seed);
+        System.out.println("New world created with seed: " + seed);
         drawWorld();
+        System.out.println("World drawn.");
     }
 
     private static void drawWorld() {
@@ -271,6 +287,7 @@ public class GameMenu {
     private static void checkObjectiveCompletion() {
         if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
             player.addPoints(100); // Award points for reaching the door
+            System.out.println("Objective completed! Points awarded: 100");
 
             // Reapply coordinate system before drawing
             StdDraw.setXscale(0, 1);
@@ -286,6 +303,7 @@ public class GameMenu {
             // Reset game state to show the post-login menu
             gameStarted = false;
             redraw = true;
+            System.out.println("Game state reset to post-login menu.");
         }
     }
 
