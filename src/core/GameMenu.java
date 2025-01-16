@@ -42,13 +42,18 @@ public class GameMenu {
                     if (world.isShowPath() && world.getPathToAvatar() != null) {
                         drawPath();
                     }
-                    // StdDraw.show();
                 }
                 StdDraw.show(); // Show the buffer
                 redraw = false; // Reset redraw flag
             }
 
             handleInput();
+
+            // Ensure player is initialized before creating a new game
+            if (!gameStarted && player != null) {
+                createNewGame();
+            }
+
             detectMouseMove();
             StdDraw.pause(50); // Adjust pause duration if needed
 
@@ -145,33 +150,38 @@ public class GameMenu {
                         break;
                 }
             }
-            else if (!gameStarted) {
-                // Post-login menu options
-                switch (key) {
-                    case 'n':
-                        createNewGame();
-                        break;
-                    case 'l':
-                        loadGame(player);
-                        break;
-                    case 'q':
-                        System.exit(0);
-                        break;
-                }
-            }
-            else {
-                // Game started: Handle in-game inputs
-                if (key == ':') {
-                    quitSignBuilder.setLength(0);
-                    quitSignBuilder.append(key);
-                } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
-                    saveGame(player);
-                    System.exit(0);
-                } else if (key == 'p') {
-                    world.togglePathDisplay();
-                }
-                handleMovement(key);
-            }
+//             else if (!gameStarted) {
+//             // Post-login menu options
+//             switch (key) {
+//             case 'n':
+//             createNewGame();
+//             break;
+//             case 'l':
+//             loadGame(player);
+//             break;
+//             case 'q':
+//             System.exit(0);
+//             break;
+//             }
+//             }
+//             else {
+//             // Game started: Handle in-game inputs
+//             if (key == ':') {
+//             quitSignBuilder.setLength(0);
+//             quitSignBuilder.append(key);
+//             } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
+//             saveGame(player);
+//             System.exit(0);
+//             } else if (key == 'p') {
+//             world.togglePathDisplay();
+//             }
+//             handleMovement(key);
+//             }
+
+
+        }
+        else if (player != null && gameStarted) {
+            handleMovement('a');
         }
     }
 
@@ -180,41 +190,52 @@ public class GameMenu {
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(0.5, 0.6, "Enter Username: ");
         StdDraw.show();
-        StringBuilder usernameBuilder = new StringBuilder();
+//        StringBuilder usernameBuilder = new StringBuilder();
 
-        while (true) {
-            if (StdDraw.hasNextKeyTyped()) {
-                char key = StdDraw.nextKeyTyped();
-                if (key == '\n' || key == '\r') {
-                    break;
-                }
-                usernameBuilder.append(key);
-            }
+//        while (true) {
+//            if (StdDraw.hasNextKeyTyped()) {
+//                char key = StdDraw.nextKeyTyped();
+//                if (key == '\n' || key == '\r') {
+//                    break;
+//                }
+//                usernameBuilder.append(key);
+//            }
+//
+//            // Clear and redraw the screen with the current username input
+//            StdDraw.clear(StdDraw.BLACK);
+//            StdDraw.setPenColor(StdDraw.WHITE);
+//            StdDraw.text(0.5, 0.6, "Enter Username: " + usernameBuilder);
+//            StdDraw.show();
+//
+//            // Add a small pause to prevent excessive CPU usage
+//            StdDraw.pause(80);
+//        }
+//
+//        String username = usernameBuilder.toString().trim();
 
-            // Clear and redraw the screen with the current username input
-            StdDraw.clear(StdDraw.BLACK);
-            StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.text(0.5, 0.6, "Enter Username: " + usernameBuilder);
-            StdDraw.show();
+//         Clear and redraw the screen with the current username input
+        String username = "p";
+        StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.text(0.5, 0.6, "Enter Username: " + username);
+        StdDraw.show();
 
-            // Add a small pause to prevent excessive CPU usage
-            StdDraw.pause(80);
-        }
-
-        String username = usernameBuilder.toString().trim();
+        // Add a small pause to prevent excessive CPU usage
+        StdDraw.pause(500);
         Player loadedPlayer = PlayerStorage.loadPlayer(username);
 
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
-        if (loadedPlayer == null) {
-            StdDraw.text(0.5, 0.5, "Creating new profile for: " + username);
-            StdDraw.show();
-            return new Player(username);
-        } else {
-            StdDraw.text(0.5, 0.5, "Welcome back, " + username + "! Points: " + loadedPlayer.getPoints());
-            StdDraw.show();
-            return loadedPlayer;
-        }
+//        if (loadedPlayer == null) {
+//            StdDraw.text(0.5, 0.5, "Creating new profile for: " + username);
+//            StdDraw.show();
+//            return new Player(username);
+//        } else {
+//            StdDraw.text(0.5, 0.5, "Welcome backkkk prelogin, " + username + "! Points: " + loadedPlayer.getPoints());
+//            StdDraw.show();
+//            return loadedPlayer;
+//        }
+        return new Player(username);
     }
 
     private void createNewGame() {
@@ -224,38 +245,40 @@ public class GameMenu {
         StdDraw.show();
 
         StringBuilder seedInput = new StringBuilder();
-        boolean randomSeed = false;
+        // boolean randomSeed = false;
 
-        while (true) {
-            if (StdDraw.hasNextKeyTyped()) {
-                char key = StdDraw.nextKeyTyped();
-                if (key == 'r' || key == 'R') {
-                    randomSeed = true;
-                    System.out.println("Random seed selected.");
-                    break;
-                } else if (Character.isDigit(key) && seedInput.length() < 18) { // Limit seed length
-                    seedInput.append(key);
-                    StdDraw.clear(StdDraw.BLACK);
-                    StdDraw.setPenColor(StdDraw.WHITE);
-                    StdDraw.text(0.5, 0.6, "Enter seed: " + seedInput);
-                    StdDraw.show();
-                } else if (key == '\n' || key == '\r') {
-                    System.out.println("Seed entered: " + seedInput.toString());
-                    break;
-                }
-            }
-        }
+        // while (true) {
+        // if (StdDraw.hasNextKeyTyped()) {
+        // char key = StdDraw.nextKeyTyped();
+        // if (key == 'r' || key == 'R') {
+        // randomSeed = true;
+        // System.out.println("Random seed selected.");
+        // break;
+        // } else if (Character.isDigit(key) && seedInput.length() < 18) { // Limit seed
+        // length
+        // seedInput.append(key);
+        // StdDraw.clear(StdDraw.BLACK);
+        // StdDraw.setPenColor(StdDraw.WHITE);
+        // StdDraw.text(0.5, 0.6, "Enter seed: " + seedInput);
+        // StdDraw.show();
+        // } else if (key == '\n' || key == '\r') {
+        // System.out.println("Seed entered: " + seedInput.toString());
+        // break;
+        // }
+        // }
+        // }
 
         long seed;
-        try {
-            seed = randomSeed
-                    ? System.currentTimeMillis() // Generate a random seed if player skips
-                    : Long.parseLong(seedInput.toString());
-            System.out.println("seed is: " + seed);
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid seed entered. Using random seed.");
-            seed = System.currentTimeMillis();
-        }
+//        try {
+//            seed = randomSeed
+//                    ? System.currentTimeMillis() // Generate a random seed if player skips
+//                    : Long.parseLong(seedInput.toString());
+//            System.out.println("seed is: " + seed);
+//        } catch (NumberFormatException e) {
+//            System.out.println("Invalid seed entered. Using random seed.");
+//            seed = System.currentTimeMillis();
+//        }
+        seed = 1234L;
 
         // Reset the game state
         gameStarted = true;
@@ -281,15 +304,17 @@ public class GameMenu {
     }
 
     private void handleMovement(char key) {
-        switch (Character.toLowerCase(key)) {
-            case 'w':
-            case 'a':
-            case 's':
-            case 'd':
-                world.moveAvatar(key);
-                checkObjectiveCompletion();
-                break;
-        }
+        // switch (Character.toLowerCase(key)) {
+        // case 'w':
+        // case 'a':
+        // case 's':
+        // case 'd':
+        // world.moveAvatar(key);
+        // checkObjectiveCompletion();
+        // break;
+        // }
+        world.moveAvatar('a');
+        checkObjectiveCompletion();
     }
 
     private void checkObjectiveCompletion() {

@@ -85,15 +85,27 @@ public class World {
 
     private void placeDoorNearPlayer() {
         // Attempt to place the door one move away from the player
-        for (int i = avatarX - 1; i <= avatarX + 1; i++) {
-            for (int j = avatarY - 1; j <= avatarY + 1; j++) {
-                if (isValidDoorPosition(i, j) && isAdjacentToFloor(i, j) && (i != avatarX || j != avatarY)) {
-                    doorX = i;
-                    doorY = j;
-                    map[doorX][doorY] = Tileset.LOCKED_DOOR;
-                    return;
-                }
-            }
+        // for (int i = avatarX - 1; i <= avatarX + 1; i++) {
+        // for (int j = avatarY - 1; j <= avatarY + 1; j++) {
+        // if (isValidDoorPosition(i, j) && isAdjacentToFloor(i, j) && (i != avatarX ||
+        // j != avatarY)) {
+        // doorX = i;
+        // doorY = j;
+        // map[doorX][doorY] = Tileset.LOCKED_DOOR;
+        // return;
+        // }
+        // }
+        // }
+        // Attempt to place the door one step to the left of the player
+        int i = avatarX - 1;
+        int j = avatarY;
+        // Check if the position is valid and adjacent to a floor
+        if (isValidDoorPosition(i, j) && isAdjacentToFloor(i, j)) {
+            doorX = i;
+            doorY = j;
+            map[doorX][doorY] = Tileset.LOCKED_DOOR;
+        } else {
+            System.out.println("Cannot place door to the left of the player. Position is invalid.");
         }
     }
 
@@ -116,15 +128,20 @@ public class World {
     }
 
     private boolean isAdjacentToFloor(int x, int y) {
+        // Debug: Print the current position and its surroundings
+        System.out.println("Checking adjacency for position: (" + x + ", " + y + ")");
+        boolean right = x < map.length - 1 && map[x + 1][y] == AVATAR;
+        return right;
+
         // Check if the wall tile is adjacent to a floor tile
-        return (x > 0 && map[x - 1][y] == FLOOR) ||
-                (x < WIDTH - 1 && map[x + 1][y] == FLOOR) ||
-                (y > 0 && map[x][y - 1] == FLOOR) ||
-                (y < HEIGHT - 1 && map[x][y + 1] == FLOOR);
+//        return (x > 0 && map[x - 1][y] == FLOOR) ||
+//                (x < map.length - 1 && map[x + 1][y] == FLOOR) ||
+//                (y > 0 && map[x][y - 1] == FLOOR) ||
+//                (y < map[0].length - 1 && map[x][y + 1] == FLOOR);
     }
 
     private boolean isValidDoorPosition(int x, int y) {
-        return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT && map[x][y] == WALL;
+        return x >= 0 && x < WIDTH && y >= 0 && y < map[0].length && map[x][y] == WALL;
     }
 
     public void moveChaser() {
@@ -223,8 +240,8 @@ public class World {
 
     public void generateRoom() {
         int difficulty = player.calculateDifficulty(); // Get difficulty based on player points
-        int minRooms = 5 + (difficulty * 2);
-        int maxRooms = 50 + (difficulty * 5);
+        int minRooms = 1 + (difficulty * 2);
+        int maxRooms = 5 + (difficulty * 5);
         int roomNums = random.nextInt(maxRooms - minRooms + 1) + minRooms;
 
         // Generate rooms within the grid boundaries
