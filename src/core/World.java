@@ -223,8 +223,8 @@ public class World {
 
     public void generateRoom() {
         int difficulty = player.calculateDifficulty(); // Get difficulty based on player points
-        int minRooms = 5 + (difficulty * 2);
-        int maxRooms = 50 + (difficulty * 5);
+        int minRooms = 1 + (difficulty * 0);
+        int maxRooms = 5 + (difficulty * 3);
         int roomNums = random.nextInt(maxRooms - minRooms + 1) + minRooms;
 
         // Generate rooms within the grid boundaries
