@@ -10,10 +10,10 @@ public class Main {
     public static void main(String[] args) {
 
         // build your own world!
-        //main menu with options. navigate via keyboard
+        // main menu with options. navigate via keyboard
         GameMenu gameMenu = new GameMenu();
         gameMenu.createGameMenu();
-//        GameInterface gameInterface = new GameInterface();
-//        gameInterface.launch();
+        // GameInterface gameInterface = new GameInterface();
+        // gameInterface.launch();
     }
 }

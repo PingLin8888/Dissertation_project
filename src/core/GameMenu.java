@@ -11,29 +11,25 @@ import java.awt.*;
  * Inspired by GPT.
  */
 public class GameMenu {
-    private static World world;
-    private static TERenderer ter;
-    // private static StringBuilder seedBuilder = new StringBuilder();
-    private static StringBuilder quitSignBuilder = new StringBuilder();
-    // private static boolean enteringSeed = false;
-    private static boolean gameStarted = false;
-    private static boolean redraw = true;
+    private World world;
+    private TERenderer ter;
+    private StringBuilder quitSignBuilder = new StringBuilder();
+    private boolean gameStarted = false;
+    private boolean redraw = true;
     private double prevMouseX = 0;
     private double prevMouseY = 0;
     private long lastChaserMoveTime = 0; // Variable to track the last time the chaser moved
     private static final long CHASER_MOVE_INTERVAL = 500; // Interval in milliseconds between chaser movements
 
-    private static Player player = null;
+    private Player player = null;
 
     public void createGameMenu() {
-        StdDraw.setCanvasSize(800, 600);
-        StdDraw.setXscale(0, 1);
-        StdDraw.setYscale(0, 1);
+        setupCanvas();
         ter = new TERenderer();
+        StdDraw.enableDoubleBuffering(); // Enable double buffering
 
         while (true) {
             if (redraw) {
-                System.out.println("Redrawing the screen...");
                 StdDraw.clear(StdDraw.BLACK);
 
                 if (player == null) {
@@ -41,34 +37,39 @@ public class GameMenu {
                 } else if (!gameStarted) {
                     drawPostLoginMenu(player); // Menu after login
                 } else {
-                    System.out.println("Rendering game world...");
                     ter.renderFrame(world.getMap());
                     updateHUD();
                     if (world.isShowPath() && world.getPathToAvatar() != null) {
                         drawPath();
                     }
+                    // StdDraw.show();
                 }
-
-                StdDraw.show();
-                redraw = false;
+                StdDraw.show(); // Show the buffer
+                redraw = false; // Reset redraw flag
             }
 
             handleInput();
             detectMouseMove();
-            StdDraw.pause(20);
+            StdDraw.pause(50); // Adjust pause duration if needed
 
             if (gameStarted) {
                 long currentTime = System.currentTimeMillis();
                 if (currentTime - lastChaserMoveTime >= CHASER_MOVE_INTERVAL) {
                     world.moveChaser();
-                    lastChaserMoveTime = currentTime; // Update the last move time
+                    lastChaserMoveTime = currentTime;
                     redraw = true;
                 }
             }
         }
     }
 
-    private static void drawLoginMenu() {
+    private void setupCanvas() {
+        StdDraw.setCanvasSize(800, 600);
+        StdDraw.setXscale(0, 1);
+        StdDraw.setYscale(0, 1);
+    }
+
+    private void drawLoginMenu() {
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(0.5, 0.65, "Log In / Create Profile (P)");
         StdDraw.text(0.5, 0.5, "Quit (Q)");
@@ -76,7 +77,7 @@ public class GameMenu {
 
     }
 
-    private static void drawPostLoginMenu(Player player) {
+    private void drawPostLoginMenu(Player player) {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(0.5, 0.8, "Welcome, " + player.getUsername());
@@ -127,7 +128,7 @@ public class GameMenu {
         StdDraw.textLeft(0.01, 0.99, description);
     }
 
-    private static void handleInput() {
+    private void handleInput() {
         if (StdDraw.hasNextKeyTyped()) {
             char key = Character.toLowerCase(StdDraw.nextKeyTyped());
             redraw = true;
@@ -143,11 +144,12 @@ public class GameMenu {
                         System.exit(0);
                         break;
                 }
-            } else if (!gameStarted) {
+            }
+            else if (!gameStarted) {
                 // Post-login menu options
                 switch (key) {
                     case 'n':
-                        createNewGame(player);
+                        createNewGame();
                         break;
                     case 'l':
                         loadGame(player);
@@ -156,7 +158,8 @@ public class GameMenu {
                         System.exit(0);
                         break;
                 }
-            } else {
+            }
+            else {
                 // Game started: Handle in-game inputs
                 if (key == ':') {
                     quitSignBuilder.setLength(0);
@@ -172,7 +175,7 @@ public class GameMenu {
         }
     }
 
-    private static Player loginOrCreateProfile() {
+    private Player loginOrCreateProfile() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(0.5, 0.6, "Enter Username: ");
@@ -195,7 +198,7 @@ public class GameMenu {
             StdDraw.show();
 
             // Add a small pause to prevent excessive CPU usage
-            StdDraw.pause(20);
+            StdDraw.pause(80);
         }
 
         String username = usernameBuilder.toString().trim();
@@ -214,7 +217,7 @@ public class GameMenu {
         }
     }
 
-    private static void createNewGame(Player player) {
+    private void createNewGame() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(0.5, 0.6, "Enter seed for world generation or press R for a random world: ");
@@ -248,6 +251,7 @@ public class GameMenu {
             seed = randomSeed
                     ? System.currentTimeMillis() // Generate a random seed if player skips
                     : Long.parseLong(seedInput.toString());
+            System.out.println("seed is: " + seed);
         } catch (NumberFormatException e) {
             System.out.println("Invalid seed entered. Using random seed.");
             seed = System.currentTimeMillis();
@@ -255,24 +259,28 @@ public class GameMenu {
 
         // Reset the game state
         gameStarted = true;
-        redraw = true;
+        // redraw = true;
 
         // Initialize a new world with the given seed and player
         world = new World(player, seed);
         System.out.println("New world created with seed: " + seed);
         drawWorld();
-        System.out.println("World drawn.");
     }
 
-    private static void drawWorld() {
-        // StdDraw.clear();
-        int width = world.getMap().length;
-        int height = world.getMap()[0].length;
-        ter.initialize(width, height);
-        ter.renderFrame(world.getMap());
+    private void drawWorld() {
+        System.out.println("before drawing world");
+        try {
+            int width = world.getMap().length;
+            int height = world.getMap()[0].length;
+            ter.initialize(width, height);
+            ter.renderFrame(world.getMap());
+        } catch (Exception e) {
+            System.err.println("Error drawing world: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    private static void handleMovement(char key) {
+    private void handleMovement(char key) {
         switch (Character.toLowerCase(key)) {
             case 'w':
             case 'a':
@@ -284,7 +292,7 @@ public class GameMenu {
         }
     }
 
-    private static void checkObjectiveCompletion() {
+    private void checkObjectiveCompletion() {
         if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
             player.addPoints(100); // Award points for reaching the door
             System.out.println("Objective completed! Points awarded: 100");
@@ -307,7 +315,7 @@ public class GameMenu {
         }
     }
 
-    public static void saveGame(Player player) {
+    public void saveGame(Player player) {
         String fileName = "game_data.txt";
         try {
             String contents = player.getUsername() + "\n" + world.getSeed() + "\n" + world.getAvatarX() + "\n" +
@@ -320,7 +328,7 @@ public class GameMenu {
         }
     }
 
-    public static void loadGame(Player player) {
+    public void loadGame(Player player) {
         String fileName = "game_data.txt";
         try {
             String contents = FileUtils.readFile(fileName);
@@ -331,7 +339,7 @@ public class GameMenu {
                 // Clear the screen and display the message
                 StdDraw.clear(StdDraw.BLACK);
                 StdDraw.setPenColor(StdDraw.WHITE);
-                StdDraw.text(0.5, 0.5, "No saved gamefound for this player.");
+                StdDraw.text(0.5, 0.5, "No saved game found for this player.");
                 StdDraw.show();
                 StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
                 return;
