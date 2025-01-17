@@ -74,7 +74,7 @@ public class World {
     }
 
     private void placeChaser() {
-        // Place the chaser one tile away from the avatar
+        // Start with the avatar's position
         int chaserX = avatarX;
         int chaserY = avatarY;
 
@@ -82,25 +82,42 @@ public class World {
         Random rand = new Random();
         int direction = rand.nextInt(4); // 0: up, 1: down, 2: left, 3: right
 
+        // Check positions in order of preference
         switch (direction) {
             case 0: // Up
-                if (chaserY + 2 < HEIGHT && map[chaserX][chaserY + 2] == FLOOR) {
-                    chaserY += 2;
+                if (chaserY + 3 < HEIGHT && map[chaserX][chaserY + 3] == FLOOR) {
+                    chaserY += 3; // Preferred position
+                } else if (chaserY + 2 < HEIGHT && map[chaserX][chaserY + 2] == FLOOR) {
+                    chaserY += 2; // Fallback position
+                } else if (chaserY + 1 < HEIGHT && map[chaserX][chaserY + 1] == FLOOR) {
+                    chaserY += 1; // Closer fallback
                 }
                 break;
             case 1: // Down
-                if (chaserY - 2 >= 0 && map[chaserX][chaserY - 2] == FLOOR) {
-                    chaserY -= 2;
+                if (chaserY - 3 >= 0 && map[chaserX][chaserY - 3] == FLOOR) {
+                    chaserY -= 3; // Preferred position
+                } else if (chaserY - 2 >= 0 && map[chaserX][chaserY - 2] == FLOOR) {
+                    chaserY -= 2; // Fallback position
+                } else if (chaserY - 1 >= 0 && map[chaserX][chaserY - 1] == FLOOR) {
+                    chaserY -= 1; // Closer fallback
                 }
                 break;
             case 2: // Left
-                if (chaserX - 2 >= 0 && map[chaserX - 2][chaserY] == FLOOR) {
-                    chaserX -= 2;
+                if (chaserX - 3 >= 0 && map[chaserX - 3][chaserY] == FLOOR) {
+                    chaserX -= 3; // Preferred position
+                } else if (chaserX - 2 >= 0 && map[chaserX - 2][chaserY] == FLOOR) {
+                    chaserX -= 2; // Fallback position
+                } else if (chaserX - 1 >= 0 && map[chaserX - 1][chaserY] == FLOOR) {
+                    chaserX -= 1; // Closer fallback
                 }
                 break;
             case 3: // Right
-                if (chaserX + 2 < WIDTH && map[chaserX + 1][chaserY] == FLOOR) {
-                    chaserX += 2;
+                if (chaserX + 3 < WIDTH && map[chaserX + 3][chaserY] == FLOOR) {
+                    chaserX += 3; // Preferred position
+                } else if (chaserX + 2 < WIDTH && map[chaserX + 2][chaserY] == FLOOR) {
+                    chaserX += 2; // Fallback position
+                } else if (chaserX + 1 < WIDTH && map[chaserX + 1][chaserY] == FLOOR) {
+                    chaserX += 1; // Closer fallback
                 }
                 break;
         }
@@ -253,12 +270,13 @@ public class World {
         int difficulty = player.calculateDifficulty(); // Get difficulty based on player points
         int minRooms = 1 + (difficulty * 0);
         int maxRooms = 5 + (difficulty * 3);
-        int roomNums = random.nextInt(maxRooms - minRooms + 1) + minRooms;
+        // int roomNums = random.nextInt(maxRooms - minRooms + 1) + minRooms;
+        int roomNums = 3;
 
         // Generate rooms within the grid boundaries
         while (rooms.size() < roomNums) {
-            int width = random.nextInt(10) + 5;
-            int height = random.nextInt(7) + 4;
+            int width = random.nextInt(10) + 10;
+            int height = random.nextInt(7) + 8;
             int x = random.nextInt(WIDTH - width - 2) + 1;
             int y = random.nextInt(HEIGHT - height - 2) + 1;
             Room newRoom = new Room(width, height, x, y);
