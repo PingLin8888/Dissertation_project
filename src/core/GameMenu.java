@@ -19,7 +19,7 @@ public class GameMenu {
     private double prevMouseX = 0;
     private double prevMouseY = 0;
     private long lastChaserMoveTime = 0; // Variable to track the last time the chaser moved
-    private static final long CHASER_MOVE_INTERVAL = 500; // Interval in milliseconds between chaser movements
+    private static final long CHASER_MOVE_INTERVAL = 100; // Reduced interval for faster chaser movement
 
     private Player player = null;
 
@@ -292,6 +292,26 @@ public class GameMenu {
     }
 
     private void checkObjectiveCompletion() {
+        // Check if the chaser is adjacent to the avatar
+        if ((Math.abs(world.getChaseX() - world.getAvatarX()) == 1 && world.getChaseY() == world.getAvatarY()) ||
+                (Math.abs(world.getChaseY() - world.getAvatarY()) == 1 && world.getChaseX() == world.getAvatarX())) {
+            // End the game and redirect to the post-login menu
+            System.out.println("Chaser is adjacent to the avatar! Ending game.");
+
+            // Clear the screen and display the message
+            StdDraw.clear(StdDraw.BLACK);
+            StdDraw.setPenColor(StdDraw.WHITE);
+            StdDraw.text(0.5, 0.5, "Game Over! You were caught by the chaser.");
+            StdDraw.show();
+            StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
+
+            // Reset game state to show the post-login menu
+            gameStarted = false;
+            redraw = true;
+            System.out.println("Game state reset to post-login menu.");
+        }
+
+        // Check if the avatar has reached the door
         if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
             player.addPoints(100); // Award points for reaching the door
             System.out.println("Objective completed! Points awarded: 100");

@@ -58,29 +58,57 @@ public class World {
     }
 
     private void placeAvatar() {
-        for (int i = 0; i < WIDTH; i++) {
-            for (int j = 0; j < HEIGHT; j++) {
-                if (map[i][j] == FLOOR) {
-                    avatarX = i;
-                    avatarY = j;
-                    map[i][j] = AVATAR;
-                    return;
-                }
-            }
+        List<Point> availablePositions = new ArrayList<>(usedSpaces); // Create a list from usedSpaces
+
+        // Filter available positions to only include floor tiles
+        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR);
+
+        // Randomly select one of the available positions for the avatar
+        if (!availablePositions.isEmpty()) {
+            Random rand = new Random();
+            Point randomPosition = availablePositions.get(rand.nextInt(availablePositions.size()));
+            avatarX = randomPosition.x;
+            avatarY = randomPosition.y;
+            map[avatarX][avatarY] = AVATAR;
         }
     }
 
     private void placeChaser() {
-        for (int i = WIDTH - 1; i >= 0; i--) {
-            for (int j = HEIGHT - 1; j >= 0; j--) {
-                if (map[i][j] == FLOOR) {
-                    chaseX = i;
-                    chaseY = j;
-                    map[i][j] = CHASER;
-                    return;
+        // Place the chaser one tile away from the avatar
+        int chaserX = avatarX;
+        int chaserY = avatarY;
+
+        // Randomly choose a direction to place the chaser
+        Random rand = new Random();
+        int direction = rand.nextInt(4); // 0: up, 1: down, 2: left, 3: right
+
+        switch (direction) {
+            case 0: // Up
+                if (chaserY + 2 < HEIGHT && map[chaserX][chaserY + 2] == FLOOR) {
+                    chaserY += 2;
                 }
-            }
+                break;
+            case 1: // Down
+                if (chaserY - 2 >= 0 && map[chaserX][chaserY - 2] == FLOOR) {
+                    chaserY -= 2;
+                }
+                break;
+            case 2: // Left
+                if (chaserX - 2 >= 0 && map[chaserX - 2][chaserY] == FLOOR) {
+                    chaserX -= 2;
+                }
+                break;
+            case 3: // Right
+                if (chaserX + 2 < WIDTH && map[chaserX + 1][chaserY] == FLOOR) {
+                    chaserX += 2;
+                }
+                break;
         }
+
+        // Set the chaser's position
+        chaseX = chaserX;
+        chaseY = chaserY;
+        map[chaseX][chaseY] = CHASER;
     }
 
     private void placeDoorNearPlayer() {
