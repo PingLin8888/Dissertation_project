@@ -154,6 +154,7 @@ public class GameMenu {
                         loadGame(player);
                         break;
                     case 'q':
+                        saveGame(player);
                         System.exit(0);
                         break;
                 }
