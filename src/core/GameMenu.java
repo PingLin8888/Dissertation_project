@@ -144,8 +144,7 @@ public class GameMenu {
                         System.exit(0);
                         break;
                 }
-            }
-            else if (!gameStarted) {
+            } else if (!gameStarted) {
                 // Post-login menu options
                 switch (key) {
                     case 'n':
@@ -158,8 +157,7 @@ public class GameMenu {
                         System.exit(0);
                         break;
                 }
-            }
-            else {
+            } else {
                 // Game started: Handle in-game inputs
                 if (key == ':') {
                     quitSignBuilder.setLength(0);

@@ -87,7 +87,7 @@ public class World {
         // Attempt to place the door one move away from the player
         for (int i = avatarX - 1; i <= avatarX + 1; i++) {
             for (int j = avatarY - 1; j <= avatarY + 1; j++) {
-                if (isValidDoorPosition(i, j) && isAdjacentToFloor(i, j) && (i != avatarX || j != avatarY)) {
+                if (isValidDoorPosition(i, j) && isAdjacentToFloorOrAvatar(i, j) && (i != avatarX || j != avatarY)) {
                     doorX = i;
                     doorY = j;
                     map[doorX][doorY] = Tileset.LOCKED_DOOR;
@@ -105,7 +105,7 @@ public class World {
         // Attempt to place the door near the calculated midpoint
         for (int i = midX - 1; i <= midX + 1; i++) {
             for (int j = midY - 1; j <= midY + 1; j++) {
-                if (isValidDoorPosition(i, j) && isAdjacentToFloor(i, j)) {
+                if (isValidDoorPosition(i, j) && isAdjacentToFloorOrAvatar(i, j)) {
                     doorX = i;
                     doorY = j;
                     map[doorX][doorY] = Tileset.LOCKED_DOOR;
@@ -115,12 +115,12 @@ public class World {
         }
     }
 
-    private boolean isAdjacentToFloor(int x, int y) {
-        // Check if the wall tile is adjacent to a floor tile
-        return (x > 0 && map[x - 1][y] == FLOOR) ||
-                (x < WIDTH - 1 && map[x + 1][y] == FLOOR) ||
-                (y > 0 && map[x][y - 1] == FLOOR) ||
-                (y < HEIGHT - 1 && map[x][y + 1] == FLOOR);
+    private boolean isAdjacentToFloorOrAvatar(int x, int y) {
+        // Check if the wall tile is adjacent to a floor tile or the avatar
+        return (x > 0 && (map[x - 1][y] == FLOOR || (x - 1 == avatarX && y == avatarY))) ||
+                (x < WIDTH - 1 && (map[x + 1][y] == FLOOR || (x + 1 == avatarX && y == avatarY))) ||
+                (y > 0 && (map[x][y - 1] == FLOOR || (x == avatarX && y - 1 == avatarY))) ||
+                (y < HEIGHT - 1 && (map[x][y + 1] == FLOOR || (x == avatarX && y + 1 == avatarY)));
     }
 
     private boolean isValidDoorPosition(int x, int y) {
