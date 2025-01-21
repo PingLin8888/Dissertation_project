@@ -47,4 +47,13 @@ public class TranslationManager {
         }
         return translation;
     }
+
+    public String getTranslation(String key) {
+        String translation = translations.get(key);
+        if (translation == null) {
+            System.err.println("Warning: Translation for key '" + key + "' not found. Using default.");
+            return key; // Return the key itself or a default message
+        }
+        return translation;
+    }
 }

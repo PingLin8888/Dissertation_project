@@ -96,7 +96,7 @@ public class GameMenu {
             // Clear the screen and display the message
             StdDraw.clear(StdDraw.BLACK);
             StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.text(0.5, 0.5, "Game Over! You were caught by the chaser.");
+            StdDraw.text(0.5, 0.5, translationManager.getTranslation("game_over"));
             StdDraw.show();
             StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
 
@@ -305,7 +305,10 @@ public class GameMenu {
     private void createNewGame() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.text(0.5, 0.6, "Enter seed for world generation or press R for a random world: ");
+
+        // Use the translation for "Enter seed for world generation or press R for a
+        // random world:"
+        StdDraw.text(0.5, 0.6, translationManager.getTranslation("enter_seed"));
         StdDraw.show();
 
         StringBuilder seedInput = new StringBuilder();
@@ -322,7 +325,7 @@ public class GameMenu {
                     seedInput.append(key);
                     StdDraw.clear(StdDraw.BLACK);
                     StdDraw.setPenColor(StdDraw.WHITE);
-                    StdDraw.text(0.5, 0.6, "Enter seed: " + seedInput);
+                    StdDraw.text(0.5, 0.6, translationManager.getTranslation("enter_seed") + " " + seedInput);
                     StdDraw.show();
                 } else if (key == '\n' || key == '\r') {
                     System.out.println("Seed entered: " + seedInput.toString());
@@ -344,7 +347,6 @@ public class GameMenu {
 
         // Reset the game state
         gameStarted = true;
-        // redraw = true;
 
         // Initialize a new world with the given seed and player
         world = new World(player, seed);
@@ -423,10 +425,10 @@ public class GameMenu {
 
             // Check if the saved game belongs to the current player
             if (!lines[0].equals(player.getUsername())) {
-                // Clear the screen and display the message
+                // Clear the screen and display the translated message
                 StdDraw.clear(StdDraw.BLACK);
                 StdDraw.setPenColor(StdDraw.WHITE);
-                StdDraw.text(0.5, 0.5, "No saved game found for this player.");
+                StdDraw.text(0.5, 0.5, translationManager.getTranslation("no_saved_game")); // Use the translation
                 StdDraw.show();
                 StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
                 return;
