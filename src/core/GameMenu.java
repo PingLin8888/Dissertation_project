@@ -6,10 +6,17 @@ import tileengine.TETile;
 import utils.FileUtils;
 
 import java.awt.*;
+import java.util.Locale;
 
 /**
  * Inspired by GPT.
  */
+
+// Enum to represent supported languages
+enum Language {
+    ENGLISH, Chinese // Add more languages as needed
+}
+
 public class GameMenu {
     private World world;
     private TERenderer ter;
@@ -22,11 +29,24 @@ public class GameMenu {
     private static final long CHASER_MOVE_INTERVAL = 1000; // Reduced interval for faster chaser movement
 
     private Player player = null;
+    private Language currentLanguage = Language.ENGLISH; // Default language
+    private TranslationManager translationManager;
+
+    public GameMenu() {
+        initializeTranslations();
+    }
+
+    private void initializeTranslations() {
+        translationManager = new TranslationManager(currentLanguage);
+    }
 
     public void createGameMenu() {
         setupCanvas();
         ter = new TERenderer();
         StdDraw.enableDoubleBuffering(); // Enable double buffering
+
+        // Language selection toggle
+        toggleLanguageSelection();
 
         while (true) {
             if (redraw) {
@@ -94,22 +114,46 @@ public class GameMenu {
         StdDraw.setYscale(0, 1);
     }
 
-    private void drawLoginMenu() {
+    private void toggleLanguageSelection() {
+        StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.text(0.5, 0.65, "Log In / Create Profile (P)");
-        StdDraw.text(0.5, 0.5, "Quit (Q)");
+
+        // Display language selection prompt
+        StdDraw.text(0.5, 0.6, "Select Language:");
+        StdDraw.text(0.5, 0.5, "Press 'E' for English");
+        StdDraw.text(0.5, 0.4, "Press 'C' for Chinese");
         StdDraw.show();
 
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char key = Character.toLowerCase(StdDraw.nextKeyTyped());
+                if (key == 'e') {
+                    currentLanguage = Language.ENGLISH;
+                    break;
+                } else if (key == 'c') {
+                    currentLanguage = Language.Chinese;
+                    break;
+                }
+            }
+        }
+        initializeTranslations(); // Reinitialize translations after language selection
+    }
+
+    private void drawLoginMenu() {
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.text(0.5, 0.65, translationManager.getTranslation("login"));
+        StdDraw.text(0.5, 0.5, translationManager.getTranslation("quit"));
+        StdDraw.show();
     }
 
     private void drawPostLoginMenu(Player player) {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.text(0.5, 0.8, "Welcome, " + player.getUsername());
-        StdDraw.text(0.5, 0.7, "Points: " + player.getPoints());
-        StdDraw.text(0.5, 0.6, "New Game (N)");
-        StdDraw.text(0.5, 0.5, "Load Game (L)");
-        StdDraw.text(0.5, 0.4, "Quit (Q)");
+        StdDraw.text(0.5, 0.8, translationManager.getTranslation("welcome", player.getUsername()));
+        StdDraw.text(0.5, 0.7, translationManager.getTranslation("points", player.getPoints()));
+        StdDraw.text(0.5, 0.6, translationManager.getTranslation("new_game"));
+        StdDraw.text(0.5, 0.5, translationManager.getTranslation("load_game"));
+        StdDraw.text(0.5, 0.4, translationManager.getTranslation("quit"));
         StdDraw.show();
     }
 
