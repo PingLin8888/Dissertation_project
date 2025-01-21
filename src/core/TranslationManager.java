@@ -2,6 +2,8 @@ package core;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -16,20 +18,22 @@ public class TranslationManager {
 
     private void loadTranslations(Language language) {
         String fileName;
-        if (language == Language.ENGLISH) {
-            fileName = "messages_en.properties";
-        } else {
+        if (language == Language.CHINESE) {
             fileName = "messages_zh.properties";
+        } else {
+            fileName = "messages_en.properties";
         }
 
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream(fileName)) {
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream(fileName);
+                InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
             if (input == null) {
                 System.out.println("Sorry, unable to find " + fileName);
                 return;
             }
             Properties prop = new Properties();
-            prop.load(input);
+            prop.load(reader);
             for (String key : prop.stringPropertyNames()) {
+                System.out.println("Loaded key: " + key + " with value: " + prop.getProperty(key));
                 translations.put(key, prop.getProperty(key));
             }
         } catch (IOException ex) {

@@ -6,7 +6,6 @@ import tileengine.TETile;
 import utils.FileUtils;
 
 import java.awt.*;
-import java.util.Locale;
 
 /**
  * Inspired by GPT.
@@ -14,7 +13,7 @@ import java.util.Locale;
 
 // Enum to represent supported languages
 enum Language {
-    ENGLISH, Chinese // Add more languages as needed
+    ENGLISH, CHINESE // Add more languages as needed
 }
 
 public class GameMenu {
@@ -116,12 +115,12 @@ public class GameMenu {
 
     private void toggleLanguageSelection() {
         StdDraw.clear(StdDraw.BLACK);
-        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.setPenColor(Color.WHITE);
 
         // Display language selection prompt
-        StdDraw.text(0.5, 0.6, "Select Language:");
-        StdDraw.text(0.5, 0.5, "Press 'E' for English");
-        StdDraw.text(0.5, 0.4, "Press 'C' for Chinese");
+        StdDraw.text(0.5, 0.6, "Select Language");
+        StdDraw.text(0.5, 0.5, "Press E for English");
+        StdDraw.text(0.5, 0.4, "按 'C' 选择中文");
         StdDraw.show();
 
         while (true) {
@@ -131,7 +130,7 @@ public class GameMenu {
                     currentLanguage = Language.ENGLISH;
                     break;
                 } else if (key == 'c') {
-                    currentLanguage = Language.Chinese;
+                    currentLanguage = Language.CHINESE;
                     break;
                 }
             }
@@ -140,15 +139,33 @@ public class GameMenu {
     }
 
     private void drawLoginMenu() {
-        StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.text(0.5, 0.65, translationManager.getTranslation("login"));
-        StdDraw.text(0.5, 0.5, translationManager.getTranslation("quit"));
+
+        setupCanvas();
+        // Load a font that supports Chinese characters
+        Font font = new Font("SimSun", Font.PLAIN, 24); // Ensure this font is available
+        StdDraw.setFont(font); // Set the font in StdDraw
+
+        StdDraw.clear(StdDraw.BLACK); // Clear the canvas
+        StdDraw.setPenColor(Color.WHITE);
+
+        // Debugging output
+        String loginText = translationManager.getTranslation("login");
+        String quitText = translationManager.getTranslation("quit");
+
+        // Draw the text
+        StdDraw.text(0.5, 0.65, loginText);
+        StdDraw.text(0.5, 0.5, quitText);
         StdDraw.show();
     }
 
     private void drawPostLoginMenu(Player player) {
         StdDraw.clear(StdDraw.BLACK);
-        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.setPenColor(Color.WHITE);
+
+        // Load a font that supports Chinese characters
+        Font font = new Font("SimSun", Font.PLAIN, 24); // Change "SimSun" to your desired font
+        StdDraw.setFont(font); // Set the font in StdDraw
+
         StdDraw.text(0.5, 0.8, translationManager.getTranslation("welcome", player.getUsername()));
         StdDraw.text(0.5, 0.7, translationManager.getTranslation("points", player.getPoints()));
         StdDraw.text(0.5, 0.6, translationManager.getTranslation("new_game"));
