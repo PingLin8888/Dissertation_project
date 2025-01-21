@@ -165,7 +165,6 @@ public class GameMenu {
         // Load a font that supports Chinese characters
         Font font = new Font("SimSun", Font.PLAIN, 24); // Change "SimSun" to your desired font
         StdDraw.setFont(font); // Set the font in StdDraw
-
         StdDraw.text(0.5, 0.8, translationManager.getTranslation("welcome", player.getUsername()));
         StdDraw.text(0.5, 0.7, translationManager.getTranslation("points", player.getPoints()));
         StdDraw.text(0.5, 0.6, translationManager.getTranslation("new_game"));
@@ -263,8 +262,11 @@ public class GameMenu {
     private Player loginOrCreateProfile() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.text(0.5, 0.6, "Enter Username: ");
+
+        // Use the translation for "Enter Username:"
+        StdDraw.text(0.5, 0.6, translationManager.getTranslation("enter_username"));
         StdDraw.show();
+
         StringBuilder usernameBuilder = new StringBuilder();
 
         while (true) {
@@ -279,7 +281,7 @@ public class GameMenu {
             // Clear and redraw the screen with the current username input
             StdDraw.clear(StdDraw.BLACK);
             StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.text(0.5, 0.6, "Enter Username: " + usernameBuilder);
+            StdDraw.text(0.5, 0.6, translationManager.getTranslation("enter_username") + " " + usernameBuilder);
             StdDraw.show();
 
             // Add a small pause to prevent excessive CPU usage
@@ -296,8 +298,6 @@ public class GameMenu {
             StdDraw.show();
             return new Player(username);
         } else {
-            StdDraw.text(0.5, 0.5, "Welcome back, " + username + "! Points: " + loadedPlayer.getPoints());
-            StdDraw.show();
             return loadedPlayer;
         }
     }

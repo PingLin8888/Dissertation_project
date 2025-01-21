@@ -33,7 +33,6 @@ public class TranslationManager {
             Properties prop = new Properties();
             prop.load(reader);
             for (String key : prop.stringPropertyNames()) {
-                System.out.println("Loaded key: " + key + " with value: " + prop.getProperty(key));
                 translations.put(key, prop.getProperty(key));
             }
         } catch (IOException ex) {
