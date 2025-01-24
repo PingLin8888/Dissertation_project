@@ -20,7 +20,7 @@ public class World {
     final private static TETile CHASER = Tileset.FLOWER;
 
     private int avatarX, avatarY;
-    private int chaseX, chaseY;
+    private int chaserX, chaserY;
     private boolean isShowPath;
     private List<Point> pathToAvatar;
 
@@ -53,8 +53,7 @@ public class World {
         initializeWorldWithTiles();
         placeAvatar();
         placeChaser();
-        // placeDoorNearChaser();
-        placeDoorNearPlayer();
+        placeDoor();
     }
 
     private void placeAvatar() {
@@ -74,117 +73,94 @@ public class World {
     }
 
     private void placeChaser() {
-        // Start with the avatar's position
-        int chaserX = avatarX;
-        int chaserY = avatarY;
+        // Create a list of available positions from usedSpaces
+        List<Point> availablePositions = new ArrayList<>(usedSpaces);
 
-        // Randomly choose a direction to place the chaser
-        Random rand = new Random();
-        int direction = rand.nextInt(4); // 0: up, 1: down, 2: left, 3: right
+        // Filter available positions to only include floor tiles
+        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR);
 
-        // Check positions in order of preference
-        switch (direction) {
-            case 0: // Up
-                if (chaserY + 3 < HEIGHT && map[chaserX][chaserY + 3] == FLOOR) {
-                    chaserY += 3; // Preferred position
-                } else if (chaserY + 2 < HEIGHT && map[chaserX][chaserY + 2] == FLOOR) {
-                    chaserY += 2; // Fallback position
-                } else if (chaserY + 1 < HEIGHT && map[chaserX][chaserY + 1] == FLOOR) {
-                    chaserY += 1; // Closer fallback
-                }
-                break;
-            case 1: // Down
-                if (chaserY - 3 >= 0 && map[chaserX][chaserY - 3] == FLOOR) {
-                    chaserY -= 3; // Preferred position
-                } else if (chaserY - 2 >= 0 && map[chaserX][chaserY - 2] == FLOOR) {
-                    chaserY -= 2; // Fallback position
-                } else if (chaserY - 1 >= 0 && map[chaserX][chaserY - 1] == FLOOR) {
-                    chaserY -= 1; // Closer fallback
-                }
-                break;
-            case 2: // Left
-                if (chaserX - 3 >= 0 && map[chaserX - 3][chaserY] == FLOOR) {
-                    chaserX -= 3; // Preferred position
-                } else if (chaserX - 2 >= 0 && map[chaserX - 2][chaserY] == FLOOR) {
-                    chaserX -= 2; // Fallback position
-                } else if (chaserX - 1 >= 0 && map[chaserX - 1][chaserY] == FLOOR) {
-                    chaserX -= 1; // Closer fallback
-                }
-                break;
-            case 3: // Right
-                if (chaserX + 3 < WIDTH && map[chaserX + 3][chaserY] == FLOOR) {
-                    chaserX += 3; // Preferred position
-                } else if (chaserX + 2 < WIDTH && map[chaserX + 2][chaserY] == FLOOR) {
-                    chaserX += 2; // Fallback position
-                } else if (chaserX + 1 < WIDTH && map[chaserX + 1][chaserY] == FLOOR) {
-                    chaserX += 1; // Closer fallback
-                }
-                break;
-        }
+        // Find the position that is furthest from the avatar
+        Point furthestPosition = null;
+        double maxDistance = -1;
 
-        // Set the chaser's position
-        chaseX = chaserX;
-        chaseY = chaserY;
-        map[chaseX][chaseY] = CHASER;
-    }
-
-    private void placeDoorNearPlayer() {
-        // Attempt to place the door one move away from the player
-        for (int i = avatarX - 1; i <= avatarX + 1; i++) {
-            for (int j = avatarY - 1; j <= avatarY + 1; j++) {
-                if (isValidDoorPosition(i, j) && isAdjacentToFloorOrAvatar(i, j) && (i != avatarX || j != avatarY)) {
-                    doorX = i;
-                    doorY = j;
-                    map[doorX][doorY] = Tileset.LOCKED_DOOR;
-                    return;
-                }
+        for (Point point : availablePositions) {
+            double distance = calculateDistance(point, new Point(avatarX, avatarY));
+            if (distance > maxDistance) {
+                maxDistance = distance;
+                furthestPosition = point;
             }
         }
-    }
 
-    private void placeDoorNearChaser() {
-        // Calculate the midpoint between the avatar and the chaser
-        int midX = (avatarX + chaseX) / 2;
-        int midY = (avatarY + chaseY) / 2;
-
-        // Attempt to place the door near the calculated midpoint
-        for (int i = midX - 1; i <= midX + 1; i++) {
-            for (int j = midY - 1; j <= midY + 1; j++) {
-                if (isValidDoorPosition(i, j) && isAdjacentToFloorOrAvatar(i, j)) {
-                    doorX = i;
-                    doorY = j;
-                    map[doorX][doorY] = Tileset.LOCKED_DOOR;
-                    return;
-                }
-            }
+        // Place the chaser at the furthest position if available
+        if (furthestPosition != null) {
+            chaserX = furthestPosition.x;
+            chaserY = furthestPosition.y;
+            map[chaserX][chaserY] = CHASER; // Place the chaser on the map
         }
     }
 
-    private boolean isAdjacentToFloorOrAvatar(int x, int y) {
-        // Check if the wall tile is adjacent to a floor tile or the avatar
-        return (x > 0 && (map[x - 1][y] == FLOOR || (x - 1 == avatarX && y == avatarY))) ||
-                (x < WIDTH - 1 && (map[x + 1][y] == FLOOR || (x + 1 == avatarX && y == avatarY))) ||
-                (y > 0 && (map[x][y - 1] == FLOOR || (x == avatarX && y - 1 == avatarY))) ||
-                (y < HEIGHT - 1 && (map[x][y + 1] == FLOOR || (x == avatarX && y + 1 == avatarY)));
+    private double calculateDistance(Point p1, Point p2) {
+        // Calculate Manhattan distance
+        return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
     }
 
-    private boolean isValidDoorPosition(int x, int y) {
-        return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT && map[x][y] == WALL;
+    private void placeDoor() {
+        List<Point> availablePositions = new ArrayList<>(usedSpaces); // Create a list from usedSpaces
+
+        // Filter available positions to only include wall tiles
+        availablePositions.removeIf(point -> map[point.x][point.y] != WALL);
+
+        // Filter available positions to only include wall tiles that are adjacent to a
+        // floor or avatar
+        // and also adjacent to a nothing tile
+        availablePositions.removeIf(point -> {
+            boolean adjacentToFloorOrAvatar = false;
+            boolean adjacentToNothing = false;
+
+            for (Point neighbor : getAdjacentPoints(point.x, point.y)) {
+                if (map[neighbor.x][neighbor.y] == FLOOR || map[neighbor.x][neighbor.y] == AVATAR) {
+                    adjacentToFloorOrAvatar = true;
+                }
+                if (map[neighbor.x][neighbor.y] == UNUSED) {
+                    adjacentToNothing = true;
+                }
+            }
+            // Return true if it does not meet the criteria
+            return !(adjacentToFloorOrAvatar && adjacentToNothing);
+        });
+
+        // Randomly select one of the available positions for the door
+        if (!availablePositions.isEmpty()) {
+            Random rand = new Random();
+            Point randomPosition = availablePositions.get(rand.nextInt(availablePositions.size()));
+            doorX = randomPosition.x;
+            doorY = randomPosition.y;
+            map[doorX][doorY] = Tileset.LOCKED_DOOR; // Place the door on the map
+        }
+    }
+
+    private List<Point> getAdjacentPoints(int x, int y) {
+        List<Point> neighbors = new ArrayList<>();
+        neighbors.add(new Point(x - 1, y)); // Left
+        neighbors.add(new Point(x + 1, y)); // Right
+        neighbors.add(new Point(x, y - 1)); // Down
+        neighbors.add(new Point(x, y + 1)); // Up
+        return neighbors;
     }
 
     public void moveChaser() {
-        pathToAvatar = findPath(new Point(chaseX, chaseY), new Point(avatarX, avatarY));
+        pathToAvatar = findPath(new Point(chaserX, chaserY), new Point(avatarX, avatarY));
         if (pathToAvatar != null && !pathToAvatar.isEmpty()) {
-            Point next = pathToAvatar.get(0);
+            Point next = pathToAvatar.getFirst();
             setChaserToNewPosition(next.x, next.y);
         }
     }
 
     public void setChaserToNewPosition(int x, int y) {
-        map[chaseX][chaseY] = FLOOR;
-        chaseX = x;
-        chaseY = y;
-        map[chaseX][chaseY] = CHASER;
+        map[chaserX][chaserY] = FLOOR;
+        chaserX = x;
+        chaserY = y;
+        map[chaserX][chaserY] = CHASER;
     }
 
     public void togglePathDisplay() {
@@ -268,10 +244,10 @@ public class World {
 
     public void generateRoom() {
         int difficulty = player.calculateDifficulty(); // Get difficulty based on player points
-        int minRooms = 1 + (difficulty * 0);
+        int minRooms = 1 + difficulty;
         int maxRooms = 5 + (difficulty * 3);
-        // int roomNums = random.nextInt(maxRooms - minRooms + 1) + minRooms;
-        int roomNums = 3;
+        int roomNums = random.nextInt(maxRooms - minRooms + 1) + minRooms;
+        // int roomNums = 3;
 
         // Generate rooms within the grid boundaries
         while (rooms.size() < roomNums) {
@@ -564,12 +540,12 @@ public class World {
         return pathToAvatar;
     }
 
-    public int getChaseX() {
-        return chaseX;
+    public int getChaserX() {
+        return chaserX;
     }
 
-    public int getChaseY() {
-        return chaseY;
+    public int getChaserY() {
+        return chaserY;
     }
 
     public int getDoorX() {

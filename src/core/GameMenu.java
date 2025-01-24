@@ -85,8 +85,8 @@ public class GameMenu {
 
     private void checkChaserEncounter() {
         // Check if the chaser is adjacent to the avatar
-        if ((Math.abs(world.getChaseX() - world.getAvatarX()) == 1 && world.getChaseY() == world.getAvatarY()) ||
-                (Math.abs(world.getChaseY() - world.getAvatarY()) == 1 && world.getChaseX() == world.getAvatarX())) {
+        if ((Math.abs(world.getChaserX() - world.getAvatarX()) == 1 && world.getChaserY() == world.getAvatarY()) ||
+                (Math.abs(world.getChaserY() - world.getAvatarY()) == 1 && world.getChaserX() == world.getAvatarX())) {
             // End the game and redirect to the post-login menu
             System.out.println("Chaser is adjacent to the avatar! Ending game.");
 
@@ -251,7 +251,7 @@ public class GameMenu {
                 } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
                     saveGame(player);
                     System.exit(0);
-                } else if (key == 'p') {
+                } else if (key == 'z') {
                     world.togglePathDisplay();
                 }
                 handleMovement(key);
@@ -408,8 +408,8 @@ public class GameMenu {
         String fileName = "game_data.txt";
         try {
             String contents = player.getUsername() + "\n" + world.getSeed() + "\n" + world.getAvatarX() + "\n" +
-                    world.getAvatarY() + "\n" + world.getChaseX() + "\n" +
-                    world.getChaseY() + "\n" + player.getPoints();
+                    world.getAvatarY() + "\n" + world.getChaserX() + "\n" +
+                    world.getChaserY() + "\n" + player.getPoints();
             FileUtils.writeFile(fileName, contents);
             PlayerStorage.savePlayer(player); // Save player data
         } catch (RuntimeException e) {
