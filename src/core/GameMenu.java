@@ -252,7 +252,7 @@ public class GameMenu {
                     saveGame(player);
                     System.exit(0);
                 } else if (key == 'z') {
-                    world.togglePathDisplay();
+                    world.togglePathDisplay();//Show path
                 }
                 handleMovement(key);
             }

@@ -13,11 +13,11 @@ public class World {
     final private static int WIDTH = 80;
     final private static int HEIGHT = 45;
     final private static TETile UNUSED = Tileset.NOTHING;
-    final private static TETile FLOOR = Tileset.FLOOR;
+    final private static TETile FLOOR = Tileset.GRASS;
     final private static TETile WALL = Tileset.WALL;
     final private static long SEEDDefault = 87654L;
     final private static TETile AVATAR = Tileset.AVATAR;
-    final private static TETile CHASER = Tileset.FLOWER;
+    final private static TETile CHASER = Tileset.CHASER;
 
     private int avatarX, avatarY;
     private int chaserX, chaserY;
