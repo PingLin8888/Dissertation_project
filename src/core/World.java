@@ -65,11 +65,13 @@ public class World {
     private void initializeConsumables() {
         consumables.add(new Consumable("Smiley Face", 10, Tileset.SMILEY_FACE_green_body_circle));
         consumables.add(new Consumable("Normal Face", 5, Tileset.SMILEY_FACE_green_body_rhombus));
-//        consumables.add(new Consumable("Angry Face", -5, Tileset.ANGRY_FACE));
+        // consumables.add(new Consumable("Angry Face", -5, Tileset.ANGRY_FACE));
     }
 
     private void placeAvatar() {
-        List<Point> availablePositions = new ArrayList<>(usedSpaces); // Create a list from usedSpaces
+        List<Point> availablePositions = new ArrayList<>(usedSpaces); // Create a copy
+        System.out.println("Used Spaces Size: " + usedSpaces.size());
+        System.out.println("Available Positions Size: " + availablePositions.size()); // Check size immediately after
 
         // Filter available positions to only include floor tiles
         availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR);
@@ -587,7 +589,7 @@ public class World {
         List<Point> availablePositions = new ArrayList<>(usedSpaces);
 
         // Filter available positions to only include floor tiles
-        availablePositions.removeIf(point -> map[point.x][point.y] != Tileset.FLOOR);
+        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR);
 
         for (int i = 0; i < NUMBER_OF_CONSUMABLES; i++) { // Use the defined constant
             if (availablePositions.isEmpty()) {
