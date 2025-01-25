@@ -18,6 +18,7 @@ public class World {
     final private static long SEEDDefault = 87654L;
     final private static TETile AVATAR = Tileset.AVATAR;
     final private static TETile CHASER = Tileset.CHASER;
+    private static final int NUMBER_OF_CONSUMABLES = 10; // Fixed number of consumables
 
     private int avatarX, avatarY;
     private int chaserX, chaserY;
@@ -34,6 +35,8 @@ public class World {
 
     private int doorX, doorY;
 
+    private List<Consumable> consumables; // Class-level variable
+
     public World() {
         this(null, SEEDDefault);
     }
@@ -41,6 +44,8 @@ public class World {
     public World(Player player, Long seed) {
         this.seed = seed;
         this.player = player;
+        this.consumables = new ArrayList<>(); // Initialize the list
+        initializeConsumables(); // Call a method to populate the list
         initializeWorldComponents();
     }
 
@@ -54,6 +59,13 @@ public class World {
         placeAvatar();
         placeChaser();
         placeDoor();
+        placeConsumables();
+    }
+
+    private void initializeConsumables() {
+        consumables.add(new Consumable("Smiley Face", 10, Tileset.SMILEY_FACE_green_body_circle));
+        consumables.add(new Consumable("Normal Face", 5, Tileset.SMILEY_FACE_green_body_rhombus));
+//        consumables.add(new Consumable("Angry Face", -5, Tileset.ANGRY_FACE));
     }
 
     private void placeAvatar() {
@@ -177,8 +189,20 @@ public class World {
             case 'd' -> newX += 1;
         }
         if (newX >= 0 && newX < WIDTH && newY >= 0 && newY < HEIGHT) {
-            if (map[newX][newY] == FLOOR || map[newX][newY] == Tileset.LOCKED_DOOR) {
-                if (map[newX][newY] == Tileset.LOCKED_DOOR) {
+            TETile tileAtNewPosition = map[newX][newY];
+
+            // Check for consumables
+            for (Consumable consumable : consumables) {
+                if (tileAtNewPosition == consumable.getTile()) {
+                    player.addPoints(consumable.getPointValue()); // Adjust points
+                    map[newX][newY] = Tileset.FLOOR; // Remove the consumable from the map
+                    break; // Exit the loop after consuming
+                }
+            }
+
+            // Existing logic for moving the avatar
+            if (tileAtNewPosition == Tileset.FLOOR || tileAtNewPosition == Tileset.LOCKED_DOOR) {
+                if (tileAtNewPosition == Tileset.LOCKED_DOOR) {
                     map[newX][newY] = Tileset.UNLOCKED_DOOR; // Change to unlocked door
                 }
                 setAvatarToNewPosition(newX, newY);
@@ -554,6 +578,26 @@ public class World {
 
     public int getDoorY() {
         return doorY;
+    }
+
+    private void placeConsumables() {
+        Random rand = new Random();
+
+        // Create a list of available positions from usedSpaces
+        List<Point> availablePositions = new ArrayList<>(usedSpaces);
+
+        // Filter available positions to only include floor tiles
+        availablePositions.removeIf(point -> map[point.x][point.y] != Tileset.FLOOR);
+
+        for (int i = 0; i < NUMBER_OF_CONSUMABLES; i++) { // Use the defined constant
+            if (availablePositions.isEmpty()) {
+                break; // Exit if there are no available positions
+            }
+            Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
+            Consumable consumable = consumables.get(rand.nextInt(consumables.size()));
+            map[position.x][position.y] = consumable.getTile();
+            availablePositions.remove(position);
+        }
     }
 
 }
