@@ -32,7 +32,7 @@ public class Tileset {
                         "floor");
         public static final TETile NOTHING = new TETile(' ', Color.black, Color.black, "nothing");
         public static final TETile GRASS0 = new TETile('"', Color.green, Color.black, "grass");
-        public static final TETile WATER = new TETile('≈', Color.blue, Color.black, "water");
+//        public static final TETile WATER = new TETile('≈', Color.blue, Color.black, "water");
         public static final TETile FLOWER = new TETile('❀', Color.magenta, Color.pink, "flower");
         public static final TETile LOCKED_DOOR0 = new TETile('█', Color.orange, Color.black,
                         "locked door");
@@ -52,5 +52,6 @@ public class Tileset {
         public static final TETile SMILEY_FACE_green_body_circle = new TETile('·', new Color(128, 192, 128), Color.black,
                 "smiley face green body circle", "assets/images/smiley_green_body_circle.png");
         public static final TETile GRASS = new TETile(' ', Color.green, Color.black, "grass","assets/images/platformPack_tile045.png");
+        public static final TETile WATER = new TETile(' ', Color.green, Color.black, "grass","assets/images/platformPack_tile005.png");
 
 }

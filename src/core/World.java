@@ -197,7 +197,8 @@ public class World {
             for (Consumable consumable : consumables) {
                 if (tileAtNewPosition == consumable.getTile()) {
                     player.addPoints(consumable.getPointValue()); // Adjust points
-                    map[newX][newY] = Tileset.FLOOR; // Remove the consumable from the map
+                    map[newX][newY] = FLOOR; // Remove the consumable from the map
+                    setAvatarToNewPosition(newX, newY);
                     break; // Exit the loop after consuming
                 }
             }
