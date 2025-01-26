@@ -252,7 +252,7 @@ public class GameMenu {
                     saveGame(player);
                     System.exit(0);
                 } else if (key == 'z') {
-                    world.togglePathDisplay();//Show path
+                    world.togglePathDisplay();// Show path
                 }
                 handleMovement(key);
             }
@@ -407,10 +407,24 @@ public class GameMenu {
     public void saveGame(Player player) {
         String fileName = "game_data.txt";
         try {
-            String contents = player.getUsername() + "\n" + world.getSeed() + "\n" + world.getAvatarX() + "\n" +
-                    world.getAvatarY() + "\n" + world.getChaserX() + "\n" +
-                    world.getChaserY() + "\n" + player.getPoints();
-            FileUtils.writeFile(fileName, contents);
+            StringBuilder contents = new StringBuilder();
+            contents.append(player.getUsername()).append("\n");
+            contents.append(world.getSeed()).append("\n");
+            contents.append(world.getAvatarX()).append("\n");
+            contents.append(world.getAvatarY()).append("\n");
+            contents.append(world.getChaserX()).append("\n");
+            contents.append(world.getChaserY()).append("\n");
+            contents.append(player.getPoints()).append("\n");
+
+            // Save door position
+            contents.append(world.getDoorX()).append(",").append(world.getDoorY()).append("\n");
+
+            // Save consumables positions
+            for (Point consumable : world.getConsumablePositions()) {
+                contents.append(consumable.x).append(",").append(consumable.y).append("\n");
+            }
+
+            FileUtils.writeFile(fileName, contents.toString());
             PlayerStorage.savePlayer(player); // Save player data
         } catch (RuntimeException e) {
             e.printStackTrace();

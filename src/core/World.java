@@ -36,6 +36,7 @@ public class World {
     private int doorX, doorY;
 
     private List<Consumable> consumables; // Class-level variable
+    private Set<Point> consumablePositions; // To store positions of consumables
 
     public World() {
         this(null, SEEDDefault);
@@ -44,12 +45,12 @@ public class World {
     public World(Player player, Long seed) {
         this.seed = seed;
         this.player = player;
-        this.consumables = new ArrayList<>(); // Initialize the list
-        initializeConsumables(); // Call a method to populate the list
         initializeWorldComponents();
     }
 
     private void initializeWorldComponents() {
+        this.consumables = new ArrayList<>(); // Initialize the list
+        this.consumablePositions = new HashSet<>(); // Initialize the set
         rooms = new ArrayList<>();
         hallways = new ArrayList<>();
         random = new Random(seed);
@@ -59,6 +60,7 @@ public class World {
         placeAvatar();
         placeChaser();
         placeDoor();
+        initializeConsumables(); // Call a method to populate the list
         placeConsumables();
     }
 
@@ -70,8 +72,6 @@ public class World {
 
     private void placeAvatar() {
         List<Point> availablePositions = new ArrayList<>(usedSpaces); // Create a copy
-        System.out.println("Used Spaces Size: " + usedSpaces.size());
-        System.out.println("Available Positions Size: " + availablePositions.size()); // Check size immediately after
 
         // Filter available positions to only include floor tiles
         availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR);
@@ -90,8 +90,10 @@ public class World {
         // Create a list of available positions from usedSpaces
         List<Point> availablePositions = new ArrayList<>(usedSpaces);
 
-        // Filter available positions to only include floor tiles
-        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR);
+        // Filter available positions to only include floor tiles and exclude the
+        // avatar's position
+        availablePositions
+                .removeIf(point -> map[point.x][point.y] != FLOOR || (point.x == avatarX && point.y == avatarY));
 
         // Find the position that is furthest from the avatar
         Point furthestPosition = null;
@@ -589,18 +591,26 @@ public class World {
         // Create a list of available positions from usedSpaces
         List<Point> availablePositions = new ArrayList<>(usedSpaces);
 
-        // Filter available positions to only include floor tiles
-        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR);
+        // Filter available positions to only include floor tiles and exclude the
+        // avatar's and chaser's positions
+        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR ||
+                (point.x == avatarX && point.y == avatarY) ||
+                (point.x == chaserX && point.y == chaserY));
 
-        for (int i = 0; i < NUMBER_OF_CONSUMABLES; i++) { // Use the defined constant
+        for (int i = 0; i < NUMBER_OF_CONSUMABLES; i++) {
             if (availablePositions.isEmpty()) {
                 break; // Exit if there are no available positions
             }
             Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
             Consumable consumable = consumables.get(rand.nextInt(consumables.size()));
             map[position.x][position.y] = consumable.getTile();
+            consumablePositions.add(position); // Store the position of the consumable
             availablePositions.remove(position);
         }
+    }
+
+    public Set<Point> getConsumablePositions() {
+        return consumablePositions; // Return the set of consumable positions
     }
 
 }
