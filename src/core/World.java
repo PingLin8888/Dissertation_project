@@ -203,7 +203,7 @@ public class World {
             }
 
             // Existing logic for moving the avatar
-            if (tileAtNewPosition == Tileset.FLOOR || tileAtNewPosition == Tileset.LOCKED_DOOR) {
+            if (tileAtNewPosition == FLOOR || tileAtNewPosition == Tileset.LOCKED_DOOR) {
                 if (tileAtNewPosition == Tileset.LOCKED_DOOR) {
                     map[newX][newY] = Tileset.UNLOCKED_DOOR; // Change to unlocked door
                 }
