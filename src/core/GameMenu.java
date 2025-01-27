@@ -473,11 +473,8 @@ public class GameMenu implements EventListener {
     public void renderNotifications() {
         for (Notification notification : notifications) {
             if (!notification.isExpired()) {
-                // Example: Render the notification message at a specific position
-                // You can adjust the x and y coordinates as needed
-                // StdDraw.clear(StdDraw.BLACK);
                 StdDraw.setPenColor(StdDraw.WHITE);
-                StdDraw.textLeft(0., 2, notification.getMessage());
+                StdDraw.textLeft(0.01, 1.99, notification.getMessage());
                 StdDraw.show();
                 StdDraw.pause(2000);
             }
