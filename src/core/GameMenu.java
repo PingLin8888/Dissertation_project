@@ -350,7 +350,7 @@ public class GameMenu implements EventListener {
 
         // Reset the game state
         gameStarted = true;
-
+        System.out.println("before newing the world");
         // Initialize a new world with the given seed and player
         world = new World(player, seed);
         this.world.getEventDispatcher().addListener(this); // Register this GameMenu as a listener

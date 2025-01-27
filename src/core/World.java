@@ -288,8 +288,8 @@ public class World {
 
         // Generate rooms within the grid boundaries
         while (rooms.size() < roomNums) {
-            int width = random.nextInt(10) + 10;
-            int height = random.nextInt(7) + 8;
+            int width = random.nextInt(10) + 5;
+            int height = random.nextInt(7) + 3;
             int x = random.nextInt(WIDTH - width - 2) + 1;
             int y = random.nextInt(HEIGHT - height - 2) + 1;
             Room newRoom = new Room(width, height, x, y);
