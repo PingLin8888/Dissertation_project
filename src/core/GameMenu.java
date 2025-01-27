@@ -378,8 +378,8 @@ public class GameMenu implements EventListener {
             case 's':
             case 'd':
                 world.moveAvatar(key);
-                checkObjectiveCompletion();
                 renderNotifications();
+                checkObjectiveCompletion();
                 break;
         }
     }
@@ -475,7 +475,11 @@ public class GameMenu implements EventListener {
             if (!notification.isExpired()) {
                 // Example: Render the notification message at a specific position
                 // You can adjust the x and y coordinates as needed
-                StdDraw.text(0.5, 0.9, notification.getMessage());
+                // StdDraw.clear(StdDraw.BLACK);
+                StdDraw.setPenColor(StdDraw.WHITE);
+                StdDraw.textLeft(0., 2, notification.getMessage());
+                StdDraw.show();
+                StdDraw.pause(2000);
             }
         }
     }

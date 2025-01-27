@@ -208,7 +208,7 @@ public class World {
 
                     // Dispatch the event
                     eventDispatcher.dispatch(new Event(Event.EventType.CONSUMABLE_CONSUMED,
-                            "You consumed a " + consumable.getName() + "!"));
+                            "You got " + consumable.getPointValue() + " points!"));
                     break; // Exit the loop after consuming
                 }
             }
