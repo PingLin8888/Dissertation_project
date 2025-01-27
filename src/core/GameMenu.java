@@ -6,6 +6,8 @@ import tileengine.TETile;
 import utils.FileUtils;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Inspired by GPT.
@@ -16,7 +18,7 @@ enum Language {
     ENGLISH, CHINESE // Add more languages as needed
 }
 
-public class GameMenu {
+public class GameMenu implements EventListener {
     private World world;
     private TERenderer ter;
     private StringBuilder quitSignBuilder = new StringBuilder();
@@ -25,11 +27,12 @@ public class GameMenu {
     private double prevMouseX = 0;
     private double prevMouseY = 0;
     private long lastChaserMoveTime = 0; // Variable to track the last time the chaser moved
-    private static final long CHASER_MOVE_INTERVAL = 1000; // Reduced interval for faster chaser movement
+    private static final long CHASER_MOVE_INTERVAL = 5000; // Reduced interval for faster chaser movement
 
     private Player player = null;
     private Language currentLanguage = Language.ENGLISH; // Default language
     private TranslationManager translationManager;
+    private List<Notification> notifications = new ArrayList<>();
 
     public GameMenu() {
         initializeTranslations();
@@ -350,6 +353,7 @@ public class GameMenu {
 
         // Initialize a new world with the given seed and player
         world = new World(player, seed);
+        this.world.getEventDispatcher().addListener(this); // Register this GameMenu as a listener
         System.out.println("New world created with seed: " + seed);
         drawWorld();
     }
@@ -375,6 +379,7 @@ public class GameMenu {
             case 'd':
                 world.moveAvatar(key);
                 checkObjectiveCompletion();
+                renderNotifications();
                 break;
         }
     }
@@ -458,4 +463,20 @@ public class GameMenu {
         }
     }
 
+    @Override
+    public void onEvent(Event event) {
+        if (event.getType() == Event.EventType.CONSUMABLE_CONSUMED) {
+            notifications.add(new Notification(event.getMessage(), 2000));
+        }
+    }
+
+    public void renderNotifications() {
+        for (Notification notification : notifications) {
+            if (!notification.isExpired()) {
+                // Example: Render the notification message at a specific position
+                // You can adjust the x and y coordinates as needed
+                StdDraw.text(0.5, 0.9, notification.getMessage());
+            }
+        }
+    }
 }

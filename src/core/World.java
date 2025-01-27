@@ -36,7 +36,10 @@ public class World {
     private int doorX, doorY;
 
     private List<Consumable> consumables; // Class-level variable
+
     private Set<Point> consumablePositions; // To store positions of consumables
+
+    private EventDispatcher eventDispatcher;
 
     public World() {
         this(null, SEEDDefault);
@@ -45,16 +48,18 @@ public class World {
     public World(Player player, Long seed) {
         this.seed = seed;
         this.player = player;
+
         initializeWorldComponents();
     }
 
     private void initializeWorldComponents() {
-        this.consumables = new ArrayList<>(); // Initialize the list
-        this.consumablePositions = new HashSet<>(); // Initialize the set
         rooms = new ArrayList<>();
         hallways = new ArrayList<>();
         random = new Random(seed);
         usedSpaces = new HashSet<>();
+        this.consumables = new ArrayList<>(); // Initialize the list
+        this.consumablePositions = new HashSet<>(); // Initialize the set
+        this.eventDispatcher = new EventDispatcher(); // Initialize the event dispatcher
         map = new TETile[WIDTH][HEIGHT];
         initializeWorldWithTiles();
         placeAvatar();
@@ -198,15 +203,18 @@ public class World {
             // Check for consumables
             for (Consumable consumable : consumables) {
                 if (tileAtNewPosition == consumable.getTile()) {
-                    player.addPoints(consumable.getPointValue()); // Adjust points
-                    map[newX][newY] = FLOOR; // Remove the consumable from the map
-                    setAvatarToNewPosition(newX, newY);
+                    player.addPoints(consumable.getPointValue());
+                    map[newX][newY] = FLOOR;
+
+                    // Dispatch the event
+                    eventDispatcher.dispatch(new Event(Event.EventType.CONSUMABLE_CONSUMED,
+                            "You consumed a " + consumable.getName() + "!"));
                     break; // Exit the loop after consuming
                 }
             }
 
             // Existing logic for moving the avatar
-            if (tileAtNewPosition == FLOOR || tileAtNewPosition == Tileset.LOCKED_DOOR) {
+            if (tileAtNewPosition != WALL) {
                 if (tileAtNewPosition == Tileset.LOCKED_DOOR) {
                     map[newX][newY] = Tileset.UNLOCKED_DOOR; // Change to unlocked door
                 }
@@ -545,6 +553,30 @@ public class World {
         }
     }
 
+    private void placeConsumables() {
+        Random rand = new Random();
+
+        // Create a list of available positions from usedSpaces
+        List<Point> availablePositions = new ArrayList<>(usedSpaces);
+
+        // Filter available positions to only include floor tiles and exclude the
+        // avatar's and chaser's positions
+        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR ||
+                (point.x == avatarX && point.y == avatarY) ||
+                (point.x == chaserX && point.y == chaserY));
+
+        for (int i = 0; i < NUMBER_OF_CONSUMABLES; i++) {
+            if (availablePositions.isEmpty()) {
+                break; // Exit if there are no available positions
+            }
+            Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
+            Consumable consumable = consumables.get(rand.nextInt(consumables.size()));
+            map[position.x][position.y] = consumable.getTile();
+            consumablePositions.add(position); // Store the position of the consumable
+            availablePositions.remove(position);
+        }
+    }
+
     public TETile[][] getMap() {
         return map;
     }
@@ -585,32 +617,11 @@ public class World {
         return doorY;
     }
 
-    private void placeConsumables() {
-        Random rand = new Random();
-
-        // Create a list of available positions from usedSpaces
-        List<Point> availablePositions = new ArrayList<>(usedSpaces);
-
-        // Filter available positions to only include floor tiles and exclude the
-        // avatar's and chaser's positions
-        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR ||
-                (point.x == avatarX && point.y == avatarY) ||
-                (point.x == chaserX && point.y == chaserY));
-
-        for (int i = 0; i < NUMBER_OF_CONSUMABLES; i++) {
-            if (availablePositions.isEmpty()) {
-                break; // Exit if there are no available positions
-            }
-            Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
-            Consumable consumable = consumables.get(rand.nextInt(consumables.size()));
-            map[position.x][position.y] = consumable.getTile();
-            consumablePositions.add(position); // Store the position of the consumable
-            availablePositions.remove(position);
-        }
-    }
-
     public Set<Point> getConsumablePositions() {
-        return consumablePositions; // Return the set of consumable positions
+        return consumablePositions;
     }
 
+    public EventDispatcher getEventDispatcher() {
+        return eventDispatcher;
+    }
 }
