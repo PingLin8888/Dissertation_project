@@ -8,6 +8,7 @@ import utils.FileUtils;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sound.sampled.*;
 
 /**
  * Inspired by GPT.
@@ -33,19 +34,40 @@ public class GameMenu implements EventListener {
     private Language currentLanguage = Language.ENGLISH; // Default language
     private TranslationManager translationManager;
     private List<Notification> notifications = new ArrayList<>();
+    private Clip menuSound;
 
     public GameMenu() {
         initializeTranslations();
+        loadMenuSound();
+    }
+
+    private void loadMenuSound() {
+        try {
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(getClass().getResource("/sounds/tone1.wav"));
+            menuSound = AudioSystem.getClip();
+            menuSound.open(audioInputStream);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void playMenuSound() throws InterruptedException {
+        if (menuSound != null) {
+            menuSound.setFramePosition(0); // Rewind to the beginning
+            menuSound.start(); // Play the sound
+            Thread.sleep(menuSound.getMicrosecondLength() / 1000);
+        }
     }
 
     private void initializeTranslations() {
         translationManager = new TranslationManager(currentLanguage);
     }
 
-    public void createGameMenu() {
+    public void createGameMenu() throws InterruptedException {
         setupCanvas();
         ter = new TERenderer();
         StdDraw.enableDoubleBuffering(); // Enable double buffering
+
 
         // Language selection toggle
         toggleLanguageSelection();
@@ -216,7 +238,7 @@ public class GameMenu implements EventListener {
         StdDraw.textLeft(0.01, 0.99, description);
     }
 
-    private void handleInput() {
+    private void handleInput() throws InterruptedException {
         if (StdDraw.hasNextKeyTyped()) {
             char key = Character.toLowerCase(StdDraw.nextKeyTyped());
             redraw = true;
@@ -225,6 +247,7 @@ public class GameMenu implements EventListener {
                 // Initial menu for login or quit
                 switch (key) {
                     case 'p': // Login or create a player
+                        playMenuSound();
                         player = loginOrCreateProfile();
                         redraw = true;
                         break;
@@ -236,9 +259,11 @@ public class GameMenu implements EventListener {
                 // Post-login menu options
                 switch (key) {
                     case 'n':
+                        playMenuSound();
                         createNewGame();
                         break;
                     case 'l':
+                        playMenuSound();
                         loadGame(player);
                         break;
                     case 'q':

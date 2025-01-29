@@ -7,7 +7,7 @@ import javax.swing.*;
 import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
 
         // build your own world!
         // main menu with options. navigate via keyboard
