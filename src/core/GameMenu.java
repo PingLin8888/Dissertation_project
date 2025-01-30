@@ -43,19 +43,28 @@ public class GameMenu implements EventListener {
 
     private void loadMenuSound() {
         try {
-            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(getClass().getResource("/sounds/tone1.wav"));
+            AudioInputStream audioInputStream = AudioSystem
+                    .getAudioInputStream(getClass().getResource("/sounds/tone1.wav"));
             menuSound = AudioSystem.getClip();
             menuSound.open(audioInputStream);
+
+            // Add listener to automatically close the input stream
+            menuSound.addLineListener(event -> {
+                if (event.getType() == LineEvent.Type.STOP) {
+                    menuSound.setFramePosition(0); // Reset position when done
+                }
+            });
+
+            audioInputStream.close(); // Close the stream after we're done with it
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Error loading menu sound: " + e.getMessage());
         }
     }
 
-    private void playMenuSound() throws InterruptedException {
+    private void playMenuSound() {
         if (menuSound != null) {
             menuSound.setFramePosition(0); // Rewind to the beginning
-            menuSound.start(); // Play the sound
-            Thread.sleep(menuSound.getMicrosecondLength() / 1000);
+            menuSound.start(); // Play the sound without waiting
         }
     }
 
@@ -67,7 +76,6 @@ public class GameMenu implements EventListener {
         setupCanvas();
         ter = new TERenderer();
         StdDraw.enableDoubleBuffering(); // Enable double buffering
-
 
         // Language selection toggle
         toggleLanguageSelection();
@@ -94,7 +102,7 @@ public class GameMenu implements EventListener {
 
             handleInput();
             detectMouseMove();
-            StdDraw.pause(50); // Adjust pause duration if needed
+            StdDraw.pause(16); // Approximately 60 FPS
 
             if (gameStarted) {
                 long currentTime = System.currentTimeMillis();
@@ -491,18 +499,28 @@ public class GameMenu implements EventListener {
     @Override
     public void onEvent(Event event) {
         if (event.getType() == Event.EventType.CONSUMABLE_CONSUMED) {
-            notifications.add(new Notification(event.getMessage(), 2000));
+            // Add notification without any pause
+            notifications.add(new Notification(event.getMessage(), System.currentTimeMillis() + 2000));
+            redraw = true; // Request a redraw to show the notification
         }
     }
 
     public void renderNotifications() {
-        for (Notification notification : notifications) {
-            if (!notification.isExpired()) {
-                StdDraw.setPenColor(StdDraw.WHITE);
-                StdDraw.textLeft(0.01, 1.99, notification.getMessage());
-                StdDraw.show();
-                StdDraw.pause(2000);
-            }
+        // Remove expired notifications first
+        notifications.removeIf(Notification::isExpired);
+
+        // Only show the most recent notification
+        if (!notifications.isEmpty()) {
+            Notification latestNotification = notifications.get(notifications.size() - 1);
+            StdDraw.setPenColor(StdDraw.WHITE);
+            StdDraw.textLeft(0.01, 0.95, latestNotification.getMessage());
+        }
+    }
+
+    // Add cleanup method to properly close resources
+    public void cleanup() {
+        if (menuSound != null) {
+            menuSound.close();
         }
     }
 }

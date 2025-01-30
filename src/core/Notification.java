@@ -1,18 +1,16 @@
 package core;
 
 public class Notification {
-    private String message;
-    private long displayTime; // Time to display the message
-    private long startTime;
+    private final String message;
+    private final long expiryTime; // Timestamp when notification should expire
 
-    public Notification(String message, long displayTime) {
+    public Notification(String message, long expiryTime) {
         this.message = message;
-        this.displayTime = displayTime;
-        this.startTime = System.currentTimeMillis();
+        this.expiryTime = expiryTime;
     }
 
     public boolean isExpired() {
-        return (System.currentTimeMillis() - startTime) > displayTime;
+        return System.currentTimeMillis() > expiryTime;
     }
 
     public String getMessage() {
