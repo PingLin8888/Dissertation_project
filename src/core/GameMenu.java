@@ -209,19 +209,47 @@ public class GameMenu implements EventListener {
     }
 
     private void updateHUD() {
-        // Example HUD update method
-        String description;
-        int mouseX = (int) Math.floor(prevMouseX);
-        int mouseY = (int) Math.floor(prevMouseY);
+        // Get mouse position and convert to tile coordinates
+        double mouseX = StdDraw.mouseX();
+        double mouseY = StdDraw.mouseY();
 
-        if (mouseX >= 0 && mouseX < world.getMap().length && mouseY >= 0 && mouseY < world.getMap()[0].length) {
-            TETile tile = world.getMap()[mouseX][mouseY];
-            description = tile.description();
-        } else {
-            description = "out side of map";
+        // Only update if mouse has moved
+        if (mouseX != prevMouseX || mouseY != prevMouseY) {
+            redraw = true;
+            prevMouseX = mouseX;
+            prevMouseY = mouseY;
         }
+
+        // Get the tile description at mouse position
+        String description = getTileDescription(mouseX, mouseY);
+
+        // Draw HUD background (optional - for better readability)
+        StdDraw.setPenColor(StdDraw.BLACK);
+        StdDraw.filledRectangle(0.5, 0.95, 0.5, 0.05);
+
+        // Set text color
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.textLeft(0.01, 0.99, description);
+
+        // Draw tile description on the left
+        StdDraw.textLeft(0.01, 42, description);
+
+        // Draw player name in the center
+        StdDraw.textLeft(0.01, 44, "Player: " + player.getUsername());
+
+        // Draw points on the right
+        StdDraw.textLeft(0.01, 43, "Points: " + player.getPoints());
+    }
+
+    private String getTileDescription(double mouseX, double mouseY) {
+        int tileX = (int) Math.floor(mouseX);
+        int tileY = (int) Math.floor(mouseY);
+
+        if (tileX >= 0 && tileX < world.getMap().length && tileY >= 0 && tileY < world.getMap()[0].length) {
+            TETile tile = world.getMap()[tileX][tileY];
+            return tile.description();
+        } else {
+            return "out side of map";
+        }
     }
 
     private void handleInput() throws InterruptedException {
@@ -501,7 +529,7 @@ public class GameMenu implements EventListener {
         if (!notifications.isEmpty()) {
             Notification latestNotification = notifications.get(notifications.size() - 1);
             StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.textLeft(0.01, 1.99, latestNotification.getMessage());
+            StdDraw.textLeft(0.01, 41, latestNotification.getMessage());
         }
     }
 

@@ -22,7 +22,7 @@ import java.awt.Color;
 public class Tileset {
         public static final TETile AVATAR = new TETile(' ', Color.white, Color.black, "you",
                         "assets/images/character_femaleAdventurer_walk0.png");
-        public static final TETile CHASER = new TETile(' ', Color.white, Color.black, "you",
+        public static final TETile CHASER = new TETile(' ', Color.white, Color.black, "Monster",
                 "assets/images/character_zombie_idle.png");
         public static final TETile WALL0 = new TETile('#', new Color(216, 128, 128), Color.darkGray,
                         "wall");
@@ -48,9 +48,9 @@ public class Tileset {
         public static final TETile BANANA = new TETile('b', Color.yellow, Color.black, "banana",
                         "assets/images/banana.png");
         public static final TETile SMILEY_FACE_green_body_rhombus = new TETile('·', new Color(128, 192, 128), Color.black,
-                "smiley face green body rhombus", "assets/images/SMILEY_FACE_green_body_rhombus.png");
+                "yum", "assets/images/SMILEY_FACE_green_body_rhombus.png");
         public static final TETile SMILEY_FACE_green_body_circle = new TETile('·', new Color(128, 192, 128), Color.black,
-                "smiley face green body circle", "assets/images/smiley_green_body_circle.png");
+                "yum", "assets/images/smiley_green_body_circle.png");
         public static final TETile GRASS = new TETile(' ', Color.green, Color.black, "grass","assets/images/platformPack_tile045.png");
         public static final TETile WATER = new TETile(' ', Color.green, Color.black, "grass","assets/images/platformPack_tile005.png");
 
