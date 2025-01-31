@@ -1,0 +1,37 @@
+# Default ignored files
+/shelf/
+/.idea/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore IntelliJ IDEA files
+.idea/
+*.iml
+
+   # Ignore asset directories
+   assets/images/
+   assets/kenney_animal-pack-redux/
+   assets/kenney_background-elements-redux/
+   assets/kenney_digital-audio/
+   assets/kenney_monster-builder-pack/
+   assets/kenney_rpg-audio/
+   assets/kenney_shape-characters/
+   assets/kenney_simplified-platformer-pack/
+   assets/kenney_smoke-particles/
+   assets/kenney_toon-characters-1/
+   assets/sounds/
+
+   # Ignore macOS system files
+   .DS_Store
+   assets/.DS_Store
+   out/.DS_Store
+   src/.DS_Store
+
+   # Ignore JavaFX SDK and library directories
+   javafx-sdk-23.0.2/
