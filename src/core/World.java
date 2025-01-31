@@ -206,10 +206,13 @@ public class World {
                     player.addPoints(consumable.getPointValue());
                     map[newX][newY] = FLOOR;
 
+                    // Play sound effect
+                    AudioManager.getInstance().playSound("consume");
+
                     // Dispatch the event
                     eventDispatcher.dispatch(new Event(Event.EventType.CONSUMABLE_CONSUMED,
                             "You got " + consumable.getPointValue() + " points!"));
-                    break; // Exit the loop after consuming
+                    break;
                 }
             }
 

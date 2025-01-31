@@ -8,7 +8,6 @@ import utils.FileUtils;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sound.sampled.*;
 
 /**
  * Inspired by GPT.
@@ -34,38 +33,9 @@ public class GameMenu implements EventListener {
     private Language currentLanguage = Language.ENGLISH; // Default language
     private TranslationManager translationManager;
     private List<Notification> notifications = new ArrayList<>();
-    private Clip menuSound;
 
     public GameMenu() {
         initializeTranslations();
-        loadMenuSound();
-    }
-
-    private void loadMenuSound() {
-        try {
-            AudioInputStream audioInputStream = AudioSystem
-                    .getAudioInputStream(getClass().getResource("/sounds/tone1.wav"));
-            menuSound = AudioSystem.getClip();
-            menuSound.open(audioInputStream);
-
-            // Add listener to automatically close the input stream
-            menuSound.addLineListener(event -> {
-                if (event.getType() == LineEvent.Type.STOP) {
-                    menuSound.setFramePosition(0); // Reset position when done
-                }
-            });
-
-            audioInputStream.close(); // Close the stream after we're done with it
-        } catch (Exception e) {
-            System.err.println("Error loading menu sound: " + e.getMessage());
-        }
-    }
-
-    private void playMenuSound() {
-        if (menuSound != null) {
-            menuSound.setFramePosition(0); // Rewind to the beginning
-            menuSound.start(); // Play the sound without waiting
-        }
     }
 
     private void initializeTranslations() {
@@ -117,9 +87,14 @@ public class GameMenu implements EventListener {
     }
 
     private void checkChaserEncounter() {
-        // Check if the chaser is adjacent to the avatar
-        if ((Math.abs(world.getChaserX() - world.getAvatarX()) == 1 && world.getChaserY() == world.getAvatarY()) ||
-                (Math.abs(world.getChaserY() - world.getAvatarY()) == 1 && world.getChaserX() == world.getAvatarX())) {
+        if ((Math.abs(world.getChaserX() - world.getAvatarX()) == 1 &&
+                world.getChaserY() == world.getAvatarY()) ||
+                (Math.abs(world.getChaserY() - world.getAvatarY()) == 1 &&
+                        world.getChaserX() == world.getAvatarX())) {
+
+            // Play game over sound
+            AudioManager.getInstance().playSound("gameover");
+
             // End the game and redirect to the post-login menu
             System.out.println("Chaser is adjacent to the avatar! Ending game.");
 
@@ -160,9 +135,11 @@ public class GameMenu implements EventListener {
             if (StdDraw.hasNextKeyTyped()) {
                 char key = Character.toLowerCase(StdDraw.nextKeyTyped());
                 if (key == 'e') {
+                    AudioManager.getInstance().playSound("menu");
                     currentLanguage = Language.ENGLISH;
                     break;
                 } else if (key == 'c') {
+                    AudioManager.getInstance().playSound("menu");
                     currentLanguage = Language.CHINESE;
                     break;
                 }
@@ -255,11 +232,12 @@ public class GameMenu implements EventListener {
                 // Initial menu for login or quit
                 switch (key) {
                     case 'p': // Login or create a player
-                        playMenuSound();
+                        AudioManager.getInstance().playSound("menu"); // Play sound only for valid menu action
                         player = loginOrCreateProfile();
                         redraw = true;
                         break;
                     case 'q':
+                        AudioManager.getInstance().playSound("menu");
                         System.exit(0);
                         break;
                 }
@@ -267,14 +245,17 @@ public class GameMenu implements EventListener {
                 // Post-login menu options
                 switch (key) {
                     case 'n':
-                        playMenuSound();
+                        AudioManager.getInstance().playSound("menu");
                         createNewGame();
+                        AudioManager.getInstance().playSound("gamestart");
                         break;
                     case 'l':
-                        playMenuSound();
+                        AudioManager.getInstance().playSound("menu");
                         loadGame(player);
+                        AudioManager.getInstance().playSound("gamestart");
                         break;
                     case 'q':
+                        AudioManager.getInstance().playSound("menu");
                         saveGame(player);
                         System.exit(0);
                         break;
@@ -285,12 +266,16 @@ public class GameMenu implements EventListener {
                     quitSignBuilder.setLength(0);
                     quitSignBuilder.append(key);
                 } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
+                    AudioManager.getInstance().playSound("menu");
                     saveGame(player);
                     System.exit(0);
                 } else if (key == 'z') {
+                    AudioManager.getInstance().playSound("menu");
                     world.togglePathDisplay();// Show path
+                } else if (key == 'w' || key == 'a' || key == 's' || key == 'd') {
+                    AudioManager.getInstance().playSound("walkOnGrass");
+                    handleMovement(key);
                 }
-                handleMovement(key);
             }
         }
     }
@@ -308,6 +293,7 @@ public class GameMenu implements EventListener {
         while (true) {
             if (StdDraw.hasNextKeyTyped()) {
                 char key = StdDraw.nextKeyTyped();
+                AudioManager.getInstance().playSound("menu");
                 if (key == '\n' || key == '\r') {
                     break;
                 }
@@ -519,8 +505,6 @@ public class GameMenu implements EventListener {
 
     // Add cleanup method to properly close resources
     public void cleanup() {
-        if (menuSound != null) {
-            menuSound.close();
-        }
+        AudioManager.getInstance().cleanup();
     }
 }
