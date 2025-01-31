@@ -116,7 +116,8 @@ public class GameMenu implements EventListener {
     }
 
     private void setupCanvas() {
-        StdDraw.setCanvasSize(800, 600);
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        StdDraw.setCanvasSize(screenSize.width, screenSize.height);
         StdDraw.setXscale(0, 1);
         StdDraw.setYscale(0, 1);
     }
