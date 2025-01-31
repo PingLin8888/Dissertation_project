@@ -188,7 +188,7 @@ public class World {
         isShowPath = !isShowPath;
     }
 
-    public void moveAvatar(char direction) {
+    public boolean moveAvatar(char direction) {
         int newX = avatarX;
         int newY = avatarY;
         switch (Character.toLowerCase(direction)) {
@@ -203,11 +203,10 @@ public class World {
             // Check for consumables
             for (Consumable consumable : consumables) {
                 if (tileAtNewPosition == consumable.getTile()) {
+                    AudioManager.getInstance().playSound("consume");
+
                     player.addPoints(consumable.getPointValue());
                     map[newX][newY] = FLOOR;
-
-                    // Play sound effect
-                    AudioManager.getInstance().playSound("consume");
 
                     // Dispatch the event
                     eventDispatcher.dispatch(new Event(Event.EventType.CONSUMABLE_CONSUMED,
@@ -216,14 +215,16 @@ public class World {
                 }
             }
 
-            // Existing logic for moving the avatar
+            // If the new position is not a wall, move is successful
             if (tileAtNewPosition != WALL) {
                 if (tileAtNewPosition == Tileset.LOCKED_DOOR) {
                     map[newX][newY] = Tileset.UNLOCKED_DOOR; // Change to unlocked door
                 }
                 setAvatarToNewPosition(newX, newY);
+                return true; // Move was successful
             }
         }
+        return false; // Move was blocked
     }
 
     void setAvatarToNewPosition(int newX, int newY) {

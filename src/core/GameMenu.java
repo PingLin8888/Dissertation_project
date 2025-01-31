@@ -274,7 +274,6 @@ public class GameMenu implements EventListener {
                     AudioManager.getInstance().playSound("menu");
                     world.togglePathDisplay();// Show path
                 } else if (key == 'w' || key == 'a' || key == 's' || key == 'd') {
-                    AudioManager.getInstance().playSound("walkOnGrass");
                     handleMovement(key);
                 }
             }
@@ -397,8 +396,9 @@ public class GameMenu implements EventListener {
             case 'a':
             case 's':
             case 'd':
-                world.moveAvatar(key);
-//                renderNotifications();
+                if (world.moveAvatar(key)) {
+                    AudioManager.getInstance().playSound("walkOnGrass");
+                }
                 checkObjectiveCompletion();
                 break;
         }
