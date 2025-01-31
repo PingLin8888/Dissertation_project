@@ -408,6 +408,7 @@ public class GameMenu implements EventListener {
 
         // Check if the avatar has reached the door
         if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
+            AudioManager.getInstance().playSound("gamePass");
             player.addPoints(100); // Award points for reaching the door
             System.out.println("Objective completed! Points awarded: 100");
 
