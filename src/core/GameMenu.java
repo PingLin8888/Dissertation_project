@@ -64,7 +64,7 @@ public class GameMenu implements EventListener {
                     if (world.isShowPath() && world.getPathToAvatar() != null) {
                         drawPath();
                     }
-                    // StdDraw.show();
+                    renderNotifications();
                 }
                 StdDraw.show(); // Show the buffer
                 redraw = false; // Reset redraw flag
@@ -398,7 +398,7 @@ public class GameMenu implements EventListener {
             case 's':
             case 'd':
                 world.moveAvatar(key);
-                renderNotifications();
+//                renderNotifications();
                 checkObjectiveCompletion();
                 break;
         }
@@ -500,7 +500,7 @@ public class GameMenu implements EventListener {
         if (!notifications.isEmpty()) {
             Notification latestNotification = notifications.get(notifications.size() - 1);
             StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.textLeft(0.01, 0.95, latestNotification.getMessage());
+            StdDraw.textLeft(0.01, 1.99, latestNotification.getMessage());
         }
     }
 
