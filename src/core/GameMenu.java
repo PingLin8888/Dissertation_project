@@ -34,6 +34,23 @@ public class GameMenu implements EventListener {
     private TranslationManager translationManager;
     private List<Notification> notifications = new ArrayList<>();
 
+    // Add this class to cache HUD information
+    private static class HUDInfo {
+        final String tileDescription;
+        final String playerInfo;
+        final String pointsInfo;
+
+        HUDInfo(String tileDescription, String playerInfo, String pointsInfo) {
+            this.tileDescription = tileDescription;
+            this.playerInfo = playerInfo;
+            this.pointsInfo = pointsInfo;
+        }
+    }
+
+    // Add these fields to GameMenu class
+    private HUDInfo hudCache;
+    private boolean hudNeedsUpdate = true;
+
     public GameMenu() {
         initializeTranslations();
     }
@@ -45,19 +62,34 @@ public class GameMenu implements EventListener {
     public void createGameMenu() throws InterruptedException {
         setupCanvas();
         ter = new TERenderer();
-        StdDraw.enableDoubleBuffering(); // Enable double buffering
+        StdDraw.enableDoubleBuffering();
 
-        // Language selection toggle
         toggleLanguageSelection();
 
         while (true) {
-            if (redraw) {
+            // Only handle input and update game state if needed
+            boolean inputHandled = handleInput();
+            boolean mouseMoved = detectMouseMove();
+            boolean chaserMoved = false;
+
+            if (gameStarted) {
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastChaserMoveTime >= CHASER_MOVE_INTERVAL) {
+                    world.moveChaser();
+                    checkChaserEncounter();
+                    lastChaserMoveTime = currentTime;
+                    chaserMoved = true;
+                }
+            }
+
+            // Only redraw if something changed
+            if (redraw || inputHandled || mouseMoved || chaserMoved) {
                 StdDraw.clear(StdDraw.BLACK);
 
                 if (player == null) {
-                    drawLoginMenu(); // Initial menu
+                    drawLoginMenu();
                 } else if (!gameStarted) {
-                    drawPostLoginMenu(player); // Menu after login
+                    drawPostLoginMenu(player);
                 } else {
                     ter.renderFrame(world.getMap());
                     updateHUD();
@@ -66,24 +98,83 @@ public class GameMenu implements EventListener {
                     }
                     renderNotifications();
                 }
-                StdDraw.show(); // Show the buffer
-                redraw = false; // Reset redraw flag
+                StdDraw.show();
+                redraw = false;
             }
 
-            handleInput();
-            detectMouseMove();
-            StdDraw.pause(16); // Approximately 60 FPS
+            // Use a consistent frame timing
+            Thread.sleep(16); // Cap at ~60 FPS
+        }
+    }
 
-            if (gameStarted) {
-                long currentTime = System.currentTimeMillis();
-                if (currentTime - lastChaserMoveTime >= CHASER_MOVE_INTERVAL) {
-                    world.moveChaser();
-                    checkChaserEncounter();
-                    lastChaserMoveTime = currentTime;
-                    redraw = true;
+    private boolean handleInput() throws InterruptedException {
+        if (StdDraw.hasNextKeyTyped()) {
+            char key = Character.toLowerCase(StdDraw.nextKeyTyped());
+            redraw = true;
+
+            if (player == null) {
+                // Initial menu for login or quit
+                switch (key) {
+                    case 'p': // Login or create a player
+                        AudioManager.getInstance().playSound("menu"); // Play sound only for valid menu action
+                        player = loginOrCreateProfile();
+                        redraw = true;
+                        break;
+                    case 'q':
+                        AudioManager.getInstance().playSound("menu");
+                        System.exit(0);
+                        break;
+                }
+            } else if (!gameStarted) {
+                // Post-login menu options
+                switch (key) {
+                    case 'n':
+                        AudioManager.getInstance().playSound("menu");
+                        createNewGame();
+                        AudioManager.getInstance().playSound("gamestart");
+                        break;
+                    case 'l':
+                        AudioManager.getInstance().playSound("menu");
+                        loadGame(player);
+                        AudioManager.getInstance().playSound("gamestart");
+                        break;
+                    case 'q':
+                        AudioManager.getInstance().playSound("menu");
+                        saveGame(player);
+                        System.exit(0);
+                        break;
+                }
+            } else {
+                // Game started: Handle in-game inputs
+                if (key == ':') {
+                    quitSignBuilder.setLength(0);
+                    quitSignBuilder.append(key);
+                } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
+                    AudioManager.getInstance().playSound("menu");
+                    saveGame(player);
+                    System.exit(0);
+                } else if (key == 'z') {
+                    AudioManager.getInstance().playSound("menu");
+                    world.togglePathDisplay();// Show path
+                } else if (key == 'w' || key == 'a' || key == 's' || key == 'd') {
+                    handleMovement(key);
                 }
             }
+            return true;
         }
+        return false;
+    }
+
+    private boolean detectMouseMove() {
+        double currentMouseX = StdDraw.mouseX();
+        double currentMouseY = StdDraw.mouseY();
+
+        if (hasMouseMoved(currentMouseX, currentMouseY)) {
+            prevMouseX = currentMouseX;
+            prevMouseY = currentMouseY;
+            return true;
+        }
+        return false;
     }
 
     private void checkChaserEncounter() {
@@ -150,7 +241,6 @@ public class GameMenu implements EventListener {
     }
 
     private void drawLoginMenu() {
-
         setupCanvas();
         // Load a font that supports Chinese characters
         Font font = new Font("SimSun", Font.PLAIN, 24); // Ensure this font is available
@@ -191,53 +281,32 @@ public class GameMenu implements EventListener {
         }
     }
 
-    private void detectMouseMove() {
-        double currentMouseX = StdDraw.mouseX();
-        double currentMouseY = StdDraw.mouseY();
-
-        if (hasMouseMoved(currentMouseX, currentMouseY)) {
-
-            // Update previous mouse position
-            prevMouseX = currentMouseX;
-            prevMouseY = currentMouseY;
-            redraw = true;
-        }
-    }
-
     private boolean hasMouseMoved(double currentMouseX, double currentMouseY) {
-        return currentMouseX != prevMouseX || currentMouseY != prevMouseY;
+        // Add a small threshold to prevent tiny movements from triggering updates
+        double threshold = 0.001;
+        return Math.abs(currentMouseX - prevMouseX) > threshold ||
+                Math.abs(currentMouseY - prevMouseY) > threshold;
     }
 
     private void updateHUD() {
-        // Get mouse position and convert to tile coordinates
-        double mouseX = StdDraw.mouseX();
-        double mouseY = StdDraw.mouseY();
-
-        // Only update if mouse has moved
-        if (mouseX != prevMouseX || mouseY != prevMouseY) {
-            redraw = true;
-            prevMouseX = mouseX;
-            prevMouseY = mouseY;
+        // Cache HUD text to avoid string concatenation every frame
+        if (hudCache == null || hudNeedsUpdate) {
+            hudCache = new HUDInfo(
+                    getTileDescription(StdDraw.mouseX(), StdDraw.mouseY()),
+                    "Player: " + player.getUsername(),
+                    "Points: " + player.getPoints());
+            hudNeedsUpdate = false;
         }
 
-        // Get the tile description at mouse position
-        String description = getTileDescription(mouseX, mouseY);
-
-        // Draw HUD background (optional - for better readability)
+        // Draw HUD background
         StdDraw.setPenColor(StdDraw.BLACK);
         StdDraw.filledRectangle(0.5, 0.95, 0.5, 0.05);
 
-        // Set text color
+        // Draw HUD text
         StdDraw.setPenColor(StdDraw.WHITE);
-
-        // Draw tile description on the left
-        StdDraw.textLeft(0.01, 42, description);
-
-        // Draw player name in the center
-        StdDraw.textLeft(0.01, 44, "Player: " + player.getUsername());
-
-        // Draw points on the right
-        StdDraw.textLeft(0.01, 43, "Points: " + player.getPoints());
+        StdDraw.textLeft(0.01, 42, hudCache.tileDescription);
+        StdDraw.textLeft(0.01, 44, hudCache.playerInfo);
+        StdDraw.textLeft(0.01, 43, hudCache.pointsInfo);
     }
 
     private String getTileDescription(double mouseX, double mouseY) {
@@ -249,62 +318,6 @@ public class GameMenu implements EventListener {
             return tile.description();
         } else {
             return "out side of map";
-        }
-    }
-
-    private void handleInput() throws InterruptedException {
-        if (StdDraw.hasNextKeyTyped()) {
-            char key = Character.toLowerCase(StdDraw.nextKeyTyped());
-            redraw = true;
-
-            if (player == null) {
-                // Initial menu for login or quit
-                switch (key) {
-                    case 'p': // Login or create a player
-                        AudioManager.getInstance().playSound("menu"); // Play sound only for valid menu action
-                        player = loginOrCreateProfile();
-                        redraw = true;
-                        break;
-                    case 'q':
-                        AudioManager.getInstance().playSound("menu");
-                        System.exit(0);
-                        break;
-                }
-            } else if (!gameStarted) {
-                // Post-login menu options
-                switch (key) {
-                    case 'n':
-                        AudioManager.getInstance().playSound("menu");
-                        createNewGame();
-                        AudioManager.getInstance().playSound("gamestart");
-                        break;
-                    case 'l':
-                        AudioManager.getInstance().playSound("menu");
-                        loadGame(player);
-                        AudioManager.getInstance().playSound("gamestart");
-                        break;
-                    case 'q':
-                        AudioManager.getInstance().playSound("menu");
-                        saveGame(player);
-                        System.exit(0);
-                        break;
-                }
-            } else {
-                // Game started: Handle in-game inputs
-                if (key == ':') {
-                    quitSignBuilder.setLength(0);
-                    quitSignBuilder.append(key);
-                } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
-                    AudioManager.getInstance().playSound("menu");
-                    saveGame(player);
-                    System.exit(0);
-                } else if (key == 'z') {
-                    AudioManager.getInstance().playSound("menu");
-                    world.togglePathDisplay();// Show path
-                } else if (key == 'w' || key == 'a' || key == 's' || key == 'd') {
-                    handleMovement(key);
-                }
-            }
         }
     }
 
@@ -322,10 +335,20 @@ public class GameMenu implements EventListener {
             if (StdDraw.hasNextKeyTyped()) {
                 char key = StdDraw.nextKeyTyped();
                 AudioManager.getInstance().playSound("menu");
+
                 if (key == '\n' || key == '\r') {
                     break;
+                } else if (key == '\b' || key == 127) { // Backspace and Delete keys
+                    // Remove the last character if there is one
+                    if (usernameBuilder.length() > 0) {
+                        usernameBuilder.setLength(usernameBuilder.length() - 1);
+                    }
+                } else {
+                    // Add the character if it's not a control character
+                    if (!Character.isISOControl(key)) {
+                        usernameBuilder.append(key);
+                    }
                 }
-                usernameBuilder.append(key);
             }
 
             // Clear and redraw the screen with the current username input
@@ -433,11 +456,11 @@ public class GameMenu implements EventListener {
     }
 
     private void checkObjectiveCompletion() {
-
         // Check if the avatar has reached the door
         if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
             AudioManager.getInstance().playSound("gamePass");
             player.addPoints(100); // Award points for reaching the door
+            hudNeedsUpdate = true; // Update HUD when points change
             System.out.println("Objective completed! Points awarded: 100");
 
             // Reapply coordinate system before drawing
@@ -517,6 +540,7 @@ public class GameMenu implements EventListener {
         if (event.getType() == Event.EventType.CONSUMABLE_CONSUMED) {
             // Add notification without any pause
             notifications.add(new Notification(event.getMessage(), System.currentTimeMillis() + 2000));
+            hudNeedsUpdate = true; // Update HUD when points change
             redraw = true; // Request a redraw to show the notification
         }
     }
