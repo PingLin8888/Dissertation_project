@@ -64,7 +64,9 @@ public class GameMenu implements EventListener {
         ter = new TERenderer();
         StdDraw.enableDoubleBuffering();
 
-        toggleLanguageSelection();
+        if (player == null) {
+            toggleLanguageSelection();
+        }
 
         while (true) {
             // Only handle input and update game state if needed
@@ -156,6 +158,8 @@ public class GameMenu implements EventListener {
                 } else if (key == 'z') {
                     AudioManager.getInstance().playSound("menu");
                     world.togglePathDisplay();// Show path
+                } else if (key == 'n') { // Add restart functionality
+                    handleRestart();
                 } else if (key == 'w' || key == 'a' || key == 's' || key == 'd') {
                     handleMovement(key);
                 }
@@ -560,5 +564,36 @@ public class GameMenu implements EventListener {
     // Add cleanup method to properly close resources
     public void cleanup() {
         AudioManager.getInstance().cleanup();
+    }
+
+    private void handleRestart() throws InterruptedException {
+        StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.setXscale(0, 1);
+        StdDraw.setYscale(0, 1);
+        StdDraw.text(0.5, 0.6, translationManager.getTranslation("restart_confirm"));
+        StdDraw.text(0.5, 0.5, translationManager.getTranslation("restart_options"));
+        StdDraw.show();
+
+        // Wait for user confirmation
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char response = Character.toLowerCase(StdDraw.nextKeyTyped());
+                if (response == 'y') {
+                    AudioManager.getInstance().playSound("menu");
+                    // Restart the game
+                    gameStarted = false;
+                    createGameMenu();
+                    break;
+                } else if (response == 'n') {
+                    AudioManager.getInstance().playSound("menu");
+                    // Return to the current game
+                    redraw = true;
+                    drawWorld(); // Redraw the current world
+                    break;
+                }
+            }
+            StdDraw.pause(10);
+        }
     }
 }
