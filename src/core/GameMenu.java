@@ -60,6 +60,8 @@ public class GameMenu implements EventListener {
 
     private GameState currentState = GameState.LANGUAGE_SELECT;
 
+    private boolean hasSavedGame = false; // Add this field to track if saved game exists
+
     public GameMenu() {
         initializeTranslations();
     }
@@ -177,45 +179,6 @@ public class GameMenu implements EventListener {
         StdDraw.setYscale(0, 1);
     }
 
-    private void toggleLanguageSelection() {
-        // Enable double buffering if not already enabled
-        StdDraw.enableDoubleBuffering();
-
-        // First draw - draw everything to the back buffer
-        StdDraw.clear(StdDraw.BLACK);
-        StdDraw.setPenColor(Color.WHITE);
-        StdDraw.text(0.5, 0.6, "Select Language");
-        StdDraw.text(0.5, 0.5, "Press E for English");
-        StdDraw.text(0.5, 0.4, "按 'C' 选择中文");
-        StdDraw.show(); // Show the back buffer
-
-        while (true) {
-            if (StdDraw.hasNextKeyTyped()) {
-                char key = Character.toLowerCase(StdDraw.nextKeyTyped());
-                if (key == 'e') {
-                    AudioManager.getInstance().playSound("menu");
-                    currentLanguage = Language.ENGLISH;
-                    currentState = GameState.LOGIN;
-                    initializeTranslations();
-                    break;
-                } else if (key == 'c') {
-                    AudioManager.getInstance().playSound("menu");
-                    currentLanguage = Language.CHINESE;
-                    currentState = GameState.LOGIN;
-                    initializeTranslations();
-                    break;
-                }
-            }
-            StdDraw.pause(10); // Add a small pause to reduce CPU usage
-        }
-
-        // Initialize translations before clearing the screen
-        initializeTranslations();
-
-        // Clear and draw the login menu in one frame
-        StdDraw.clear(StdDraw.BLACK);
-        drawLoginMenu(); // This method should include StdDraw.show()
-    }
 
     private void drawLoginMenu() {
         // Load a font that supports Chinese characters
@@ -235,17 +198,43 @@ public class GameMenu implements EventListener {
 
     private void drawPostLoginMenu(Player player) {
         StdDraw.clear(StdDraw.BLACK);
-        StdDraw.setPenColor(Color.WHITE);
 
         // Load a font that supports Chinese characters
-        Font font = new Font("SimSun", Font.PLAIN, 24); // Change "SimSun" to your desired font
-        StdDraw.setFont(font); // Set the font in StdDraw
+        Font font = new Font("SimSun", Font.PLAIN, 24);
+        StdDraw.setFont(font);
+
+        // Check if saved game exists for this player
+        hasSavedGame = checkSavedGameExists(player.getUsername());
+
+        // Draw menu items
+        StdDraw.setPenColor(Color.WHITE);
         StdDraw.text(0.5, 0.8, translationManager.getTranslation("welcome", player.getUsername()));
         StdDraw.text(0.5, 0.7, translationManager.getTranslation("points", player.getPoints()));
         StdDraw.text(0.5, 0.6, translationManager.getTranslation("new_game"));
+
+        // Set color based on whether saved game exists
+        if (hasSavedGame) {
+            StdDraw.setPenColor(Color.WHITE);
+        } else {
+            StdDraw.setPenColor(Color.GRAY);
+        }
         StdDraw.text(0.5, 0.5, translationManager.getTranslation("load_game"));
+
+        // Reset color to white for quit option
+        StdDraw.setPenColor(Color.WHITE);
         StdDraw.text(0.5, 0.4, translationManager.getTranslation("quit"));
         StdDraw.show();
+    }
+
+    private boolean checkSavedGameExists(String username) {
+        String fileName = "game_data.txt";
+        try {
+            String contents = FileUtils.readFile(fileName);
+            String[] lines = contents.split("\n");
+            return lines[0].equals(username);
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     private void drawPath() {
@@ -531,10 +520,6 @@ public class GameMenu implements EventListener {
         }
     }
 
-    // Add cleanup method to properly close resources
-    public void cleanup() {
-        AudioManager.getInstance().cleanup();
-    }
 
     private void handleRestart() throws InterruptedException {
         StdDraw.clear(StdDraw.BLACK);
@@ -552,8 +537,8 @@ public class GameMenu implements EventListener {
                 if (response == 'y') {
                     AudioManager.getInstance().playSound("menu");
                     // Restart the game
-//                    gameStarted = false;
-//                    createGameMenu();
+                    // gameStarted = false;
+                    // createGameMenu();
                     currentState = GameState.MAIN_MENU;
                     break;
                 } else if (response == 'n') {
@@ -605,10 +590,23 @@ public class GameMenu implements EventListener {
                 currentState = GameState.IN_GAME;
                 break;
             case 'l':
-                AudioManager.getInstance().playSound("menu");
-                loadGame(player);
-                AudioManager.getInstance().playSound("gamestart");
-                currentState = GameState.IN_GAME;
+                if (hasSavedGame) {
+                    AudioManager.getInstance().playSound("menu");
+                    loadGame(player);
+                    AudioManager.getInstance().playSound("gamestart");
+                    currentState = GameState.IN_GAME;
+                } else {
+                    // Show no saved game message
+                    StdDraw.clear(StdDraw.BLACK);
+                    StdDraw.setPenColor(StdDraw.WHITE);
+                    StdDraw.text(0.5, 0.5, translationManager.getTranslation("no_saved_game"));
+                    StdDraw.show();
+                    StdDraw.pause(2000);
+
+                    // Return to main menu
+                    redraw = true;
+                    currentState = GameState.MAIN_MENU;
+                }
                 break;
             case 'q':
                 AudioManager.getInstance().playSound("menu");
