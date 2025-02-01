@@ -218,14 +218,16 @@ public class GameMenu implements EventListener {
     }
 
     private void toggleLanguageSelection() {
+        // Enable double buffering if not already enabled
+        StdDraw.enableDoubleBuffering();
+
+        // First draw - draw everything to the back buffer
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(Color.WHITE);
-
-        // Display language selection prompt
         StdDraw.text(0.5, 0.6, "Select Language");
         StdDraw.text(0.5, 0.5, "Press E for English");
         StdDraw.text(0.5, 0.4, "按 'C' 选择中文");
-        StdDraw.show();
+        StdDraw.show(); // Show the back buffer
 
         while (true) {
             if (StdDraw.hasNextKeyTyped()) {
@@ -240,26 +242,30 @@ public class GameMenu implements EventListener {
                     break;
                 }
             }
+            StdDraw.pause(10); // Add a small pause to reduce CPU usage
         }
-        initializeTranslations(); // Reinitialize translations after language selection
+
+        // Initialize translations before clearing the screen
+        initializeTranslations();
+
+        // Clear and draw the login menu in one frame
+        StdDraw.clear(StdDraw.BLACK);
+        drawLoginMenu(); // This method should include StdDraw.show()
     }
 
     private void drawLoginMenu() {
-        setupCanvas();
         // Load a font that supports Chinese characters
-        Font font = new Font("SimSun", Font.PLAIN, 24); // Ensure this font is available
-        StdDraw.setFont(font); // Set the font in StdDraw
+        Font font = new Font("SimSun", Font.PLAIN, 24);
+        StdDraw.setFont(font);
 
-        StdDraw.clear(StdDraw.BLACK); // Clear the canvas
+        // Draw everything to the back buffer
         StdDraw.setPenColor(Color.WHITE);
-
-        // Debugging output
         String loginText = translationManager.getTranslation("login");
         String quitText = translationManager.getTranslation("quit");
-
-        // Draw the text
         StdDraw.text(0.5, 0.65, loginText);
         StdDraw.text(0.5, 0.5, quitText);
+
+        // Show the back buffer
         StdDraw.show();
     }
 
