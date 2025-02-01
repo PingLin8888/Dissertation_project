@@ -51,6 +51,15 @@ public class GameMenu implements EventListener {
     private HUDInfo hudCache;
     private boolean hudNeedsUpdate = true;
 
+    private enum GameState {
+        LANGUAGE_SELECT,
+        LOGIN,
+        MAIN_MENU,
+        IN_GAME
+    }
+
+    private GameState currentState = GameState.LANGUAGE_SELECT;
+
     public GameMenu() {
         initializeTranslations();
     }
@@ -64,150 +73,101 @@ public class GameMenu implements EventListener {
         ter = new TERenderer();
         StdDraw.enableDoubleBuffering();
 
-        if (player == null) {
-            toggleLanguageSelection();
-        }
+        // Set initial state
+        currentState = GameState.LANGUAGE_SELECT;
 
         while (true) {
-            // Only handle input and update game state if needed
+            // Handle input
             boolean inputHandled = handleInput();
             boolean mouseMoved = detectMouseMove();
             boolean chaserMoved = false;
 
-            if (gameStarted) {
-                long currentTime = System.currentTimeMillis();
-                if (currentTime - lastChaserMoveTime >= CHASER_MOVE_INTERVAL) {
-                    world.moveChaser();
-                    checkChaserEncounter();
-                    lastChaserMoveTime = currentTime;
-                    chaserMoved = true;
-                }
+            // Update game state
+            if (currentState == GameState.IN_GAME) {
+                chaserMoved = updateChaser();
             }
 
-            // Only redraw if something changed
+            // Render if needed
             if (redraw || inputHandled || mouseMoved || chaserMoved) {
-                StdDraw.clear(StdDraw.BLACK);
-
-                if (player == null) {
-                    drawLoginMenu();
-                } else if (!gameStarted) {
-                    drawPostLoginMenu(player);
-                } else {
-                    ter.renderFrame(world.getMap());
-                    updateHUD();
-                    if (world.isShowPath() && world.getPathToAvatar() != null) {
-                        drawPath();
-                    }
-                    renderNotifications();
-                }
-                StdDraw.show();
-                redraw = false;
+                render();
             }
 
-            // Use a consistent frame timing
             Thread.sleep(16); // Cap at ~60 FPS
         }
     }
 
+    private boolean updateChaser() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastChaserMoveTime >= CHASER_MOVE_INTERVAL) {
+            world.moveChaser();
+            checkChaserEncounter();
+            lastChaserMoveTime = currentTime;
+            return true;
+        }
+        return false;
+    }
+
+    private void render() {
+        StdDraw.clear(StdDraw.BLACK);
+
+        switch (currentState) {
+            case LANGUAGE_SELECT:
+                renderLanguageSelect();
+                break;
+            case LOGIN:
+                drawLoginMenu();
+                break;
+            case MAIN_MENU:
+                drawPostLoginMenu(player);
+                break;
+            case IN_GAME:
+                renderGameScreen();
+                break;
+        }
+
+        StdDraw.show();
+        redraw = false;
+    }
+
+    private void renderLanguageSelect() {
+        StdDraw.setPenColor(Color.WHITE);
+        StdDraw.text(0.5, 0.6, "Select Language");
+        StdDraw.text(0.5, 0.5, "Press E for English");
+        StdDraw.text(0.5, 0.4, "按 'C' 选择中文");
+    }
+
+    private void renderGameScreen() {
+        ter.renderFrame(world.getMap());
+        updateHUD();
+        if (world.isShowPath() && world.getPathToAvatar() != null) {
+            drawPath();
+        }
+        renderNotifications();
+    }
+
     private boolean handleInput() throws InterruptedException {
-        if (StdDraw.hasNextKeyTyped()) {
-            char key = Character.toLowerCase(StdDraw.nextKeyTyped());
-            redraw = true;
-
-            if (player == null) {
-                // Initial menu for login or quit
-                switch (key) {
-                    case 'p': // Login or create a player
-                        AudioManager.getInstance().playSound("menu"); // Play sound only for valid menu action
-                        player = loginOrCreateProfile();
-                        redraw = true;
-                        break;
-                    case 'q':
-                        AudioManager.getInstance().playSound("menu");
-                        System.exit(0);
-                        break;
-                }
-            } else if (!gameStarted) {
-                // Post-login menu options
-                switch (key) {
-                    case 'n':
-                        AudioManager.getInstance().playSound("menu");
-                        createNewGame();
-                        AudioManager.getInstance().playSound("gamestart");
-                        break;
-                    case 'l':
-                        AudioManager.getInstance().playSound("menu");
-                        loadGame(player);
-                        AudioManager.getInstance().playSound("gamestart");
-                        break;
-                    case 'q':
-                        AudioManager.getInstance().playSound("menu");
-                        saveGame(player);
-                        System.exit(0);
-                        break;
-                }
-            } else {
-                // Game started: Handle in-game inputs
-                if (key == ':') {
-                    quitSignBuilder.setLength(0);
-                    quitSignBuilder.append(key);
-                } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
-                    AudioManager.getInstance().playSound("menu");
-                    saveGame(player);
-                    System.exit(0);
-                } else if (key == 'z') {
-                    AudioManager.getInstance().playSound("menu");
-                    world.togglePathDisplay();// Show path
-                } else if (key == 'n') { // Add restart functionality
-                    handleRestart();
-                } else if (key == 'w' || key == 'a' || key == 's' || key == 'd') {
-                    handleMovement(key);
-                }
-            }
-            return true;
+        if (!StdDraw.hasNextKeyTyped()) {
+            return false;
         }
-        return false;
-    }
 
-    private boolean detectMouseMove() {
-        double currentMouseX = StdDraw.mouseX();
-        double currentMouseY = StdDraw.mouseY();
+        char key = Character.toLowerCase(StdDraw.nextKeyTyped());
+        redraw = true;
 
-        if (hasMouseMoved(currentMouseX, currentMouseY)) {
-            prevMouseX = currentMouseX;
-            prevMouseY = currentMouseY;
-            return true;
+        switch (currentState) {
+            case LANGUAGE_SELECT:
+                handleLanguageSelection(key);
+                break;
+            case LOGIN:
+                handleLoginInput(key);
+                break;
+            case MAIN_MENU:
+                handleMainMenuInput(key);
+                break;
+            case IN_GAME:
+                handleGameInput(key);
+                break;
         }
-        return false;
-    }
-
-    private void checkChaserEncounter() {
-        if ((Math.abs(world.getChaserX() - world.getAvatarX()) == 1 &&
-                world.getChaserY() == world.getAvatarY()) ||
-                (Math.abs(world.getChaserY() - world.getAvatarY()) == 1 &&
-                        world.getChaserX() == world.getAvatarX())) {
-
-            // Play game over sound
-            AudioManager.getInstance().playSound("gameover");
-
-            // End the game and redirect to the post-login menu
-            System.out.println("Chaser is adjacent to the avatar! Ending game.");
-
-            StdDraw.setXscale(0, 1);
-            StdDraw.setYscale(0, 1);
-
-            // Clear the screen and display the message
-            StdDraw.clear(StdDraw.BLACK);
-            StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.text(0.5, 0.5, translationManager.getTranslation("game_over"));
-            StdDraw.show();
-            StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
-
-            // Reset game state to show the post-login menu
-            gameStarted = false;
-            redraw = true;
-            System.out.println("Game state reset to post-login menu.");
-        }
+        return true;
     }
 
     private void setupCanvas() {
@@ -235,10 +195,14 @@ public class GameMenu implements EventListener {
                 if (key == 'e') {
                     AudioManager.getInstance().playSound("menu");
                     currentLanguage = Language.ENGLISH;
+                    currentState = GameState.LOGIN;
+                    initializeTranslations();
                     break;
                 } else if (key == 'c') {
                     AudioManager.getInstance().playSound("menu");
                     currentLanguage = Language.CHINESE;
+                    currentState = GameState.LOGIN;
+                    initializeTranslations();
                     break;
                 }
             }
@@ -588,8 +552,9 @@ public class GameMenu implements EventListener {
                 if (response == 'y') {
                     AudioManager.getInstance().playSound("menu");
                     // Restart the game
-                    gameStarted = false;
-                    createGameMenu();
+//                    gameStarted = false;
+//                    createGameMenu();
+                    currentState = GameState.MAIN_MENU;
                     break;
                 } else if (response == 'n') {
                     AudioManager.getInstance().playSound("menu");
@@ -600,6 +565,116 @@ public class GameMenu implements EventListener {
                 }
             }
             StdDraw.pause(10);
+        }
+    }
+
+    private void handleLanguageSelection(char key) {
+        if (key == 'e') {
+            AudioManager.getInstance().playSound("menu");
+            currentLanguage = Language.ENGLISH;
+            currentState = GameState.LOGIN;
+            initializeTranslations();
+        } else if (key == 'c') {
+            AudioManager.getInstance().playSound("menu");
+            currentLanguage = Language.CHINESE;
+            currentState = GameState.LOGIN;
+            initializeTranslations();
+        }
+    }
+
+    private void handleLoginInput(char key) {
+        switch (key) {
+            case 'p':
+                AudioManager.getInstance().playSound("menu");
+                player = loginOrCreateProfile();
+                currentState = GameState.MAIN_MENU;
+                break;
+            case 'q':
+                AudioManager.getInstance().playSound("menu");
+                System.exit(0);
+                break;
+        }
+    }
+
+    private void handleMainMenuInput(char key) {
+        switch (key) {
+            case 'n':
+                AudioManager.getInstance().playSound("menu");
+                createNewGame();
+                AudioManager.getInstance().playSound("gamestart");
+                currentState = GameState.IN_GAME;
+                break;
+            case 'l':
+                AudioManager.getInstance().playSound("menu");
+                loadGame(player);
+                AudioManager.getInstance().playSound("gamestart");
+                currentState = GameState.IN_GAME;
+                break;
+            case 'q':
+                AudioManager.getInstance().playSound("menu");
+                saveGame(player);
+                System.exit(0);
+                break;
+        }
+    }
+
+    private void handleGameInput(char key) throws InterruptedException {
+        if (key == ':') {
+            quitSignBuilder.setLength(0);
+            quitSignBuilder.append(key);
+        } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
+            AudioManager.getInstance().playSound("menu");
+            saveGame(player);
+            System.exit(0);
+        } else if (key == 'p') {
+            AudioManager.getInstance().playSound("menu");
+            world.togglePathDisplay();
+        } else if (key == 'n') {
+            handleRestart();
+        } else if (key == 'w' || key == 'a' || key == 's' || key == 'd') {
+            handleMovement(key);
+        }
+    }
+
+    private boolean detectMouseMove() {
+        double currentMouseX = StdDraw.mouseX();
+        double currentMouseY = StdDraw.mouseY();
+
+        if (hasMouseMoved(currentMouseX, currentMouseY)) {
+            prevMouseX = currentMouseX;
+            prevMouseY = currentMouseY;
+            return true;
+        }
+        return false;
+    }
+
+    private void checkChaserEncounter() {
+        if ((Math.abs(world.getChaserX() - world.getAvatarX()) == 1 &&
+                world.getChaserY() == world.getAvatarY()) ||
+                (Math.abs(world.getChaserY() - world.getAvatarY()) == 1 &&
+                        world.getChaserX() == world.getAvatarX())) {
+
+            // Play game over sound
+            AudioManager.getInstance().playSound("gameover");
+
+            // End the game and redirect to the post-login menu
+            System.out.println("Chaser is adjacent to the avatar! Ending game.");
+
+            StdDraw.setXscale(0, 1);
+            StdDraw.setYscale(0, 1);
+
+            // Clear the screen and display the message
+            StdDraw.clear(StdDraw.BLACK);
+            StdDraw.setPenColor(StdDraw.WHITE);
+            StdDraw.text(0.5, 0.5, translationManager.getTranslation("game_over"));
+            StdDraw.show();
+            StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
+
+            // Reset game state to show the post-login menu
+            gameStarted = false;
+            currentState = GameState.MAIN_MENU; // Update the game state
+            redraw = true;
+            System.out.println("Game state reset to post-login menu.");
         }
     }
 }
