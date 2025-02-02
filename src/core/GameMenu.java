@@ -67,6 +67,9 @@ public class GameMenu implements EventListener {
     private static final int MAX_LEVEL = 5;
     private static final int POINTS_PER_LEVEL = 100;
 
+    // Add these fields to GameMenu class
+    private char lastDirection = 's'; // Default facing down
+
     public GameMenu() {
         initializeTranslations();
     }
@@ -272,28 +275,58 @@ public class GameMenu implements EventListener {
     }
 
     private String getTileDescription(TETile tile) {
-        if (tile == Tileset.FLOOR) {
-            return "You are on the floor.";
-        } else if (tile == Tileset.WALL) {
-            return "You hit a wall.";
-        } else if (tile == Tileset.SPIKES) {
-            return "Watch out! Spikes ahead!";
-        } else if (tile == Tileset.MUD) {
-            return "You are in mud. Slowing down!";
-        } else if (tile == Tileset.PORTAL) {
-            return "You found a teleport!";
-        } else if (tile == Tileset.ICE) {
-            return "You are sliding on ice!";
-        } else {
-            return "Unknown tile.";
+        // Get the tile in front of the avatar based on last movement direction
+        Point facingTile = getFacingTilePosition();
+        if (facingTile != null) {
+            tile = world.getMap()[facingTile.x][facingTile.y];
         }
+
+        // Check for obstacles first
+        for (ObstacleType obstacle : ObstacleType.values()) {
+            if (tile == obstacle.getTile()) {
+                switch (obstacle) {
+                    case SPIKES -> {
+                        return "Danger ahead! Spikes will hurt you and reduce points!";
+                    }
+                    case SLOWDOWN -> {
+                        return "Warning: Muddy ground ahead. It will slow you down!";
+                    }
+                    case TELEPORTER -> {
+                        return "A mysterious portal ahead. Where will it take you?";
+                    }
+                    case ICE -> {
+                        return "Careful! Slippery ice ahead!";
+                    }
+                }
+            }
+        }
+
+        // Check for consumables
+        for (Consumable consumable : world.getConsumables()) {
+            if (tile == consumable.getTile()) {
+                return "Ahead: " + consumable.getName() + " worth " + consumable.getPointValue() + " points!";
+            }
+        }
+
+        // Check basic world tiles
+        if (tile == world.getFloorTile()) {
+            return "Clear path ahead.";
+        } else if (tile == world.getWallTile()) {
+            return "A wall blocks your path.";
+        } else if (tile == Tileset.CHASER) {
+            return "DANGER! The chaser is right in front of you!";
+        } else if (tile == Tileset.LOCKED_DOOR || tile == Tileset.UNLOCKED_DOOR) {
+            return "The exit door is right ahead!";
+        }
+
+        return "Can't see what's ahead.";
     }
 
     private void renderHUD() {
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.textLeft(0.01, 41, hudCache.tileDescription);
-        StdDraw.textLeft(0.01, 40, hudCache.playerInfo);
-        StdDraw.textLeft(0.01, 39, hudCache.pointsInfo);
+        StdDraw.textLeft(0.01, 42, hudCache.tileDescription);
+        StdDraw.textLeft(0.01, 44, hudCache.playerInfo);
+        StdDraw.textLeft(0.01, 43, hudCache.pointsInfo);
     }
 
     private Player loginOrCreateProfile() {
@@ -417,17 +450,12 @@ public class GameMenu implements EventListener {
     }
 
     private void handleMovement(char key) {
-        switch (Character.toLowerCase(key)) {
-            case 'w':
-            case 'a':
-            case 's':
-            case 'd':
-                if (world.moveAvatar(key)) {
-                    AudioManager.getInstance().playSound("walkOnGrass");
-                }
-                checkObjectiveCompletion();
-                break;
+        lastDirection = key; // Update last direction before moving
+        if (world.moveAvatar(key)) {
+            AudioManager.getInstance().playSound("walk");
+            hudNeedsUpdate = true;
         }
+        checkObjectiveCompletion();
     }
 
     private void checkObjectiveCompletion() {
@@ -735,5 +763,27 @@ public class GameMenu implements EventListener {
             redraw = true;
             System.out.println("Game state reset to post-login menu.");
         }
+    }
+
+    // Add this method to get the position of the tile the avatar is facing
+    private Point getFacingTilePosition() {
+        int x = world.getAvatarX();
+        int y = world.getAvatarY();
+
+        switch (lastDirection) {
+            case 'w' -> y += 1;
+            case 's' -> y -= 1;
+            case 'a' -> x -= 1;
+            case 'd' -> x += 1;
+            default -> {
+                return null;
+            }
+        }
+
+        // Check if the position is within bounds
+        if (x >= 0 && x < world.getMap().length && y >= 0 && y < world.getMap()[0].length) {
+            return new Point(x, y);
+        }
+        return null;
     }
 }

@@ -13,8 +13,8 @@ public class World {
     final private static int WIDTH = 80;
     final private static int HEIGHT = 45;
     final private static TETile UNUSED = Tileset.NOTHING;
-    final private static TETile FLOOR = Tileset.GRASS;
-    final private static TETile WALL = Tileset.WALL;
+    final static TETile FLOOR = Tileset.GRASS;
+    final static TETile WALL = Tileset.WALL;
     final private static long SEEDDefault = 87654L;
     final private static TETile AVATAR = Tileset.AVATAR;
     final private static TETile CHASER = Tileset.CHASER;
@@ -744,5 +744,17 @@ public class World {
         }
 
         setAvatarToNewPosition(newX, newY);
+    }
+
+    public TETile getFloorTile() {
+        return FLOOR;
+    }
+
+    public TETile getWallTile() {
+        return WALL;
+    }
+
+    public List<Consumable> getConsumables() {
+        return consumables;
     }
 }
