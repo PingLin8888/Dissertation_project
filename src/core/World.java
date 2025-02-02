@@ -215,6 +215,16 @@ public class World {
     }
 
     public boolean moveAvatar(char direction) {
+        // Check if player is slowed and the effect hasn't expired
+        if (playerSlowed && System.currentTimeMillis() < slowEffectEndTime) {
+            // When slowed, there's a 50% chance that movement will be skipped
+            if (random.nextBoolean()) {
+                eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
+                        "Movement slowed by mud!"));
+                return false;
+            }
+        }
+
         int newX = avatarX;
         int newY = avatarY;
         switch (Character.toLowerCase(direction)) {
@@ -223,6 +233,7 @@ public class World {
             case 's' -> newY -= 1;
             case 'd' -> newX += 1;
         }
+
         if (newX >= 0 && newX < WIDTH && newY >= 0 && newY < HEIGHT) {
             TETile tileAtNewPosition = map[newX][newY];
 

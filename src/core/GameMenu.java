@@ -492,7 +492,7 @@ public class GameMenu implements EventListener {
         // Adjust game parameters based on level
         CHASER_MOVE_INTERVAL = Math.max(1000, CHASER_MOVE_INTERVAL - (500 * currentLevel));
         int numConsumables = 3 + currentLevel; // More consumables in higher levels
-        int numObstacles = 5 + (currentLevel * 2); // More obstacles in higher levels
+        int numObstacles = 10 + (currentLevel * 9); // More obstacles in higher levels
 
         // Create new world with increased difficulty
         world = new World(player, newSeed, numConsumables, numObstacles);
