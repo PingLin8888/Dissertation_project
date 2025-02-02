@@ -229,6 +229,12 @@ public class World {
             Point newPos = new Point(newX, newY);
             if (obstacles.containsKey(newPos)) {
                 handleObstacle(obstacles.get(newPos), newPos);
+                // Remove the obstacle after its effect is applied
+                obstacles.remove(newPos);
+                // Set the tile to floor
+                map[newX][newY] = FLOOR;
+                // Move the avatar to the new position
+                setAvatarToNewPosition(newX, newY);
                 return true;
             }
 

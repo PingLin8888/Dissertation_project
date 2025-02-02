@@ -53,9 +53,10 @@ public class Tileset {
                 "yum", "assets/images/smiley_green_body_circle.png");
         public static final TETile GRASS = new TETile(' ', Color.green, Color.black, "grass","assets/images/platformPack_tile045.png");
         public static final TETile WATER = new TETile(' ', Color.green, Color.black, "grass","assets/images/platformPack_tile005.png");
-        public static final TETile SPIKES = new TETile(' ', Color.green, Color.black, "spikes","assets/images/blackSmoke14.png");
-        public static final TETile MUD = new TETile(' ', Color.green, Color.black, "spikes","assets/images/blackSmoke14.png");
-        public static final TETile PORTAL = new TETile(' ', Color.green, Color.black, "spikes","assets/images/blackSmoke14.png");
-        public static final TETile ICE = new TETile(' ', Color.green, Color.black, "spikes","assets/images/blackSmoke14.png");
+        public static final TETile SPIKES = new TETile(' ', Color.green, Color.black, "spikes","assets/images/explosion01.png");
+        public static final TETile MUD = new TETile(' ', Color.green, Color.black, "mud","assets/images/bushOrange4.png");
+        public static final TETile PORTAL = new TETile(' ', Color.green, Color.black, "PORTAL","assets/images/houseAlt2.png");
+        public static final TETile ICE = new TETile(' ', Color.green, Color.black, "ICE","assets/images/treeLongFrozen.png" +
+                "");
 
 }
