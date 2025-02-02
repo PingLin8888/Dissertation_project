@@ -6,7 +6,7 @@ public class Player {
 
     public Player(String username) {
         this.username = username;
-        this.points = 0; // Start with 0 points
+        this.points = 0;
     }
 
     public Player(String username, int points) {
@@ -35,6 +35,4 @@ public class Player {
             return 3; // Hard
         }
     }
-
-
 }

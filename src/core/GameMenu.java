@@ -3,6 +3,7 @@ package core;
 import edu.princeton.cs.algs4.StdDraw;
 import tileengine.TERenderer;
 import tileengine.TETile;
+import tileengine.Tileset;
 import utils.FileUtils;
 
 import java.awt.*;
@@ -27,7 +28,7 @@ public class GameMenu implements EventListener {
     private double prevMouseX = 0;
     private double prevMouseY = 0;
     private long lastChaserMoveTime = 0; // Variable to track the last time the chaser moved
-    private static final long CHASER_MOVE_INTERVAL = 5000; // Reduced interval for faster chaser movement
+    private long CHASER_MOVE_INTERVAL = 5000; // Reduced interval for faster chaser movement
 
     private Player player = null;
     private Language currentLanguage = Language.ENGLISH; // Default language
@@ -61,6 +62,10 @@ public class GameMenu implements EventListener {
     private GameState currentState = GameState.LANGUAGE_SELECT;
 
     private boolean hasSavedGame = false; // Add this field to track if saved game exists
+
+    private int currentLevel = 1;
+    private static final int MAX_LEVEL = 5;
+    private static final int POINTS_PER_LEVEL = 100;
 
     public GameMenu() {
         initializeTranslations();
@@ -179,7 +184,6 @@ public class GameMenu implements EventListener {
         StdDraw.setYscale(0, 1);
     }
 
-
     private void drawLoginMenu() {
         // Load a font that supports Chinese characters
         Font font = new Font("SimSun", Font.PLAIN, 24);
@@ -252,36 +256,44 @@ public class GameMenu implements EventListener {
     }
 
     private void updateHUD() {
-        // Cache HUD text to avoid string concatenation every frame
-        if (hudCache == null || hudNeedsUpdate) {
-            hudCache = new HUDInfo(
-                    getTileDescription(StdDraw.mouseX(), StdDraw.mouseY()),
-                    "Player: " + player.getUsername(),
-                    "Points: " + player.getPoints());
-            hudNeedsUpdate = false;
-        }
+        // Get the current tile at the avatar's position from World
+        TETile currentTile = world.getMap()[world.getAvatarX()][world.getAvatarY()];
 
-        // Draw HUD background
-        StdDraw.setPenColor(StdDraw.BLACK);
-        StdDraw.filledRectangle(0.5, 0.95, 0.5, 0.05);
+        // Get the description of the current tile
+        String tileDescription = getTileDescription(currentTile);
 
-        // Draw HUD text
-        StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.textLeft(0.01, 42, hudCache.tileDescription);
-        StdDraw.textLeft(0.01, 44, hudCache.playerInfo);
-        StdDraw.textLeft(0.01, 43, hudCache.pointsInfo);
+        // Update the HUD information
+        hudCache = new HUDInfo(tileDescription,
+                "Player: " + player.getUsername(),
+                "Points: " + player.getPoints());
+
+        // Render the HUD
+        renderHUD();
     }
 
-    private String getTileDescription(double mouseX, double mouseY) {
-        int tileX = (int) Math.floor(mouseX);
-        int tileY = (int) Math.floor(mouseY);
-
-        if (tileX >= 0 && tileX < world.getMap().length && tileY >= 0 && tileY < world.getMap()[0].length) {
-            TETile tile = world.getMap()[tileX][tileY];
-            return tile.description();
+    private String getTileDescription(TETile tile) {
+        if (tile == Tileset.FLOOR) {
+            return "You are on the floor.";
+        } else if (tile == Tileset.WALL) {
+            return "You hit a wall.";
+        } else if (tile == Tileset.SPIKES) {
+            return "Watch out! Spikes ahead!";
+        } else if (tile == Tileset.MUD) {
+            return "You are in mud. Slowing down!";
+        } else if (tile == Tileset.PORTAL) {
+            return "You found a teleport!";
+        } else if (tile == Tileset.ICE) {
+            return "You are sliding on ice!";
         } else {
-            return "out side of map";
+            return "Unknown tile.";
         }
+    }
+
+    private void renderHUD() {
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.textLeft(0.01, 41, hudCache.tileDescription);
+        StdDraw.textLeft(0.01, 40, hudCache.playerInfo);
+        StdDraw.textLeft(0.01, 39, hudCache.pointsInfo);
     }
 
     private Player loginOrCreateProfile() {
@@ -419,29 +431,79 @@ public class GameMenu implements EventListener {
     }
 
     private void checkObjectiveCompletion() {
-        // Check if the avatar has reached the door
         if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
             AudioManager.getInstance().playSound("gamePass");
-            player.addPoints(100); // Award points for reaching the door
-            hudNeedsUpdate = true; // Update HUD when points change
-            System.out.println("Objective completed! Points awarded: 100");
 
-            // Reapply coordinate system before drawing
-            StdDraw.setXscale(0, 1);
-            StdDraw.setYscale(0, 1);
+            // Award points based on current level
+            int levelPoints = POINTS_PER_LEVEL * currentLevel;
+            player.addPoints(levelPoints);
+            hudNeedsUpdate = true;
 
-            // Display the completion message on the screen
-            StdDraw.clear(StdDraw.BLACK);
-            StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.text(0.5, 0.5, "Objective completed! You've reached the door.");
-            StdDraw.show();
-            StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
+            if (currentLevel < MAX_LEVEL) {
+                // Show level completion message
+                showLevelCompleteMessage(levelPoints);
 
-            // Reset game state to show the post-login menu
-            gameStarted = false;
-            redraw = true;
-            System.out.println("Game state reset to post-login menu.");
+                // Advance to next level
+                currentLevel++;
+                createNextLevel();
+            } else {
+                // Show game completion message
+                showGameCompleteMessage();
+
+                // Return to main menu
+                gameStarted = false;
+                currentState = GameState.MAIN_MENU;
+            }
         }
+    }
+
+    private void createNextLevel() {
+        // Increase difficulty with each level
+        long newSeed = world.getSeed() + currentLevel; // Generate new seed for variety
+
+        // Adjust game parameters based on level
+        CHASER_MOVE_INTERVAL = Math.max(1000, CHASER_MOVE_INTERVAL - (500 * currentLevel));
+        int numConsumables = 3 + currentLevel; // More consumables in higher levels
+        int numObstacles = 5 + (currentLevel * 2); // More obstacles in higher levels
+
+        // Create new world with increased difficulty
+        world = new World(player, newSeed, numConsumables, numObstacles);
+        world.getEventDispatcher().addListener(this);
+
+        // Show new level message
+        showNewLevelMessage();
+
+        drawWorld();
+    }
+
+    private void showLevelCompleteMessage(int pointsEarned) {
+        StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.text(0.5, 0.6, "Level " + currentLevel + " Complete!");
+        StdDraw.text(0.5, 0.5, "Points earned: " + pointsEarned);
+        StdDraw.text(0.5, 0.4, "Total points: " + player.getPoints());
+        StdDraw.show();
+        StdDraw.pause(2000);
+    }
+
+    private void showNewLevelMessage() {
+        StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.text(0.5, 0.6, "Level " + currentLevel);
+        StdDraw.text(0.5, 0.5, "Get ready!");
+        StdDraw.text(0.5, 0.4, "Chaser is faster now!");
+        StdDraw.show();
+        StdDraw.pause(2000);
+    }
+
+    private void showGameCompleteMessage() {
+        StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.text(0.5, 0.7, "Congratulations!");
+        StdDraw.text(0.5, 0.6, "You've completed all " + MAX_LEVEL + " levels!");
+        StdDraw.text(0.5, 0.5, "Final Score: " + player.getPoints());
+        StdDraw.show();
+        StdDraw.pause(3000);
     }
 
     public void saveGame(Player player) {
@@ -519,7 +581,6 @@ public class GameMenu implements EventListener {
             StdDraw.textLeft(0.01, 41, latestNotification.getMessage());
         }
     }
-
 
     private void handleRestart() throws InterruptedException {
         StdDraw.clear(StdDraw.BLACK);

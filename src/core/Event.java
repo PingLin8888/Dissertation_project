@@ -2,7 +2,8 @@ package core;
 
 public class Event {
     public enum EventType {
-        CONSUMABLE_CONSUMED
+        CONSUMABLE_CONSUMED,
+        OBSTACLE_HIT
     }
 
     private EventType type;

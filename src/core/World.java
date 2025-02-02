@@ -18,7 +18,7 @@ public class World {
     final private static long SEEDDefault = 87654L;
     final private static TETile AVATAR = Tileset.AVATAR;
     final private static TETile CHASER = Tileset.CHASER;
-    private static final int NUMBER_OF_CONSUMABLES = 10; // Fixed number of consumables
+    private int NUMBER_OF_CONSUMABLES = 10;
 
     private int avatarX, avatarY;
     private int chaserX, chaserY;
@@ -41,18 +41,21 @@ public class World {
 
     private EventDispatcher eventDispatcher;
 
+    private Map<Point, ObstacleType> obstacles = new HashMap<>();
+    private boolean playerSlowed = false;
+    private long slowEffectEndTime = 0;
+
     public World() {
         this(null, SEEDDefault);
     }
 
     public World(Player player, Long seed) {
-        this.seed = seed;
-        this.player = player;
-
-        initializeWorldComponents();
+        this(player, seed, 10, 10);
     }
 
-    private void initializeWorldComponents() {
+    public World(Player player, long seed, int numConsumables, int numObstacles) {
+        this.player = player;
+        this.seed = seed;
         rooms = new ArrayList<>();
         hallways = new ArrayList<>();
         random = new Random(seed);
@@ -65,14 +68,37 @@ public class World {
         placeAvatar();
         placeChaser();
         placeDoor();
-        initializeConsumables(); // Call a method to populate the list
-        placeConsumables();
+        populateConsumables(numConsumables); // Call a method to populate the list
+        populateObstacles(numObstacles);
     }
 
-    private void initializeConsumables() {
+    private void populateConsumables(int numConsumables) {
+        NUMBER_OF_CONSUMABLES = numConsumables;
         consumables.add(new Consumable("Smiley Face", 10, Tileset.SMILEY_FACE_green_body_circle));
         consumables.add(new Consumable("Normal Face", 5, Tileset.SMILEY_FACE_green_body_rhombus));
         // consumables.add(new Consumable("Angry Face", -5, Tileset.ANGRY_FACE));
+
+        Random rand = new Random();
+
+        // Create a list of available positions from usedSpaces
+        List<Point> availablePositions = new ArrayList<>(usedSpaces);
+
+        // Filter available positions to only include floor tiles and exclude the
+        // avatar's and chaser's positions
+        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR ||
+                (point.x == avatarX && point.y == avatarY) ||
+                (point.x == chaserX && point.y == chaserY));
+
+        for (int i = 0; i < NUMBER_OF_CONSUMABLES; i++) {
+            if (availablePositions.isEmpty()) {
+                break; // Exit if there are no available positions
+            }
+            Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
+            Consumable consumable = consumables.get(rand.nextInt(consumables.size()));
+            map[position.x][position.y] = consumable.getTile();
+            consumablePositions.add(position); // Store the position of the consumable
+            availablePositions.remove(position);
+        }
     }
 
     private void placeAvatar() {
@@ -199,6 +225,12 @@ public class World {
         }
         if (newX >= 0 && newX < WIDTH && newY >= 0 && newY < HEIGHT) {
             TETile tileAtNewPosition = map[newX][newY];
+
+            Point newPos = new Point(newX, newY);
+            if (obstacles.containsKey(newPos)) {
+                handleObstacle(obstacles.get(newPos), newPos);
+                return true;
+            }
 
             // Check for consumables
             for (Consumable consumable : consumables) {
@@ -558,27 +590,7 @@ public class World {
     }
 
     private void placeConsumables() {
-        Random rand = new Random();
 
-        // Create a list of available positions from usedSpaces
-        List<Point> availablePositions = new ArrayList<>(usedSpaces);
-
-        // Filter available positions to only include floor tiles and exclude the
-        // avatar's and chaser's positions
-        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR ||
-                (point.x == avatarX && point.y == avatarY) ||
-                (point.x == chaserX && point.y == chaserY));
-
-        for (int i = 0; i < NUMBER_OF_CONSUMABLES; i++) {
-            if (availablePositions.isEmpty()) {
-                break; // Exit if there are no available positions
-            }
-            Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
-            Consumable consumable = consumables.get(rand.nextInt(consumables.size()));
-            map[position.x][position.y] = consumable.getTile();
-            consumablePositions.add(position); // Store the position of the consumable
-            availablePositions.remove(position);
-        }
     }
 
     public TETile[][] getMap() {
@@ -627,5 +639,110 @@ public class World {
 
     public EventDispatcher getEventDispatcher() {
         return eventDispatcher;
+    }
+
+    private void generateWorld(int numConsumables, int numObstacles) {
+        // Modify your existing world generation to use these parameters
+        // Add more obstacles and consumables based on the parameters
+        // This allows for increasing difficulty in higher levels
+    }
+
+    private void handleObstacle(ObstacleType obstacle, Point position) {
+        switch (obstacle) {
+            case SPIKES:
+                // Damage player and reduce points
+                player.addPoints(obstacle.getPointPenalty());
+                AudioManager.getInstance().playSound("damage");
+                eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
+                        "Ouch! Lost " + Math.abs(obstacle.getPointPenalty()) + " points!"));
+                break;
+
+            case SLOWDOWN:
+                // Apply slow effect for 5 seconds
+                playerSlowed = true;
+                slowEffectEndTime = System.currentTimeMillis() + 5000;
+                AudioManager.getInstance().playSound("slow");
+                eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
+                        "Slowed down by mud!"));
+                break;
+
+            case TELEPORTER:
+                // Random teleport
+                List<Point> validSpots = getValidTeleportLocations();
+                Point newLocation = validSpots.get(random.nextInt(validSpots.size()));
+                setAvatarToNewPosition(newLocation.x, newLocation.y);
+                AudioManager.getInstance().playSound("teleport");
+                eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
+                        "Teleported!"));
+                break;
+
+            case ICE:
+                // Slide in current direction until hitting something
+                handleIceSlide(position);
+                AudioManager.getInstance().playSound("slide");
+                eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
+                        "Sliding on ice!"));
+                break;
+        }
+    }
+
+    private void populateObstacles(int numObstacles) {
+        Random rand = new Random(seed);
+        List<Point> availablePositions = new ArrayList<>(usedSpaces);
+
+        // Filter available positions to only include floor tiles
+        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR ||
+                (point.x == avatarX && point.y == avatarY) ||
+                (point.x == chaserX && point.y == chaserY));
+
+        // Place obstacles
+        for (int i = 0; i < numObstacles; i++) {
+            if (availablePositions.isEmpty())
+                break;
+
+            Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
+            ObstacleType obstacle = ObstacleType.values()[rand.nextInt(ObstacleType.values().length)];
+
+            obstacles.put(position, obstacle);
+            map[position.x][position.y] = obstacle.getTile();
+            availablePositions.remove(position);
+        }
+    }
+
+    private List<Point> getValidTeleportLocations() {
+        List<Point> validSpots = new ArrayList<>();
+        for (int x = 0; x < WIDTH; x++) {
+            for (int y = 0; y < HEIGHT; y++) {
+                if (map[x][y] == FLOOR &&
+                        x != chaserX && y != chaserY &&
+                        !obstacles.containsKey(new Point(x, y))) {
+                    validSpots.add(new Point(x, y));
+                }
+            }
+        }
+        return validSpots;
+    }
+
+    private void handleIceSlide(Point position) {
+        // Get current movement direction
+        int dx = position.x - avatarX;
+        int dy = position.y - avatarY;
+
+        int newX = position.x;
+        int newY = position.y;
+
+        // Slide until hitting a wall or non-ice tile
+        while (newX + dx >= 0 && newX + dx < WIDTH &&
+                newY + dy >= 0 && newY + dy < HEIGHT &&
+                map[newX + dx][newY + dy] != WALL) {
+            newX += dx;
+            newY += dy;
+            if (!obstacles.containsKey(new Point(newX, newY)) ||
+                    obstacles.get(new Point(newX, newY)) != ObstacleType.ICE) {
+                break;
+            }
+        }
+
+        setAvatarToNewPosition(newX, newY);
     }
 }
