@@ -232,8 +232,6 @@ public class World {
                 obstacles.remove(newPos);
                 // Set the tile to floor
                 map[newX][newY] = FLOOR;
-                // Move the avatar to the new position
-                setAvatarToNewPosition(newX, newY);
                 return true;
             }
 
@@ -663,11 +661,17 @@ public class World {
 
             case TELEPORTER:
                 List<Point> validSpots = getValidTeleportLocations();
-                Point newLocation = validSpots.get(random.nextInt(validSpots.size()));
-                setAvatarToNewPosition(newLocation.x, newLocation.y);
-                AudioManager.getInstance().playSound("teleport");
-                eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
-                        "Teleported!"));
+                if (!validSpots.isEmpty()) { // Add check for empty list
+                    Point newLocation = validSpots.get(random.nextInt(validSpots.size()));
+                    setAvatarToNewPosition(newLocation.x, newLocation.y);
+                    AudioManager.getInstance().playSound("teleport");
+                    eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
+                            "Teleported!"));
+                } else {
+                    // Fallback if no valid spots found
+                    eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
+                            "Teleporter malfunctioned!"));
+                }
                 break;
 
             case ICE:
@@ -704,15 +708,24 @@ public class World {
 
     private List<Point> getValidTeleportLocations() {
         List<Point> validSpots = new ArrayList<>();
+
+        // Check all positions in the world
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
-                if (map[x][y] == FLOOR &&
-                        x != chaserX && y != chaserY &&
-                        !obstacles.containsKey(new Point(x, y))) {
-                    validSpots.add(new Point(x, y));
+                Point point = new Point(x, y);
+
+                // Check multiple conditions for a valid teleport location
+                if (map[x][y] == FLOOR && // Must be a floor tile
+                        !obstacles.containsKey(point) && // No obstacles
+                        !consumablePositions.contains(point) && // No consumables
+                        (Math.abs(x - chaserX) > 5 || Math.abs(y - chaserY) > 5) && // Not too close to chaser
+                        (Math.abs(x - doorX) > 3 || Math.abs(y - doorY) > 3) && // Not too close to door
+                        (x != avatarX || y != avatarY)) { // Not current position
+                    validSpots.add(point);
                 }
             }
         }
+
         return validSpots;
     }
 
