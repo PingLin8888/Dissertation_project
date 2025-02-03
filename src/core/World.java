@@ -42,8 +42,6 @@ public class World {
     private EventDispatcher eventDispatcher;
 
     private Map<Point, ObstacleType> obstacles = new HashMap<>();
-    private boolean playerSlowed = false;
-    private long slowEffectEndTime = 0;
 
     public World() {
         this(null, SEEDDefault);
@@ -215,16 +213,6 @@ public class World {
     }
 
     public boolean moveAvatar(char direction) {
-        // Check if player is slowed and the effect hasn't expired
-        if (playerSlowed && System.currentTimeMillis() < slowEffectEndTime) {
-            // When slowed, there's a 50% chance that movement will be skipped
-            if (random.nextBoolean()) {
-                eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
-                        "Movement slowed by mud!"));
-                return false;
-            }
-        }
-
         int newX = avatarX;
         int newY = avatarY;
         switch (Character.toLowerCase(direction)) {
@@ -667,24 +655,13 @@ public class World {
     private void handleObstacle(ObstacleType obstacle, Point position) {
         switch (obstacle) {
             case SPIKES:
-                // Damage player and reduce points
                 player.addPoints(obstacle.getPointPenalty());
                 AudioManager.getInstance().playSound("damage");
                 eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
                         "Ouch! Lost " + Math.abs(obstacle.getPointPenalty()) + " points!"));
                 break;
 
-            case SLOWDOWN:
-                // Apply slow effect for 5 seconds
-                playerSlowed = true;
-                slowEffectEndTime = System.currentTimeMillis() + 5000;
-                AudioManager.getInstance().playSound("slow");
-                eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
-                        "Slowed down by mud!"));
-                break;
-
             case TELEPORTER:
-                // Random teleport
                 List<Point> validSpots = getValidTeleportLocations();
                 Point newLocation = validSpots.get(random.nextInt(validSpots.size()));
                 setAvatarToNewPosition(newLocation.x, newLocation.y);
@@ -694,7 +671,6 @@ public class World {
                 break;
 
             case ICE:
-                // Slide in current direction until hitting something
                 handleIceSlide(position);
                 AudioManager.getInstance().playSound("slide");
                 eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,

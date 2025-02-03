@@ -288,9 +288,6 @@ public class GameMenu implements EventListener {
                     case SPIKES -> {
                         return "Danger ahead! Spikes will hurt you and reduce points!";
                     }
-                    case SLOWDOWN -> {
-                        return "Warning: Muddy ground ahead. It will slow you down!";
-                    }
                     case TELEPORTER -> {
                         return "A mysterious portal ahead. Where will it take you?";
                     }
