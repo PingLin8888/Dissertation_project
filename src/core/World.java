@@ -43,6 +43,8 @@ public class World {
 
     private Map<Point, ObstacleType> obstacles = new HashMap<>();
 
+    private char lastDirection;
+
     public World() {
         this(null, SEEDDefault);
     }
@@ -213,6 +215,9 @@ public class World {
     }
 
     public boolean moveAvatar(char direction) {
+        // Set the last direction before processing the move
+        lastDirection = direction;
+
         int newX = avatarX;
         int newY = avatarY;
         switch (Character.toLowerCase(direction)) {
@@ -730,25 +735,57 @@ public class World {
     }
 
     private void handleIceSlide(Point position) {
-        // Get current movement direction
-        int dx = position.x - avatarX;
-        int dy = position.y - avatarY;
+        // Get the current movement direction
+        int dx = 0;
+        int dy = 0;
+
+        // Determine the direction based on the last movement
+        switch (lastDirection) {
+            case 'w':
+                dy = 1; // Up
+                break;
+            case 's':
+                dy = -1; // Down
+                break;
+            case 'a':
+                dx = -1; // Left
+                break;
+            case 'd':
+                dx = 1; // Right
+                break;
+            default:
+                return; // Exit if no valid direction
+        }
 
         int newX = position.x;
         int newY = position.y;
 
         // Slide until hitting a wall or non-ice tile
-        while (newX + dx >= 0 && newX + dx < WIDTH &&
-                newY + dy >= 0 && newY + dy < HEIGHT &&
-                map[newX + dx][newY + dy] != WALL) {
-            newX += dx;
-            newY += dy;
-            if (!obstacles.containsKey(new Point(newX, newY)) ||
-                    obstacles.get(new Point(newX, newY)) != ObstacleType.ICE) {
-                break;
+        while (true) {
+            int nextX = newX + dx;
+            int nextY = newY + dy;
+
+            // Check bounds and walls first
+            if (nextX < 0 || nextX >= WIDTH || nextY < 0 || nextY >= HEIGHT ||
+                    map[nextX][nextY] == WALL) {
+                break; // Stop at boundaries and walls
+            }
+
+            // Move to next position if it's ice or floor
+            newX = nextX;
+            newY = nextY;
+
+
+            // Optional: Add a small delay to make the sliding visible
+            try {
+                Thread.sleep(50);
+                setAvatarToNewPosition(newX, newY);
+            } catch (InterruptedException e) {
+                // Handle interruption
             }
         }
 
+        // Final position update
         setAvatarToNewPosition(newX, newY);
     }
 
