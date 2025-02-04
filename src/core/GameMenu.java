@@ -147,7 +147,7 @@ public class GameMenu implements EventListener {
     }
 
     private void renderGameScreen() {
-        ter.renderFrame(world.getMap());
+        ter.renderFrame(world.getVisibleMap());
         updateHUD();
         if (world.isShowPath() && world.getPathToAvatar() != null) {
             drawPath();

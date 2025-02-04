@@ -45,6 +45,10 @@ public class World {
 
     private char lastDirection;
 
+    private boolean isDarkMode = false;
+    private int visionRadius = 5; // Default vision radius
+    private TETile[][] visibleMap; // For storing what player can actually see
+
     public World() {
         this(null, SEEDDefault);
     }
@@ -70,6 +74,7 @@ public class World {
         placeDoor();
         populateConsumables(numConsumables); // Call a method to populate the list
         populateObstacles(numObstacles);
+        placeTorch();
     }
 
     private void populateConsumables(int numConsumables) {
@@ -685,6 +690,10 @@ public class World {
                 eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
                         "Sliding on ice!"));
                 break;
+
+            case DARK_ROOM:
+                handleDarkRoom(position);
+                break;
         }
     }
 
@@ -697,13 +706,23 @@ public class World {
                 (point.x == avatarX && point.y == avatarY) ||
                 (point.x == chaserX && point.y == chaserY));
 
-        // Place obstacles
-        for (int i = 0; i < numObstacles; i++) {
-            if (availablePositions.isEmpty())
-                break;
+        // Ensure at least some dark rooms (20% of obstacles will be dark rooms)
+        int numDarkRooms = Math.max(1, numObstacles / 5);
 
+        // Place dark rooms first
+        for (int i = 0; i < numDarkRooms && !availablePositions.isEmpty(); i++) {
             Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
-            ObstacleType obstacle = ObstacleType.values()[rand.nextInt(ObstacleType.values().length)];
+            obstacles.put(position, ObstacleType.DARK_ROOM);
+            map[position.x][position.y] = ObstacleType.DARK_ROOM.getTile();
+            availablePositions.remove(position);
+        }
+
+        // Place other obstacles
+        for (int i = numDarkRooms; i < numObstacles && !availablePositions.isEmpty(); i++) {
+            Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
+            ObstacleType obstacle = ObstacleType.values()[rand.nextInt(ObstacleType.values().length - 1)]; // -1 to
+                                                                                                           // exclude
+                                                                                                           // DARK_ROOM
 
             obstacles.put(position, obstacle);
             map[position.x][position.y] = obstacle.getTile();
@@ -775,7 +794,6 @@ public class World {
             newX = nextX;
             newY = nextY;
 
-
             // Optional: Add a small delay to make the sliding visible
             try {
                 Thread.sleep(50);
@@ -799,5 +817,78 @@ public class World {
 
     public List<Consumable> getConsumables() {
         return consumables;
+    }
+
+    public TETile[][] getVisibleMap() {
+        if (!isDarkMode) {
+            return map;
+        }
+
+        // Create a new map filled with darkness
+        visibleMap = new TETile[WIDTH][HEIGHT];
+        for (int x = 0; x < WIDTH; x++) {
+            for (int y = 0; y < HEIGHT; y++) {
+                visibleMap[x][y] = Tileset.NOTHING; // Dark tiles
+            }
+        }
+
+        // Show only tiles within vision radius of avatar
+        for (int x = Math.max(0, avatarX - visionRadius); x < Math.min(WIDTH, avatarX + visionRadius + 1); x++) {
+            for (int y = Math.max(0, avatarY - visionRadius); y < Math.min(HEIGHT, avatarY + visionRadius + 1); y++) {
+                // Calculate distance from avatar
+                double distance = Math.sqrt(Math.pow(x - avatarX, 2) + Math.pow(y - avatarY, 2));
+                if (distance <= visionRadius) {
+                    visibleMap[x][y] = map[x][y];
+                }
+            }
+        }
+        return visibleMap;
+    }
+
+    private void handleDarkRoom(Point position) {
+        isDarkMode = true;
+        visionRadius = 3; // Severely reduced vision
+        AudioManager.getInstance().playSound("darkness");
+        eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
+                "Darkness engulfs you! Find a torch or exit to restore light!"));
+
+        // Place a torch somewhere in the visible area
+    }
+
+    private void placeTorch() {
+        Random rand = new Random();
+        List<Point> availablePositions = new ArrayList<>();
+
+        // Find positions within a certain range but not too close
+        for (int x = Math.max(0, avatarX - 10); x < Math.min(WIDTH, avatarX + 10); x++) {
+            for (int y = Math.max(0, avatarY - 10); y < Math.min(HEIGHT, avatarY + 10); y++) {
+                Point p = new Point(x, y);
+                double distance = Math.sqrt(Math.pow(x - avatarX, 2) + Math.pow(y - avatarY, 2));
+                if (map[x][y] == FLOOR && distance > 5 && distance < 10 && !obstacles.containsKey(p)) {
+                    availablePositions.add(p);
+                }
+            }
+        }
+
+        if (!availablePositions.isEmpty()) {
+            Point torchPosition = availablePositions.get(rand.nextInt(availablePositions.size()));
+            map[torchPosition.x][torchPosition.y] = Tileset.TORCH; // You'll need to add TORCH to Tileset
+            eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
+                    "A torch glimmers in the darkness..."));
+        }
+    }
+
+    public void pickupTorch() {
+        visionRadius = 7; // Increased vision with torch
+        AudioManager.getInstance().playSound("torch");
+        eventDispatcher.dispatch(new Event(Event.EventType.ITEM_PICKUP,
+                "You found a torch! Your vision improves!"));
+    }
+
+    public void exitDarkMode() {
+        isDarkMode = false;
+        visionRadius = 5; // Reset to default
+        eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_END,
+                "Light returns to the room!"));
     }
 }
