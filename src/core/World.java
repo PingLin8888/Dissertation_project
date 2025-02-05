@@ -74,7 +74,7 @@ public class World {
         placeDoor();
         populateConsumables(numConsumables); // Call a method to populate the list
         populateObstacles(numObstacles);
-        placeTorch();
+
     }
 
     private void populateConsumables(int numConsumables) {
@@ -235,12 +235,18 @@ public class World {
         if (newX >= 0 && newX < WIDTH && newY >= 0 && newY < HEIGHT) {
             TETile tileAtNewPosition = map[newX][newY];
 
+            // Check for torch pickup
+            if (tileAtNewPosition == Tileset.TORCH) {
+                pickupTorch();
+                map[newX][newY] = FLOOR; // Remove the torch after pickup
+                setAvatarToNewPosition(newX, newY);
+                return true;
+            }
+
             Point newPos = new Point(newX, newY);
             if (obstacles.containsKey(newPos)) {
                 handleObstacle(obstacles.get(newPos), newPos);
-                // Remove the obstacle after its effect is applied
                 obstacles.remove(newPos);
-                // Set the tile to floor
                 map[newX][newY] = FLOOR;
                 return true;
             }
@@ -714,6 +720,7 @@ public class World {
             Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
             obstacles.put(position, ObstacleType.DARK_ROOM);
             map[position.x][position.y] = ObstacleType.DARK_ROOM.getTile();
+
             availablePositions.remove(position);
         }
 
@@ -852,37 +859,47 @@ public class World {
         eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
                 "Darkness engulfs you! Find a torch or exit to restore light!"));
 
-        // Place a torch somewhere in the visible area
+        // Place torch near the dark room
+        placeTorchNearDarkRoom(position);
     }
 
-    private void placeTorch() {
-        Random rand = new Random();
-        List<Point> availablePositions = new ArrayList<>();
+    private void placeTorchNearDarkRoom(Point darkRoomPosition) {
+        // Define possible adjacent positions (up, down, left, right)
+        Point[] adjacentPositions = {
+                new Point(darkRoomPosition.x + 2, darkRoomPosition.y), // Right
+                new Point(darkRoomPosition.x - 2, darkRoomPosition.y), // Left
+                new Point(darkRoomPosition.x, darkRoomPosition.y + 2), // Up
+                new Point(darkRoomPosition.x, darkRoomPosition.y - 2) // Down
+        };
 
-        // Find positions within a certain range but not too close
-        for (int x = Math.max(0, avatarX - 10); x < Math.min(WIDTH, avatarX + 10); x++) {
-            for (int y = Math.max(0, avatarY - 10); y < Math.min(HEIGHT, avatarY + 10); y++) {
-                Point p = new Point(x, y);
-                double distance = Math.sqrt(Math.pow(x - avatarX, 2) + Math.pow(y - avatarY, 2));
-                if (map[x][y] == FLOOR && distance > 5 && distance < 10 && !obstacles.containsKey(p)) {
-                    availablePositions.add(p);
-                }
+        // Try to place torch in one of these positions
+        for (Point p : adjacentPositions) {
+            if (isValidTorchPosition(p)) {
+                map[p.x][p.y] = Tileset.TORCH;
+                eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
+                        "A torch glimmers nearby..."));
+                return;
             }
         }
+    }
 
-        if (!availablePositions.isEmpty()) {
-            Point torchPosition = availablePositions.get(rand.nextInt(availablePositions.size()));
-            map[torchPosition.x][torchPosition.y] = Tileset.TORCH; // You'll need to add TORCH to Tileset
-            eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
-                    "A torch glimmers in the darkness..."));
+    private boolean isValidTorchPosition(Point p) {
+        // Check if position is within bounds
+        if (p.x < 0 || p.x >= WIDTH || p.y < 0 || p.y >= HEIGHT) {
+            return false;
         }
+
+        // Check if position is a floor tile and not occupied by anything else
+        return map[p.x][p.y] == FLOOR &&
+                !obstacles.containsKey(p) &&
+                !consumablePositions.contains(p);
     }
 
     public void pickupTorch() {
-        visionRadius = 7; // Increased vision with torch
+        visionRadius = 15; // Increased from 7 to 15 for better visibility
         AudioManager.getInstance().playSound("torch");
         eventDispatcher.dispatch(new Event(Event.EventType.ITEM_PICKUP,
-                "You found a torch! Your vision improves!"));
+                "You found a torch! Your vision greatly improves!"));
     }
 
     public void exitDarkMode() {
