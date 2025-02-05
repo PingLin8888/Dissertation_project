@@ -68,9 +68,12 @@ public class Tileset {
                         "assets/images/treeLongFrozen.png" +
                                         "");
 
-        public static final TETile DARK_ROOM = new TETile('▒', Color.blue, Color.black,
-                        "dark room", "assets/images/darkPortal.png");
+        public static final TETile DARK_MODE = new TETile('▒', Color.blue, Color.black,
+                        "dark mode", "assets/images/darkPortal.png");
 
         public static final TETile TORCH = new TETile('*', Color.yellow, Color.orange,
                         "torch", "assets/images/torch.png");
+
+        public static final TETile PATH = new TETile('·', Color.red, Color.black,
+                        "danger path", "assets/images/path.png");
 }

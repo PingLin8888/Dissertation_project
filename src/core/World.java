@@ -6,6 +6,7 @@ import tileengine.Tileset;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class World {
 
@@ -48,6 +49,10 @@ public class World {
     private boolean isDarkMode = false;
     private int visionRadius = 5; // Default vision radius
     private TETile[][] visibleMap; // For storing what player can actually see
+
+    private long lastFlashTime = 0;
+    private static final long FLASH_INTERVAL = 1000; // 4 seconds in milliseconds
+    private boolean isFlashing = false;
 
     public World() {
         this(null, SEEDDefault);
@@ -238,7 +243,7 @@ public class World {
             // Check for torch pickup
             if (tileAtNewPosition == Tileset.TORCH) {
                 pickupTorch();
-                map[newX][newY] = FLOOR; // Remove the torch after pickup
+                map[newX][newY] = FLOOR;
                 setAvatarToNewPosition(newX, newY);
                 return true;
             }
@@ -398,16 +403,26 @@ public class World {
         List<Point> neighbour = new ArrayList<>();
         int x = current.x;
         int y = current.y;
-        if (x > 0 && (map[x - 1][y] == FLOOR || map[x - 1][y] == AVATAR)) {
+
+        // Helper function to check if a tile is traversable
+        Predicate<TETile> isTraversable = tile -> tile == FLOOR ||
+                tile == AVATAR ||
+                tile == Tileset.TORCH ||
+                consumables.stream().anyMatch(c -> c.getTile() == tile) ||
+                ObstacleType.values().length > 0 && Arrays.stream(ObstacleType.values())
+                        .anyMatch(o -> o.getTile() == tile);
+
+        // Check all four directions
+        if (x > 0 && isTraversable.test(map[x - 1][y])) {
             neighbour.add(new Point(x - 1, y));
         }
-        if (x < WIDTH - 1 && (map[x + 1][y] == FLOOR || map[x + 1][y] == AVATAR)) {
+        if (x < WIDTH - 1 && isTraversable.test(map[x + 1][y])) {
             neighbour.add(new Point(x + 1, y));
         }
-        if (y > 0 && (map[x][y - 1] == FLOOR || map[x][y - 1] == AVATAR)) {
+        if (y > 0 && isTraversable.test(map[x][y - 1])) {
             neighbour.add(new Point(x, y - 1));
         }
-        if (y < HEIGHT - 1 && (map[x][y + 1] == FLOOR || map[x][y + 1] == AVATAR)) {
+        if (y < HEIGHT - 1 && isTraversable.test(map[x][y + 1])) {
             neighbour.add(new Point(x, y + 1));
         }
         return neighbour;
@@ -697,7 +712,7 @@ public class World {
                         "Sliding on ice!"));
                 break;
 
-            case DARK_ROOM:
+            case DARK_MODE:
                 handleDarkRoom(position);
                 break;
         }
@@ -718,8 +733,8 @@ public class World {
         // Place dark rooms first
         for (int i = 0; i < numDarkRooms && !availablePositions.isEmpty(); i++) {
             Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
-            obstacles.put(position, ObstacleType.DARK_ROOM);
-            map[position.x][position.y] = ObstacleType.DARK_ROOM.getTile();
+            obstacles.put(position, ObstacleType.DARK_MODE);
+            map[position.x][position.y] = ObstacleType.DARK_MODE.getTile();
 
             availablePositions.remove(position);
         }
@@ -831,6 +846,14 @@ public class World {
             return map;
         }
 
+        long currentTime = System.currentTimeMillis();
+        isFlashing = (currentTime - lastFlashTime) < 500; // Flash lasts 0.5 seconds
+
+        if (currentTime - lastFlashTime >= FLASH_INTERVAL) {
+            lastFlashTime = currentTime;
+            AudioManager.getInstance().playSound("flash");
+        }
+
         // Create a new map filled with darkness
         visibleMap = new TETile[WIDTH][HEIGHT];
         for (int x = 0; x < WIDTH; x++) {
@@ -839,16 +862,35 @@ public class World {
             }
         }
 
-        // Show only tiles within vision radius of avatar
+        // Show tiles within vision radius of avatar
         for (int x = Math.max(0, avatarX - visionRadius); x < Math.min(WIDTH, avatarX + visionRadius + 1); x++) {
             for (int y = Math.max(0, avatarY - visionRadius); y < Math.min(HEIGHT, avatarY + visionRadius + 1); y++) {
-                // Calculate distance from avatar
                 double distance = Math.sqrt(Math.pow(x - avatarX, 2) + Math.pow(y - avatarY, 2));
                 if (distance <= visionRadius) {
                     visibleMap[x][y] = map[x][y];
                 }
             }
         }
+
+        // During flash, show chaser and door regardless of distance
+        if (isFlashing) {
+            // Show chaser
+            visibleMap[chaserX][chaserY] = map[chaserX][chaserY];
+
+            // Show door
+            visibleMap[doorX][doorY] = map[doorX][doorY];
+
+            // Only show path if it exists
+            if (pathToAvatar != null && !pathToAvatar.isEmpty()) {
+                for (Point p : pathToAvatar) {
+                    // Only set the path tile if it's not the chaser's position
+                    if (!(p.x == chaserX && p.y == chaserY)) {
+                        visibleMap[p.x][p.y] = Tileset.PATH;
+                    }
+                }
+            }
+        }
+
         return visibleMap;
     }
 
@@ -903,9 +945,11 @@ public class World {
     }
 
     public void exitDarkMode() {
-        isDarkMode = false;
-        visionRadius = 5; // Reset to default
-        eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_END,
-                "Light returns to the room!"));
+        if (isDarkMode) {
+            isDarkMode = false;
+            visionRadius = 5; // Reset to default
+            eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_END,
+                    "Light returns to the room!"));
+        }
     }
 }
