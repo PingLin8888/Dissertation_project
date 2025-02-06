@@ -55,21 +55,20 @@ public class Tileset {
                         Color.black,
                         "yum", "assets/images/smiley_green_body_circle.png");
         public static final TETile GRASS = new TETile(' ', Color.green, Color.black, "grass",
-                        "assets/images/platformPack_tile045.png");
+                        "assets/images/grass.png");
         public static final TETile WATER = new TETile(' ', Color.green, Color.black, "grass",
                         "assets/images/platformPack_tile005.png");
         public static final TETile SPIKES = new TETile(' ', Color.green, Color.black, "spikes",
-                        "assets/images/explosion01.png");
+                        "assets/images/grass.png");
         public static final TETile MUD = new TETile(' ', Color.green, Color.black, "mud",
                         "assets/images/bushOrange4.png");
         public static final TETile TELEPORTER = new TETile(' ', Color.green, Color.black, "PORTAL",
-                        "assets/images/houseAlt2.png");
+                        "assets/images/grass.png");
         public static final TETile ICE = new TETile(' ', Color.green, Color.black, "ICE",
-                        "assets/images/treeLongFrozen.png" +
-                                        "");
+                        "assets/images/grass.png");
 
         public static final TETile DARK_MODE = new TETile('▒', Color.blue, Color.black,
-                        "dark mode", "assets/images/darkPortal.png");
+                        "dark mode", "assets/images/grass.png");
 
         public static final TETile TORCH = new TETile('*', Color.yellow, Color.orange,
                         "torch", "assets/images/torch.png");

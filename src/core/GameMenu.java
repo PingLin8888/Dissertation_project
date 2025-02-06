@@ -508,7 +508,7 @@ public class GameMenu implements EventListener {
         StdDraw.text(40, 23, "Points earned: " + pointsEarned);
         StdDraw.text(40, 26, "Total points: " + player.getPoints());
         StdDraw.show();
-        StdDraw.pause(2000);
+        StdDraw.pause(3000);
     }
 
     private void showNewLevelMessage() {
@@ -518,7 +518,7 @@ public class GameMenu implements EventListener {
         StdDraw.text(40, 23, "Get ready!");
         StdDraw.text(40, 26, "Chaser is faster now!");
         StdDraw.show();
-        StdDraw.pause(2000);
+        StdDraw.pause(3000);
     }
 
     private void showGameCompleteMessage() {
