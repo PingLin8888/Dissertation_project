@@ -260,11 +260,8 @@ public class World {
             for (Consumable consumable : consumables) {
                 if (tileAtNewPosition == consumable.getTile()) {
                     AudioManager.getInstance().playSound("consume");
-
                     player.addPoints(consumable.getPointValue());
                     map[newX][newY] = FLOOR;
-
-                    // Dispatch the event
                     eventDispatcher.dispatch(new Event(Event.EventType.CONSUMABLE_CONSUMED,
                             "You got " + consumable.getPointValue() + " points!"));
                     break;
@@ -277,6 +274,7 @@ public class World {
                     map[newX][newY] = Tileset.UNLOCKED_DOOR; // Change to unlocked door
                 }
                 setAvatarToNewPosition(newX, newY);
+                checkObstacleProximity();
                 return true; // Move was successful
             }
         }
@@ -776,26 +774,18 @@ public class World {
     }
 
     private void handleIceSlide(Point position) {
-        // Get the current movement direction
         int dx = 0;
         int dy = 0;
 
         // Determine the direction based on the last movement
         switch (lastDirection) {
-            case 'w':
-                dy = 1; // Up
-                break;
-            case 's':
-                dy = -1; // Down
-                break;
-            case 'a':
-                dx = -1; // Left
-                break;
-            case 'd':
-                dx = 1; // Right
-                break;
-            default:
-                return; // Exit if no valid direction
+            case 'w' -> dy = 1; // Up
+            case 's' -> dy = -1; // Down
+            case 'a' -> dx = -1; // Left
+            case 'd' -> dx = 1; // Right
+            default -> {
+                return;
+            } // Exit if no valid direction
         }
 
         int newX = position.x;
@@ -809,14 +799,14 @@ public class World {
             // Check bounds and walls first
             if (nextX < 0 || nextX >= WIDTH || nextY < 0 || nextY >= HEIGHT ||
                     map[nextX][nextY] == WALL) {
-                break; // Stop at boundaries and walls
+                break;
             }
 
             // Move to next position if it's ice or floor
             newX = nextX;
             newY = nextY;
 
-            // Optional: Add a small delay to make the sliding visible
+            // Optional delay for sliding effect
             try {
                 Thread.sleep(50);
                 setAvatarToNewPosition(newX, newY);
@@ -825,8 +815,9 @@ public class World {
             }
         }
 
-        // Final position update
+        // Final position update along with checking for obstacles
         setAvatarToNewPosition(newX, newY);
+        checkObstacleProximity(); // <-- New: check proximity after sliding finishes
     }
 
     public TETile getFloorTile() {
@@ -950,6 +941,25 @@ public class World {
             visionRadius = 5; // Reset to default
             eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_END,
                     "Light returns to the room!"));
+        }
+    }
+
+    private void checkObstacleProximity() {
+        boolean isNear = false;
+        for (Point obstaclePoint : obstacles.keySet()) {
+            // We'll use Manhattan distance to check if the avatar is within 6 steps of an
+            // obstacle.
+            int distance = Math.abs(obstaclePoint.x - avatarX) + Math.abs(obstaclePoint.y - avatarY);
+            if (distance <= 4) {
+                isNear = true;
+                break;
+            }
+        }
+
+        if (isNear) {
+            AudioManager.getInstance().playSound("errie");
+        } else {
+            AudioManager.getInstance().stopSound("errie");
         }
     }
 }
