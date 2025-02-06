@@ -504,9 +504,9 @@ public class GameMenu implements EventListener {
     private void showLevelCompleteMessage(int pointsEarned) {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.text(0.5, 0.6, "Level " + currentLevel + " Complete!");
-        StdDraw.text(0.5, 0.5, "Points earned: " + pointsEarned);
-        StdDraw.text(0.5, 0.4, "Total points: " + player.getPoints());
+        StdDraw.text(40, 20, "Level " + currentLevel + " Complete!");
+        StdDraw.text(40, 23, "Points earned: " + pointsEarned);
+        StdDraw.text(40, 26, "Total points: " + player.getPoints());
         StdDraw.show();
         StdDraw.pause(2000);
     }
@@ -514,9 +514,9 @@ public class GameMenu implements EventListener {
     private void showNewLevelMessage() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.text(0.5, 0.6, "Level " + currentLevel);
-        StdDraw.text(0.5, 0.5, "Get ready!");
-        StdDraw.text(0.5, 0.4, "Chaser is faster now!");
+        StdDraw.text(40, 20, "Level " + currentLevel);
+        StdDraw.text(40, 23, "Get ready!");
+        StdDraw.text(40, 26, "Chaser is faster now!");
         StdDraw.show();
         StdDraw.pause(2000);
     }
@@ -524,9 +524,9 @@ public class GameMenu implements EventListener {
     private void showGameCompleteMessage() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.text(0.5, 0.7, "Congratulations!");
-        StdDraw.text(0.5, 0.6, "You've completed all " + MAX_LEVEL + " levels!");
-        StdDraw.text(0.5, 0.5, "Final Score: " + player.getPoints());
+        StdDraw.text(40, 20, "Congratulations!");
+        StdDraw.text(40, 23, "You've completed all " + MAX_LEVEL + " levels!");
+        StdDraw.text(40, 26, "Final Score: " + player.getPoints());
         StdDraw.show();
         StdDraw.pause(3000);
     }
