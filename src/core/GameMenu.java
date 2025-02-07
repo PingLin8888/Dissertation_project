@@ -28,7 +28,7 @@ public class GameMenu implements EventListener {
     private double prevMouseX = 0;
     private double prevMouseY = 0;
     private long lastChaserMoveTime = 0; // Variable to track the last time the chaser moved
-    private long CHASER_MOVE_INTERVAL = 5000; // Reduced interval for faster chaser movement
+    private long CHASER_MOVE_INTERVAL = 500; // Reduced interval for faster chaser movement
 
     private Player player = null;
     private Language currentLanguage = Language.ENGLISH; // Default language

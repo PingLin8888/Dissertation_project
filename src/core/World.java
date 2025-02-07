@@ -56,6 +56,8 @@ public class World {
 
     // Field to track whether the eerie sound is currently playing
     private boolean isEerieSoundPlaying = false;
+    // Field to track if the chaser sound is currently playing
+    private boolean isChaserSoundPlaying = false;
 
     public World() {
         this(null, SEEDDefault);
@@ -213,6 +215,7 @@ public class World {
         if (pathToAvatar != null && !pathToAvatar.isEmpty()) {
             Point next = pathToAvatar.getFirst();
             setChaserToNewPosition(next.x, next.y);
+            checkChaserProximity();
         }
     }
 
@@ -277,7 +280,8 @@ public class World {
                     map[newX][newY] = Tileset.UNLOCKED_DOOR; // Change to unlocked door
                 }
                 setAvatarToNewPosition(newX, newY);
-                checkObstacleProximity();
+                checkDarkModeProximity();
+                checkChaserProximity();
                 return true; // Move was successful
             }
         }
@@ -820,7 +824,7 @@ public class World {
 
         // Final position update along with checking for obstacles
         setAvatarToNewPosition(newX, newY);
-        checkObstacleProximity(); // <-- New: check proximity after sliding finishes
+        checkDarkModeProximity(); // <-- New: check proximity after sliding finishes
     }
 
     public TETile getFloorTile() {
@@ -947,7 +951,7 @@ public class World {
         }
     }
 
-    private void checkObstacleProximity() {
+    private void checkDarkModeProximity() {
         boolean isNear = false;
         // Only check dark mode obstacles
         for (Map.Entry<Point, ObstacleType> entry : obstacles.entrySet()) {
@@ -973,6 +977,24 @@ public class World {
             if (isEerieSoundPlaying) {
                 AudioManager.getInstance().fadeOutSound("eerie", 2000);
                 isEerieSoundPlaying = false;
+            }
+        }
+    }
+
+    // New method to check if the chaser is within 5 tiles of the avatar
+    private void checkChaserProximity() {
+        int distance = Math.abs(chaserX - avatarX) + Math.abs(chaserY - avatarY);
+        if (distance <= 15) {
+            // When chaser is near, play the 'chaser' sound if it's not already playing
+            if (!isChaserSoundPlaying) {
+                AudioManager.getInstance().playSound("chaser");
+                isChaserSoundPlaying = true;
+            }
+        } else {
+            // When chaser is not near, fade out the 'chaser' sound if it is playing
+            if (isChaserSoundPlaying) {
+                AudioManager.getInstance().fadeOutSound("chaser", 2000);
+                isChaserSoundPlaying = false;
             }
         }
     }
