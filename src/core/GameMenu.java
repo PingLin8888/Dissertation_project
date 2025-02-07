@@ -40,11 +40,13 @@ public class GameMenu implements EventListener {
         final String tileDescription;
         final String playerInfo;
         final String pointsInfo;
+        final String instructions;
 
-        HUDInfo(String tileDescription, String playerInfo, String pointsInfo) {
+        HUDInfo(String tileDescription, String playerInfo, String pointsInfo, String instructions) {
             this.tileDescription = tileDescription;
             this.playerInfo = playerInfo;
             this.pointsInfo = pointsInfo;
+            this.instructions = instructions;
         }
     }
 
@@ -265,13 +267,21 @@ public class GameMenu implements EventListener {
         // Get the description of the current tile
         String tileDescription = getTileDescription(currentTile);
 
+        String instructions = "Press N to restart; Press V for invisibility cure";
         // Update the HUD information
         hudCache = new HUDInfo(tileDescription,
                 "Player: " + player.getUsername(),
-                "Points: " + player.getPoints());
+                "Points: " + player.getPoints(),
+                instructions);
 
         // Render the HUD
         renderHUD();
+    }
+
+    private String getInstructions(TETile tile) {
+        // Implement the logic to determine instructions based on the tile
+        // This is a placeholder and should be replaced with the actual implementation
+        return "No instructions available for this tile.";
     }
 
     private String getTileDescription(TETile tile) {
@@ -321,9 +331,10 @@ public class GameMenu implements EventListener {
 
     private void renderHUD() {
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.textLeft(0.01, 42, hudCache.tileDescription);
         StdDraw.textLeft(0.01, 44, hudCache.playerInfo);
         StdDraw.textLeft(0.01, 43, hudCache.pointsInfo);
+        StdDraw.textLeft(0.01, 42, hudCache.tileDescription);
+        StdDraw.textLeft(0.01, 41, hudCache.instructions);
     }
 
     private Player loginOrCreateProfile() {
@@ -603,7 +614,7 @@ public class GameMenu implements EventListener {
         if (!notifications.isEmpty()) {
             Notification latestNotification = notifications.get(notifications.size() - 1);
             StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.textLeft(0.01, 41, latestNotification.getMessage());
+            StdDraw.textLeft(0.01, 40, latestNotification.getMessage());
         }
     }
 

@@ -3,6 +3,7 @@ package core;
 public class Player {
     private String username;
     private int points;
+    private boolean isInvisible = false;
 
     public Player(String username) {
         this.username = username;
@@ -34,5 +35,28 @@ public class Player {
         } else {
             return 3; // Hard
         }
+    }
+
+    public boolean isInvisible() {
+        return isInvisible;
+    }
+
+    public boolean purchaseInvisibilityCure() {
+        int cost = 50; // Cost for the cure
+        if (points >= cost && !isInvisible) {
+            points -= cost;
+            isInvisible = true;
+            // Optionally, schedule a timer to disable invisibility after a fixed duration.
+            new Thread(() -> {
+                try {
+                    Thread.sleep(5000); // invisibility lasts for 5 seconds; adjust as needed
+                } catch (InterruptedException e) {
+                    // handle interruption
+                }
+                isInvisible = false;
+            }).start();
+            return true;
+        }
+        return false;
     }
 }

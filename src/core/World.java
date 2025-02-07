@@ -211,11 +211,41 @@ public class World {
     }
 
     public void moveChaser() {
-        pathToAvatar = findPath(new Point(chaserX, chaserY), new Point(avatarX, avatarY));
-        if (pathToAvatar != null && !pathToAvatar.isEmpty()) {
-            Point next = pathToAvatar.getFirst();
-            setChaserToNewPosition(next.x, next.y);
+        if (player.isInvisible()) {
+            // In search mode: perform a random walk using adjacent tiles.
+            List<Point> neighbors = new ArrayList<>();
+            int[][] directions = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+            for (int[] d : directions) {
+                int nx = chaserX + d[0];
+                int ny = chaserY + d[1];
+                if (isWalkable(nx, ny)) {
+                    neighbors.add(new Point(nx, ny));
+                }
+            }
+            if (!neighbors.isEmpty()) {
+                Point next = neighbors.get(random.nextInt(neighbors.size()));
+                setChaserToNewPosition(next.x, next.y);
+            }
             checkChaserProximity();
+            // Check for collision after random movement.
+            if (chaserX == avatarX && chaserY == avatarY) {
+                if (!player.isInvisible()) {
+                    eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
+                }
+            }
+        } else {
+            // Normal chasing mode.
+            pathToAvatar = findPath(new Point(chaserX, chaserY), new Point(avatarX, avatarY));
+            if (pathToAvatar != null && !pathToAvatar.isEmpty()) {
+                Point next = pathToAvatar.getFirst();
+                setChaserToNewPosition(next.x, next.y);
+                checkChaserProximity();
+                if (chaserX == avatarX && chaserY == avatarY) {
+                    if (!player.isInvisible()) {
+                        eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
+                    }
+                }
+            }
         }
     }
 
@@ -245,6 +275,18 @@ public class World {
 
         if (newX >= 0 && newX < WIDTH && newY >= 0 && newY < HEIGHT) {
             TETile tileAtNewPosition = map[newX][newY];
+
+            // Handle collision with chaser:
+            if (tileAtNewPosition == CHASER) {
+                // Check if player has purchased and activated invisibility cure.
+                if (!player.isInvisible()) {
+                    // Game over handling (or penalty) if not invisible.
+                    // For example, dispatch a game over event.
+                    eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
+                    return false;
+                }
+                // else allow safe passage if invisible
+            }
 
             // Check for torch pickup
             if (tileAtNewPosition == Tileset.TORCH) {
@@ -997,5 +1039,16 @@ public class World {
                 isChaserSoundPlaying = false;
             }
         }
+    }
+
+    // Helper method to determine if a tile is walkable for the chaser.
+    private boolean isWalkable(int x, int y) {
+        if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
+            return false;
+        }
+        if (map[x][y] == WALL) {
+            return false;
+        }
+        return true;
     }
 }

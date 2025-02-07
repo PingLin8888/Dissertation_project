@@ -5,7 +5,8 @@ public class Event {
         CONSUMABLE_CONSUMED,
         OBSTACLE_HIT,
         OBSTACLE_END,
-        ITEM_PICKUP
+        ITEM_PICKUP,
+        GAME_OVER
     }
 
     private EventType type;
