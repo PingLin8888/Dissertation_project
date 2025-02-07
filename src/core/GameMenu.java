@@ -261,14 +261,20 @@ public class GameMenu implements EventListener {
     }
 
     private void updateHUD() {
+        // Update player invisibility status in case the duration has expired.
+        player.updateInvisibility();
+        // Update the avatar tile based on current invisibility state.
+        world.updateAvatarTile();
+
         // Get the current tile at the avatar's position from World
         TETile currentTile = world.getMap()[world.getAvatarX()][world.getAvatarY()];
 
-        // Get the description of the current tile
+        // Get the description of the current tile.
         String tileDescription = getTileDescription(currentTile);
 
         String instructions = "Press N to restart; Press V for invisibility cure";
-        // Update the HUD information
+        // Update the HUD information with current tile description, player info and
+        // instructions.
         hudCache = new HUDInfo(tileDescription,
                 "Player: " + player.getUsername(),
                 "Points: " + player.getPoints(),
