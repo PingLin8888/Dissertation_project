@@ -230,6 +230,7 @@ public class World {
             // Check for collision after random movement.
             if (chaserX == avatarX && chaserY == avatarY) {
                 if (!player.isInvisible()) {
+                    AudioManager.getInstance().stopSound("chaser");
                     eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
                 }
             }
@@ -242,6 +243,7 @@ public class World {
                 checkChaserProximity();
                 if (chaserX == avatarX && chaserY == avatarY) {
                     if (!player.isInvisible()) {
+                        AudioManager.getInstance().stopSound("chaser");
                         eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
                     }
                 }
@@ -280,8 +282,8 @@ public class World {
             if (tileAtNewPosition == CHASER) {
                 // Check if player has purchased and activated invisibility cure.
                 if (!player.isInvisible()) {
-                    // Game over handling (or penalty) if not invisible.
-                    // For example, dispatch a game over event.
+                    // Stop chaser sound immediately when caught.
+                    AudioManager.getInstance().stopSound("chaser");
                     eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
                     return false;
                 }
@@ -450,33 +452,21 @@ public class World {
         return null;
     }
 
-    private List<Point> getNeighbour(Point current) {
-        List<Point> neighbour = new ArrayList<>();
-        int x = current.x;
-        int y = current.y;
+    private List<Point> getNeighbour(Point p) {
+        List<Point> neighbours = new ArrayList<>();
+        int[][] directions = { { 0, 1 }, { 1, 0 }, { 0, -1 }, { -1, 0 } }; // Up, Right, Down, Left
 
-        // Helper function to check if a tile is traversable
-        Predicate<TETile> isTraversable = tile -> tile == FLOOR ||
-                tile == AVATAR ||
-                tile == Tileset.TORCH ||
-                consumables.stream().anyMatch(c -> c.getTile() == tile) ||
-                ObstacleType.values().length > 0 && Arrays.stream(ObstacleType.values())
-                        .anyMatch(o -> o.getTile() == tile);
-
-        // Check all four directions
-        if (x > 0 && isTraversable.test(map[x - 1][y])) {
-            neighbour.add(new Point(x - 1, y));
+        for (int[] d : directions) {
+            int newX = p.x + d[0];
+            int newY = p.y + d[1];
+            Point newPoint = new Point(newX, newY);
+            // Allow the neighbor if it's either walkable OR it's the avatar's position
+            if (isWalkable(newX, newY) ||
+                    (newX == avatarX && newY == avatarY)) {
+                neighbours.add(newPoint);
+            }
         }
-        if (x < WIDTH - 1 && isTraversable.test(map[x + 1][y])) {
-            neighbour.add(new Point(x + 1, y));
-        }
-        if (y > 0 && isTraversable.test(map[x][y - 1])) {
-            neighbour.add(new Point(x, y - 1));
-        }
-        if (y < HEIGHT - 1 && isTraversable.test(map[x][y + 1])) {
-            neighbour.add(new Point(x, y + 1));
-        }
-        return neighbour;
+        return neighbours;
     }
 
     private ArrayList<Point> constructPath(Map<Point, Point> comeFrom, Point current) {
@@ -487,7 +477,6 @@ public class World {
             path.add(current);
         }
         path.removeLast();
-        path.removeFirst();
         Collections.reverse(path);
         return path;
     }

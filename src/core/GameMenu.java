@@ -520,6 +520,7 @@ public class GameMenu implements EventListener {
 
     private void showLevelCompleteMessage(int pointsEarned) {
         StdDraw.clear(StdDraw.BLACK);
+        AudioManager.getInstance().stopSound("chaser"); // Stop any lingering chaser sound.
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(40, 20, "Level " + currentLevel + " Complete!");
         StdDraw.text(40, 23, "Points earned: " + pointsEarned);
@@ -540,6 +541,7 @@ public class GameMenu implements EventListener {
 
     private void showGameCompleteMessage() {
         StdDraw.clear(StdDraw.BLACK);
+        AudioManager.getInstance().stopSound("chaser"); // Stop any lingering chaser sound.
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(40, 20, "Congratulations!");
         StdDraw.text(40, 23, "You've completed all " + MAX_LEVEL + " levels!");
@@ -762,16 +764,9 @@ public class GameMenu implements EventListener {
     }
 
     private void checkChaserEncounter() {
-        if ((Math.abs(world.getChaserX() - world.getAvatarX()) == 1 &&
-                world.getChaserY() == world.getAvatarY()) ||
-                (Math.abs(world.getChaserY() - world.getAvatarY()) == 1 &&
-                        world.getChaserX() == world.getAvatarX())) {
-
+        if (world.getChaserX() == world.getAvatarX() && world.getChaserY() == world.getAvatarY()) {
             // Play game over sound
             AudioManager.getInstance().playSound("gameover");
-
-            // End the game and redirect to the post-login menu
-            System.out.println("Chaser is adjacent to the avatar! Ending game.");
 
             StdDraw.setXscale(0, 1);
             StdDraw.setYscale(0, 1);
