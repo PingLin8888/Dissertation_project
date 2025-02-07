@@ -54,6 +54,9 @@ public class World {
     private static final long FLASH_INTERVAL = 1000; // 4 seconds in milliseconds
     private boolean isFlashing = false;
 
+    // Field to track whether the eerie sound is currently playing
+    private boolean isEerieSoundPlaying = false;
+
     public World() {
         this(null, SEEDDefault);
     }
@@ -946,20 +949,31 @@ public class World {
 
     private void checkObstacleProximity() {
         boolean isNear = false;
-        for (Point obstaclePoint : obstacles.keySet()) {
-            // We'll use Manhattan distance to check if the avatar is within 6 steps of an
-            // obstacle.
-            int distance = Math.abs(obstaclePoint.x - avatarX) + Math.abs(obstaclePoint.y - avatarY);
-            if (distance <= 4) {
-                isNear = true;
-                break;
+        // Only check dark mode obstacles
+        for (Map.Entry<Point, ObstacleType> entry : obstacles.entrySet()) {
+            if (entry.getValue() == ObstacleType.DARK_MODE) {
+                int distance = Math.abs(entry.getKey().x - avatarX) + Math.abs(entry.getKey().y - avatarY);
+                if (distance <= 4) { // Adjust threshold as needed
+                    isNear = true;
+                    break;
+                }
             }
         }
 
         if (isNear) {
-            AudioManager.getInstance().playSound("errie");
+            // When avatar comes near any dark mode obstacle, start playing eerie sound if
+            // not already playing
+            if (!isEerieSoundPlaying) {
+                AudioManager.getInstance().playSound("eerie");
+                isEerieSoundPlaying = true;
+            }
         } else {
-            AudioManager.getInstance().stopSound("errie");
+            // When avatar is not near any dark mode obstacles, fade out the eerie sound if
+            // it is playing
+            if (isEerieSoundPlaying) {
+                AudioManager.getInstance().fadeOutSound("eerie", 2000);
+                isEerieSoundPlaying = false;
+            }
         }
     }
 }

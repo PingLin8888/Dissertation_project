@@ -68,7 +68,7 @@ public class Tileset {
                         "assets/images/grass.png");
 
         public static final TETile DARK_MODE = new TETile('▒', Color.blue, Color.black,
-                        "dark mode", "assets/images/grass.png");
+                        "dark mode", "assets/images/darkPortal.png");
 
         public static final TETile TORCH = new TETile('*', Color.yellow, Color.orange,
                         "torch", "assets/images/torch.png");
