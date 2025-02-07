@@ -46,6 +46,9 @@ public class Player {
         if (points >= cost && !isInvisible) {
             points -= cost;
             isInvisible = true;
+            // Immediately reduce walk volume (the caller in GameMenu already calls it,
+            // but in case of programmatic use we ensure it here as well).
+            AudioManager.getInstance().setWalkVolume(0.1f);
             // Optionally, schedule a timer to disable invisibility after a fixed duration.
             new Thread(() -> {
                 try {
@@ -54,6 +57,8 @@ public class Player {
                     // handle interruption
                 }
                 isInvisible = false;
+                // Restore normal walk volume after invisibility expires.
+                AudioManager.getInstance().setWalkVolume(0.3f);
             }).start();
             return true;
         }

@@ -726,6 +726,18 @@ public class GameMenu implements EventListener {
             world.togglePathDisplay();
         } else if (key == 'n') {
             handleRestart();
+        } else if (key == 'v') {
+            // When V is pressed, try to purchase invisibility cure.
+            if (player.purchaseInvisibilityCure()) {
+                // Update the avatar tile to reflect invisibility.
+                world.updateAvatarTile();
+                // Reduce walk sound volume.
+                AudioManager.getInstance().setWalkVolume(0.1f);
+                notifications.add(new Notification("Invisibility activated!", System.currentTimeMillis() + 2000));
+            } else {
+                notifications.add(new Notification("Cannot activate invisibility!", System.currentTimeMillis() + 2000));
+            }
+            redraw = true;
         } else if (key == 'w' || key == 'a' || key == 's' || key == 'd') {
             handleMovement(key);
         }

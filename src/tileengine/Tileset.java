@@ -22,7 +22,7 @@ import java.awt.Color;
 public class Tileset {
         public static final TETile AVATAR = new TETile(' ', Color.white, Color.black, "you",
                         "assets/images/character_femaleAdventurer_walk0.png");
-        public static final TETile AVATAR_Invisible = new TETile(' ', Color.white, Color.black, "you",
+        public static final TETile AVATAR_INVISIBLE = new TETile(' ', Color.white, Color.black, "you",
                 "assets/images/character_femaleAdventurer_duck.png");
         public static final TETile CHASER = new TETile(' ', Color.white, Color.black, "Monster",
                         "assets/images/character_zombie_idle.png");

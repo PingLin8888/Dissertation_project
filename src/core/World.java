@@ -330,11 +330,15 @@ public class World {
         return false; // Move was blocked
     }
 
-    void setAvatarToNewPosition(int newX, int newY) {
+    public void setAvatarToNewPosition(int x, int y) {
         map[avatarX][avatarY] = FLOOR;
-        avatarX = newX;
-        avatarY = newY;
-        map[avatarX][avatarY] = AVATAR;
+        avatarX = x;
+        avatarY = y;
+        if (player != null && player.isInvisible()) {
+            map[avatarX][avatarY] = Tileset.AVATAR_INVISIBLE;
+        } else {
+            map[avatarX][avatarY] = Tileset.AVATAR;
+        }
     }
 
     private void initializeWorldWithTiles() {
@@ -1050,5 +1054,15 @@ public class World {
             return false;
         }
         return true;
+    }
+
+    public void updateAvatarTile() {
+        if (player != null) {
+            if (player.isInvisible()) {
+                map[avatarX][avatarY] = Tileset.AVATAR_INVISIBLE;
+            } else {
+                map[avatarX][avatarY] = Tileset.AVATAR;
+            }
+        }
     }
 }
