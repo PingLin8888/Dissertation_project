@@ -20,10 +20,16 @@ import java.awt.Color;
  */
 
 public class Tileset {
-        public static final TETile AVATAR = new TETile(' ', Color.white, Color.black, "you",
-                        "assets/images/character_femaleAdventurer_walk0.png");
+        public static final TETile AVATAR_FRONT = new TETile(' ', Color.white, Color.black, "you",
+                        "assets/images/character_femaleAdventurer_front.png");
+        public static final TETile AVATAR_BACK = new TETile(' ', Color.white, Color.black, "you",
+                        "assets/images/character_femaleAdventurer_back.png");
+        public static final TETile AVATAR_LEFT = new TETile(' ', Color.white, Color.black, "you",
+                        "assets/images/character_femaleAdventurer_run2_left.png");
+        public static final TETile AVATAR_Right = new TETile(' ', Color.white, Color.black, "you",
+                        "assets/images/character_femaleAdventurer_run2_right.png");
         public static final TETile AVATAR_INVISIBLE = new TETile(' ', Color.white, Color.black, "you",
-                "assets/images/character_femaleAdventurer_duck.png");
+                        "assets/images/invisible.png");
         public static final TETile CHASER = new TETile(' ', Color.white, Color.black, "Monster",
                         "assets/images/character_zombie_idle.png");
         public static final TETile WALL0 = new TETile('#', new Color(216, 128, 128), Color.darkGray,
@@ -77,4 +83,6 @@ public class Tileset {
 
         public static final TETile PATH = new TETile('·', Color.red, Color.black,
                         "danger path", "assets/images/path.png");
+
+        public static final TETile AVATAR = AVATAR_FRONT; // Default avatar
 }

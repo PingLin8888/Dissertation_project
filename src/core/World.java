@@ -17,7 +17,7 @@ public class World {
     final static TETile FLOOR = Tileset.GRASS;
     final static TETile WALL = Tileset.WALL;
     final private static long SEEDDefault = 87654L;
-    final private static TETile AVATAR = Tileset.AVATAR;
+    final private static TETile AVATAR = Tileset.AVATAR_FRONT;
     final private static TETile CHASER = Tileset.CHASER;
     private int NUMBER_OF_CONSUMABLES = 10;
 
@@ -337,9 +337,28 @@ public class World {
         avatarX = x;
         avatarY = y;
         if (player != null && player.isInvisible()) {
+            // Optionally, you could also have directional invisible avatars here.
             map[avatarX][avatarY] = Tileset.AVATAR_INVISIBLE;
         } else {
-            map[avatarX][avatarY] = Tileset.AVATAR;
+            // Update the avatar tile based on the last direction moved.
+            switch (Character.toLowerCase(lastDirection)) {
+                case 'w':
+                    map[avatarX][avatarY] = Tileset.AVATAR_BACK; // Avatar facing upward
+                    break;
+                case 's':
+                    map[avatarX][avatarY] = Tileset.AVATAR_FRONT; // Avatar facing downward
+                    break;
+                case 'a':
+                    map[avatarX][avatarY] = Tileset.AVATAR_LEFT; // Avatar facing left (side view)
+                    break;
+                case 'd':
+                    map[avatarX][avatarY] = Tileset.AVATAR_Right; // Avatar facing right (side view) using updated
+                                                                  // constant
+                    break;
+                default:
+                    map[avatarX][avatarY] = Tileset.AVATAR_FRONT;
+                    break;
+            }
         }
     }
 
@@ -476,6 +495,7 @@ public class World {
             current = comeFrom.get(current);
             path.add(current);
         }
+        // Only remove the starting position (chaser's current position)
         path.removeLast();
         Collections.reverse(path);
         return path;
@@ -1050,7 +1070,24 @@ public class World {
             if (player.isInvisible()) {
                 map[avatarX][avatarY] = Tileset.AVATAR_INVISIBLE;
             } else {
-                map[avatarX][avatarY] = Tileset.AVATAR;
+                // Update the avatar tile based on the last direction moved.
+                switch (Character.toLowerCase(lastDirection)) {
+                    case 'w':
+                        map[avatarX][avatarY] = Tileset.AVATAR_BACK; // Avatar facing upward
+                        break;
+                    case 's':
+                        map[avatarX][avatarY] = Tileset.AVATAR_FRONT; // Avatar facing downward
+                        break;
+                    case 'a':
+                        map[avatarX][avatarY] = Tileset.AVATAR_LEFT; // Avatar facing left (side view)
+                        break;
+                    case 'd':
+                        map[avatarX][avatarY] = Tileset.AVATAR_Right; // Avatar facing right (side view)
+                        break;
+                    default:
+                        map[avatarX][avatarY] = Tileset.AVATAR_FRONT; // Default to front-facing
+                        break;
+                }
             }
         }
     }
