@@ -5,6 +5,7 @@ public class Player {
     private int points;
     private boolean isInvisible = false;
     private long invisibilityEndTime = 0;
+    private int avatarChoice = 0; // Default avatar
 
     public Player(String username) {
         this.username = username;
@@ -63,5 +64,13 @@ public class Player {
             // Restore normal walk volume when invisibility expires.
             AudioManager.getInstance().setWalkVolume(0.3f);
         }
+    }
+
+    public void setAvatarChoice(int choice) {
+        this.avatarChoice = choice;
+    }
+
+    public int getAvatarChoice() {
+        return avatarChoice;
     }
 }

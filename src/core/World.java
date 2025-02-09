@@ -2,6 +2,7 @@ package core;
 
 import tileengine.TETile;
 import tileengine.Tileset;
+import tileengine.AvatarTileset;
 
 import java.awt.*;
 import java.util.*;
@@ -14,10 +15,9 @@ public class World {
     final private static int WIDTH = 80;
     final private static int HEIGHT = 45;
     final private static TETile UNUSED = Tileset.NOTHING;
-    final static TETile FLOOR = Tileset.GRASS;
+    final static TETile FLOOR = Tileset.FLOOR;
     final static TETile WALL = Tileset.WALL;
     final private static long SEEDDefault = 87654L;
-    final private static TETile AVATAR = Tileset.AVATAR_FRONT;
     final private static TETile CHASER = Tileset.CHASER;
     private int NUMBER_OF_CONSUMABLES = 10;
 
@@ -70,21 +70,21 @@ public class World {
     public World(Player player, long seed, int numConsumables, int numObstacles) {
         this.player = player;
         this.seed = seed;
+        this.lastDirection = 's'; // Initialize to facing down
         rooms = new ArrayList<>();
         hallways = new ArrayList<>();
         random = new Random(seed);
         usedSpaces = new HashSet<>();
-        this.consumables = new ArrayList<>(); // Initialize the list
-        this.consumablePositions = new HashSet<>(); // Initialize the set
-        this.eventDispatcher = new EventDispatcher(); // Initialize the event dispatcher
+        this.consumables = new ArrayList<>();
+        this.consumablePositions = new HashSet<>();
+        this.eventDispatcher = new EventDispatcher();
         map = new TETile[WIDTH][HEIGHT];
         initializeWorldWithTiles();
         placeAvatar();
         placeChaser();
         placeDoor();
-        populateConsumables(numConsumables); // Call a method to populate the list
+        populateConsumables(numConsumables);
         populateObstacles(numObstacles);
-
     }
 
     private void populateConsumables(int numConsumables) {
@@ -116,19 +116,16 @@ public class World {
         }
     }
 
-    private void placeAvatar() {
-        List<Point> availablePositions = new ArrayList<>(usedSpaces); // Create a copy
-
-        // Filter available positions to only include floor tiles
+    public void placeAvatar() {
+        List<Point> availablePositions = new ArrayList<>(usedSpaces);
         availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR);
 
-        // Randomly select one of the available positions for the avatar
         if (!availablePositions.isEmpty()) {
             Random rand = new Random();
             Point randomPosition = availablePositions.get(rand.nextInt(availablePositions.size()));
             avatarX = randomPosition.x;
             avatarY = randomPosition.y;
-            map[avatarX][avatarY] = AVATAR;
+            updateAvatarTile(); // Use this instead of setting a static tile
         }
     }
 
@@ -180,7 +177,7 @@ public class World {
             boolean adjacentToNothing = false;
 
             for (Point neighbor : getAdjacentPoints(point.x, point.y)) {
-                if (map[neighbor.x][neighbor.y] == FLOOR || map[neighbor.x][neighbor.y] == AVATAR) {
+                if (map[neighbor.x][neighbor.y] == FLOOR || map[neighbor.x][neighbor.y] == map[avatarX][avatarY]) {
                     adjacentToFloorOrAvatar = true;
                 }
                 if (map[neighbor.x][neighbor.y] == UNUSED) {
@@ -332,34 +329,20 @@ public class World {
         return false; // Move was blocked
     }
 
-    public void setAvatarToNewPosition(int x, int y) {
-        map[avatarX][avatarY] = FLOOR;
-        avatarX = x;
-        avatarY = y;
-        if (player != null && player.isInvisible()) {
-            // Optionally, you could also have directional invisible avatars here.
-            map[avatarX][avatarY] = Tileset.AVATAR_INVISIBLE;
-        } else {
-            // Update the avatar tile based on the last direction moved.
-            switch (Character.toLowerCase(lastDirection)) {
-                case 'w':
-                    map[avatarX][avatarY] = Tileset.AVATAR_BACK; // Avatar facing upward
-                    break;
-                case 's':
-                    map[avatarX][avatarY] = Tileset.AVATAR_FRONT; // Avatar facing downward
-                    break;
-                case 'a':
-                    map[avatarX][avatarY] = Tileset.AVATAR_LEFT; // Avatar facing left (side view)
-                    break;
-                case 'd':
-                    map[avatarX][avatarY] = Tileset.AVATAR_Right; // Avatar facing right (side view) using updated
-                                                                  // constant
-                    break;
-                default:
-                    map[avatarX][avatarY] = Tileset.AVATAR_FRONT;
-                    break;
-            }
-        }
+    public void setAvatarToNewPosition(int newX, int newY) {
+        // Store previous position
+        int oldX = avatarX;
+        int oldY = avatarY;
+
+        // Update position
+        avatarX = newX;
+        avatarY = newY;
+
+        // Reset old position to floor
+        map[oldX][oldY] = FLOOR;
+
+        // Update avatar tile at new position based on player's choice and direction
+        updateAvatarTile();
     }
 
     private void initializeWorldWithTiles() {
@@ -788,10 +771,10 @@ public class World {
                 (point.x == chaserX && point.y == chaserY));
 
         // Ensure at least some dark rooms (20% of obstacles will be dark rooms)
-        int numDarkRooms = Math.max(1, numObstacles / 5);
+        int numDarkModeTrap = Math.max(1, numObstacles / 5);
 
         // Place dark rooms first
-        for (int i = 0; i < numDarkRooms && !availablePositions.isEmpty(); i++) {
+        for (int i = 0; i < numDarkModeTrap && !availablePositions.isEmpty(); i++) {
             Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
             obstacles.put(position, ObstacleType.DARK_MODE);
             map[position.x][position.y] = ObstacleType.DARK_MODE.getTile();
@@ -800,7 +783,7 @@ public class World {
         }
 
         // Place other obstacles
-        for (int i = numDarkRooms; i < numObstacles && !availablePositions.isEmpty(); i++) {
+        for (int i = numDarkModeTrap; i < numObstacles && !availablePositions.isEmpty(); i++) {
             Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
             ObstacleType obstacle = ObstacleType.values()[rand.nextInt(ObstacleType.values().length - 1)]; // -1 to
                                                                                                            // exclude
@@ -937,7 +920,7 @@ public class World {
             if (pathToAvatar != null && !pathToAvatar.isEmpty()) {
                 for (Point p : pathToAvatar) {
                     // Only set the path tile if it's not the chaser's position
-                    if (!((p.x == chaserX && p.y == chaserY)||(p.x == avatarX && p.y == avatarY))) {
+                    if (!((p.x == chaserX && p.y == chaserY) || (p.x == avatarX && p.y == avatarY))) {
                         visibleMap[p.x][p.y] = Tileset.PATH;
                     }
                 }
@@ -1080,25 +1063,17 @@ public class World {
     public void updateAvatarTile() {
         if (player != null) {
             if (player.isInvisible()) {
-                map[avatarX][avatarY] = Tileset.AVATAR_INVISIBLE;
+                map[avatarX][avatarY] = Tileset.INVISIBLE;
             } else {
-                // Update the avatar tile based on the last direction moved.
+                TETile[] directionalSet = AvatarTileset.DIRECTIONAL_SETS[player.getAvatarChoice()];
+
+                // Update the avatar tile based on the last direction moved
                 switch (Character.toLowerCase(lastDirection)) {
-                    case 'w':
-                        map[avatarX][avatarY] = Tileset.AVATAR_BACK; // Avatar facing upward
-                        break;
-                    case 's':
-                        map[avatarX][avatarY] = Tileset.AVATAR_FRONT; // Avatar facing downward
-                        break;
-                    case 'a':
-                        map[avatarX][avatarY] = Tileset.AVATAR_LEFT; // Avatar facing left (side view)
-                        break;
-                    case 'd':
-                        map[avatarX][avatarY] = Tileset.AVATAR_Right; // Avatar facing right (side view)
-                        break;
-                    default:
-                        map[avatarX][avatarY] = Tileset.AVATAR_FRONT; // Default to front-facing
-                        break;
+                    case 'w' -> map[avatarX][avatarY] = directionalSet[1]; // Up
+                    case 's' -> map[avatarX][avatarY] = directionalSet[0]; // Down
+                    case 'a' -> map[avatarX][avatarY] = directionalSet[2]; // Left
+                    case 'd' -> map[avatarX][avatarY] = directionalSet[3]; // Right
+                    default -> map[avatarX][avatarY] = directionalSet[0]; // Default to front
                 }
             }
         }

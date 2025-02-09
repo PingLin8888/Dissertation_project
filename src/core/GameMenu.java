@@ -5,6 +5,8 @@ import tileengine.TERenderer;
 import tileengine.TETile;
 import tileengine.Tileset;
 import utils.FileUtils;
+import tileengine.AvatarTileset;
+import tileengine.AvatarOption;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -347,11 +349,28 @@ public class GameMenu implements EventListener {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
 
-        // Use the translation for "Enter Username:"
+        // Get username first
+        String username = getUsernameInput();
+
+        // Check if player exists
+        Player loadedPlayer = PlayerStorage.loadPlayer(username);
+        if (loadedPlayer != null) {
+            return loadedPlayer;
+        }
+
+        // If new player, show avatar selection
+        int avatarChoice = showAvatarSelection();
+
+        // Create new player with selected avatar
+        Player newPlayer = new Player(username);
+        newPlayer.setAvatarChoice(avatarChoice);
+        return newPlayer;
+    }
+
+    private String getUsernameInput() {
+        StringBuilder usernameBuilder = new StringBuilder();
         StdDraw.text(0.5, 0.6, translationManager.getTranslation("enter_username"));
         StdDraw.show();
-
-        StringBuilder usernameBuilder = new StringBuilder();
 
         while (true) {
             if (StdDraw.hasNextKeyTyped()) {
@@ -359,41 +378,72 @@ public class GameMenu implements EventListener {
                 AudioManager.getInstance().playSound("menu");
 
                 if (key == '\n' || key == '\r') {
-                    break;
-                } else if (key == '\b' || key == 127) { // Backspace and Delete keys
-                    // Remove the last character if there is one
+                    if (usernameBuilder.length() > 0) {
+                        break;
+                    }
+                } else if (key == '\b' || key == 127) {
                     if (usernameBuilder.length() > 0) {
                         usernameBuilder.setLength(usernameBuilder.length() - 1);
                     }
-                } else {
-                    // Add the character if it's not a control character
-                    if (!Character.isISOControl(key)) {
-                        usernameBuilder.append(key);
-                    }
+                } else if (!Character.isISOControl(key)) {
+                    usernameBuilder.append(key);
                 }
+
+                // Redraw
+                StdDraw.clear(StdDraw.BLACK);
+                StdDraw.text(0.5, 0.6, translationManager.getTranslation("enter_username") + " " + usernameBuilder);
+                StdDraw.show();
             }
-
-            // Clear and redraw the screen with the current username input
-            StdDraw.clear(StdDraw.BLACK);
-            StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.text(0.5, 0.6, translationManager.getTranslation("enter_username") + " " + usernameBuilder);
-            StdDraw.show();
-
-            // Add a small pause to prevent excessive CPU usage
-            StdDraw.pause(80);
+            StdDraw.pause(10);
         }
+        return usernameBuilder.toString().trim();
+    }
 
-        String username = usernameBuilder.toString().trim();
-        Player loadedPlayer = PlayerStorage.loadPlayer(username);
-
+    private int showAvatarSelection() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
-        if (loadedPlayer == null) {
-            StdDraw.text(0.5, 0.5, "Creating new profile for: " + username);
-            StdDraw.show();
-            return new Player(username);
-        } else {
-            return loadedPlayer;
+
+        // Show title
+        StdDraw.text(0.5, 0.8, translationManager.getTranslation("choose_avatar"));
+        StdDraw.text(0.5, 0.75, translationManager.getTranslation("skip_selection"));
+
+        // Calculate positions for avatar display
+        double startX = 0.3;
+        double spacing = 0.4;
+        double previewY = 0.4;
+        double textY = 0.2;
+
+        // Display avatar options
+        AvatarOption[] options = AvatarTileset.AVATAR_OPTIONS;
+        for (int i = 0; i < options.length; i++) {
+            AvatarOption avatar = options[i];
+            double x = startX + (i * spacing);
+
+            // Draw preview image
+            StdDraw.picture(x, previewY, avatar.getPreviewPath());
+
+            // Draw name
+            StdDraw.setPenColor(StdDraw.WHITE);
+            StdDraw.text(x, textY, (i + 1) + ": " + avatar.getName());
+        }
+
+        StdDraw.show();
+
+        // Wait for selection
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char key = StdDraw.nextKeyTyped();
+                if (key == '\n' || key == '\r') {
+                    return 0; // Default avatar
+                }
+                int choice = Character.getNumericValue(key);
+                AvatarOption[] avatarOptions = AvatarTileset.AVATAR_OPTIONS;
+                if (choice >= 1 && choice <= avatarOptions.length) {
+                    AudioManager.getInstance().playSound("menu");
+                    return avatarOptions[choice - 1].getIndex();
+                }
+            }
+            StdDraw.pause(10);
         }
     }
 
