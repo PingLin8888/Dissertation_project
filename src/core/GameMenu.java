@@ -474,6 +474,9 @@ public class GameMenu implements EventListener {
 
     private void checkObjectiveCompletion() {
         if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
+            // Stop all ongoing sound effects
+            AudioManager.getInstance().stopSound("chaser");
+            AudioManager.getInstance().fadeOutSound("eerie", 2000);
             AudioManager.getInstance().playSound("gamePass");
 
             // Award points based on current level
@@ -540,8 +543,10 @@ public class GameMenu implements EventListener {
     }
 
     private void showGameCompleteMessage() {
+        // Stop all ongoing sound effects
+        AudioManager.getInstance().stopSound("chaser");
+        AudioManager.getInstance().fadeOutSound("eerie", 2000); // Stop eerie sound
         StdDraw.clear(StdDraw.BLACK);
-        AudioManager.getInstance().stopSound("chaser"); // Stop any lingering chaser sound.
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(40, 20, "Congratulations!");
         StdDraw.text(40, 23, "You've completed all " + MAX_LEVEL + " levels!");

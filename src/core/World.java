@@ -937,7 +937,7 @@ public class World {
             if (pathToAvatar != null && !pathToAvatar.isEmpty()) {
                 for (Point p : pathToAvatar) {
                     // Only set the path tile if it's not the chaser's position
-                    if (!(p.x == chaserX && p.y == chaserY)) {
+                    if (!((p.x == chaserX && p.y == chaserY)||(p.x == avatarX && p.y == avatarY))) {
                         visibleMap[p.x][p.y] = Tileset.PATH;
                     }
                 }
@@ -1008,11 +1008,13 @@ public class World {
 
     private void checkDarkModeProximity() {
         boolean isNear = false;
-        // Only check dark mode obstacles
+        Point avatarPos = new Point(avatarX, avatarY);
+
         for (Map.Entry<Point, ObstacleType> entry : obstacles.entrySet()) {
             if (entry.getValue() == ObstacleType.DARK_MODE) {
-                int distance = Math.abs(entry.getKey().x - avatarX) + Math.abs(entry.getKey().y - avatarY);
-                if (distance <= 4) { // Adjust threshold as needed
+                List<Point> path = findPath(avatarPos, entry.getKey());
+                // If path exists and is within threshold
+                if (path != null && path.size() <= 6) { // Adjusted threshold for path length
                     isNear = true;
                     break;
                 }
@@ -1020,15 +1022,11 @@ public class World {
         }
 
         if (isNear) {
-            // When avatar comes near any dark mode obstacle, start playing eerie sound if
-            // not already playing
             if (!isEerieSoundPlaying) {
                 AudioManager.getInstance().playSound("eerie");
                 isEerieSoundPlaying = true;
             }
         } else {
-            // When avatar is not near any dark mode obstacles, fade out the eerie sound if
-            // it is playing
             if (isEerieSoundPlaying) {
                 AudioManager.getInstance().fadeOutSound("eerie", 2000);
                 isEerieSoundPlaying = false;
@@ -1038,15 +1036,29 @@ public class World {
 
     // New method to check if the chaser is within 5 tiles of the avatar
     private void checkChaserProximity() {
-        int distance = Math.abs(chaserX - avatarX) + Math.abs(chaserY - avatarY);
-        if (distance <= 15) {
-            // When chaser is near, play the 'chaser' sound if it's not already playing
+        // Use pathfinding to get actual distance
+        List<Point> path = findPath(new Point(chaserX, chaserY), new Point(avatarX, avatarY));
+
+        // If no path exists or path is null, chaser can't reach avatar
+        if (path == null || path.isEmpty()) {
+            if (isChaserSoundPlaying) {
+                AudioManager.getInstance().fadeOutSound("chaser", 2000);
+                isChaserSoundPlaying = false;
+            }
+            return;
+        }
+
+        // Use path length as actual distance
+        int pathDistance = path.size();
+
+        // Adjust threshold based on actual path length
+        if (pathDistance <= 8) { // Reduced from 15 to 8 since path length is typically longer than direct
+                                 // distance
             if (!isChaserSoundPlaying) {
                 AudioManager.getInstance().playSound("chaser");
                 isChaserSoundPlaying = true;
             }
         } else {
-            // When chaser is not near, fade out the 'chaser' sound if it is playing
             if (isChaserSoundPlaying) {
                 AudioManager.getInstance().fadeOutSound("chaser", 2000);
                 isChaserSoundPlaying = false;
