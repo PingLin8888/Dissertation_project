@@ -11,6 +11,7 @@ import tileengine.AvatarOption;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Inspired by GPT.
@@ -233,7 +234,7 @@ public class GameMenu implements EventListener {
 
         // Reset color to white for quit option
         StdDraw.setPenColor(Color.WHITE);
-        StdDraw.text(0.5, 0.4, "C - " + translationManager.getTranslation("customize_avatar"));
+        StdDraw.text(0.5, 0.4, "C - " + translationManager.getTranslation("change_avatar"));
         StdDraw.text(0.5, 0.3, "Q - " + translationManager.getTranslation("quit"));
         StdDraw.show();
     }
@@ -527,38 +528,39 @@ public class GameMenu implements EventListener {
         if (world.moveAvatar(key)) {
             AudioManager.getInstance().playSound("walk");
             hudNeedsUpdate = true;
-        }
-        checkObjectiveCompletion();
-    }
-
-    private void checkObjectiveCompletion() {
-        if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
-            // Stop all ongoing sound effects
-            AudioManager.getInstance().stopSound("chaser");
-            AudioManager.getInstance().fadeOutSound("eerie", 2000);
-            AudioManager.getInstance().playSound("gamePass");
-
-            // Award points based on current level
-            int levelPoints = POINTS_PER_LEVEL * currentLevel;
-            player.addPoints(levelPoints);
-            hudNeedsUpdate = true;
-
-            if (currentLevel < MAX_LEVEL) {
-                // Show level completion message
-                showLevelCompleteMessage(levelPoints);
-
-                // Advance to next level
-                currentLevel++;
-                createNextLevel();
-            } else {
-                // Show game completion message
-                showGameCompleteMessage();
-
-                // Return to main menu
-                gameStarted = false;
-                currentState = GameState.MAIN_MENU;
+            if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
+                exitDoor();
             }
         }
+    }
+
+    private void exitDoor() {
+        // Stop all ongoing sound effects
+        AudioManager.getInstance().stopSound("chaser");
+        AudioManager.getInstance().fadeOutSound("eerie", 2000);
+        AudioManager.getInstance().playSound("gamePass");
+
+        // Award points based on current level
+        int levelPoints = POINTS_PER_LEVEL * currentLevel;
+        player.addPoints(levelPoints);
+        hudNeedsUpdate = true;
+
+        if (currentLevel < MAX_LEVEL) {
+            // Show level completion message
+            showLevelCompleteMessage(levelPoints);
+
+            // Advance to next level
+            currentLevel++;
+            createNextLevel();
+        } else {
+            // Show game completion message
+            showGameCompleteMessage();
+
+            // Return to main menu
+            gameStarted = false;
+            currentState = GameState.MAIN_MENU;
+        }
+
     }
 
     private void createNextLevel() {
@@ -577,10 +579,14 @@ public class GameMenu implements EventListener {
         // Show new level message
         showNewLevelMessage();
 
+        // Ensure door is locked in new level
+        world.resetDoorState();
+
         drawWorld();
     }
 
     private void showLevelCompleteMessage(int pointsEarned) {
+        cleanupGameSounds();
         StdDraw.clear(StdDraw.BLACK);
         AudioManager.getInstance().stopSound("chaser"); // Stop any lingering chaser sound.
         StdDraw.setPenColor(StdDraw.WHITE);
@@ -592,6 +598,7 @@ public class GameMenu implements EventListener {
     }
 
     private void showNewLevelMessage() {
+        cleanupGameSounds();
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(40, 20, "Level " + currentLevel);
@@ -602,9 +609,7 @@ public class GameMenu implements EventListener {
     }
 
     private void showGameCompleteMessage() {
-        // Stop all ongoing sound effects
-        AudioManager.getInstance().stopSound("chaser");
-        AudioManager.getInstance().fadeOutSound("eerie", 2000); // Stop eerie sound
+        cleanupGameSounds();
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(40, 20, "Congratulations!");
@@ -619,13 +624,13 @@ public class GameMenu implements EventListener {
             return;
         }
 
-        // Save both game state and player data
         String fileName = "game_data.txt";
         try {
             StringBuilder data = new StringBuilder();
+            // Basic game state
             data.append(player.getUsername()).append("\n");
             data.append(player.getPoints()).append("\n");
-            data.append(player.getAvatarChoice()).append("\n"); // Add avatar choice to save data
+            data.append(player.getAvatarChoice()).append("\n");
             data.append(world.getSeed()).append("\n");
             data.append(world.getAvatarX()).append("\n");
             data.append(world.getAvatarY()).append("\n");
@@ -635,13 +640,38 @@ public class GameMenu implements EventListener {
             // Save door position
             data.append(world.getDoorX()).append(",").append(world.getDoorY()).append("\n");
 
-            // Save consumables positions
-            for (Point consumable : world.getConsumablePositions()) {
-                data.append(consumable.x).append(",").append(consumable.y).append("\n");
+            // Save only remaining consumables (those that haven't been eaten)
+            List<Point> remainingConsumables = new ArrayList<>();
+            TETile[][] worldMap = world.getMap();
+            for (Point p : world.getConsumablesList()) {
+                // Only save if the consumable is still there (not eaten)
+                if (worldMap[p.x][p.y] == Tileset.SMILEY_FACE_green_body_circle ||
+                        worldMap[p.x][p.y] == Tileset.SMILEY_FACE_green_body_rhombus) {
+                    remainingConsumables.add(p);
+                }
+            }
+
+            // Save number of remaining consumables
+            data.append(remainingConsumables.size()).append("\n");
+            // Save each remaining consumable with its type
+            for (Point p : remainingConsumables) {
+                TETile tile = worldMap[p.x][p.y];
+                String type = (tile == Tileset.SMILEY_FACE_green_body_circle) ? "Smiley Face" : "Normal Face";
+                data.append(p.x).append(",").append(p.y).append(",").append(type).append("\n");
+            }
+
+            // Save obstacles
+            Map<Point, ObstacleType> obstacles = world.getObstacleMap();
+            data.append(obstacles.size()).append("\n");
+            for (Map.Entry<Point, ObstacleType> entry : obstacles.entrySet()) {
+                Point p = entry.getKey();
+                data.append(p.x).append(",")
+                        .append(p.y).append(",")
+                        .append(entry.getValue().name()).append("\n");
             }
 
             FileUtils.writeFile(fileName, data.toString());
-            PlayerStorage.savePlayer(player); // Save player data including avatar choice
+            PlayerStorage.savePlayer(player);
         } catch (Exception e) {
             System.err.println("Error saving game: " + e.getMessage());
         }
@@ -652,24 +682,55 @@ public class GameMenu implements EventListener {
         try {
             String contents = FileUtils.readFile(fileName);
             String[] lines = contents.split("\n");
+            int currentLine = 0;
 
-            String savedUsername = lines[0];
+            String savedUsername = lines[currentLine++];
             if (!savedUsername.equals(player.getUsername())) {
                 return;
             }
 
-            int points = Integer.parseInt(lines[1]);
-            // Skip loading the saved avatar choice (line[2]) and keep the current one
-            long seed = Long.parseLong(lines[3]);
+            int points = Integer.parseInt(lines[currentLine++]);
+            currentLine++; // Skip avatar choice line
+            long seed = Long.parseLong(lines[currentLine++]);
+            int avatarX = Integer.parseInt(lines[currentLine++]);
+            int avatarY = Integer.parseInt(lines[currentLine++]);
+            int chaserX = Integer.parseInt(lines[currentLine++]);
+            int chaserY = Integer.parseInt(lines[currentLine++]);
 
-            // Only update points, keep the current avatar choice
+            // Create world with seed but don't populate items yet (pass 0,0 to prevent door
+            // placement)
+            world = new World(player, seed, 0, 0);
+
+            // Set positions
+            world.setAvatarToNewPosition(avatarX, avatarY);
+            world.setChaserToNewPosition(chaserX, chaserY);
+
+            // Load door position
+            String[] doorPos = lines[currentLine++].split(",");
+            world.setDoorPosition(Integer.parseInt(doorPos[0]), Integer.parseInt(doorPos[1]));
+
+            // Load consumables
+            int numConsumables = Integer.parseInt(lines[currentLine++]);
+            for (int i = 0; i < numConsumables; i++) {
+                String[] consumableData = lines[currentLine++].split(",");
+                int x = Integer.parseInt(consumableData[0]);
+                int y = Integer.parseInt(consumableData[1]);
+                String type = consumableData[2];
+                world.addConsumable(x, y, type);
+            }
+
+            // Load obstacles
+            int numObstacles = Integer.parseInt(lines[currentLine++]);
+            for (int i = 0; i < numObstacles; i++) {
+                String[] obstacleData = lines[currentLine++].split(",");
+                int x = Integer.parseInt(obstacleData[0]);
+                int y = Integer.parseInt(obstacleData[1]);
+                ObstacleType type = ObstacleType.valueOf(obstacleData[2]);
+                world.addObstacle(x, y, type);
+            }
+
             player.setPoints(points);
-
-            world = new World(player, seed);
-            world.setAvatarToNewPosition(Integer.parseInt(lines[4]), Integer.parseInt(lines[5]));
-            world.setChaserToNewPosition(Integer.parseInt(lines[6]), Integer.parseInt(lines[7]));
             gameStarted = true;
-
             drawWorld();
         } catch (Exception e) {
             System.err.println("Error loading game: " + e.getMessage());
@@ -809,6 +870,7 @@ public class GameMenu implements EventListener {
         } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
             AudioManager.getInstance().playSound("menu");
             saveGame(player);
+            cleanupGameSounds();
             currentState = GameState.MAIN_MENU;
             redraw = true;
             quitSignBuilder.setLength(0);
@@ -889,5 +951,12 @@ public class GameMenu implements EventListener {
             return new Point(x, y);
         }
         return null;
+    }
+
+    private void cleanupGameSounds() {
+        // Stop all game-related sounds
+        AudioManager.getInstance().stopSound("chaser");
+        AudioManager.getInstance().fadeOutSound("eerie", 2000);
+        AudioManager.getInstance().stopSound("walk");
     }
 }

@@ -70,7 +70,7 @@ public class World {
     public World(Player player, long seed, int numConsumables, int numObstacles) {
         this.player = player;
         this.seed = seed;
-        this.lastDirection = 's'; // Initialize to facing down
+        this.lastDirection = 's';
         rooms = new ArrayList<>();
         hallways = new ArrayList<>();
         random = new Random(seed);
@@ -82,9 +82,12 @@ public class World {
         initializeWorldWithTiles();
         placeAvatar();
         placeChaser();
-        placeDoor();
-        populateConsumables(numConsumables);
-        populateObstacles(numObstacles);
+        // Only place door during initial world creation, not when loading
+        if (numConsumables > 0 || numObstacles > 0) { // If these are 0, we're loading a saved game
+            placeDoor();
+            populateConsumables(numConsumables);
+            populateObstacles(numObstacles);
+        }
     }
 
     private void populateConsumables(int numConsumables) {
@@ -260,18 +263,17 @@ public class World {
     }
 
     public boolean moveAvatar(char direction) {
-        // Set the last direction before processing the move
         lastDirection = direction;
-
         int newX = avatarX;
         int newY = avatarY;
         switch (Character.toLowerCase(direction)) {
             case 'w' -> newY += 1;
-            case 'a' -> newX -= 1;
             case 's' -> newY -= 1;
+            case 'a' -> newX -= 1;
             case 'd' -> newX += 1;
         }
 
+        // Check if new position is within bounds
         if (newX >= 0 && newX < WIDTH && newY >= 0 && newY < HEIGHT) {
             TETile tileAtNewPosition = map[newX][newY];
 
@@ -317,8 +319,8 @@ public class World {
 
             // If the new position is not a wall, move is successful
             if (tileAtNewPosition != WALL) {
-                if (tileAtNewPosition == Tileset.LOCKED_DOOR) {
-                    map[newX][newY] = Tileset.UNLOCKED_DOOR; // Change to unlocked door
+                if (newX == doorX && newY == doorY) {
+                    map[doorX][doorY] = Tileset.UNLOCKED_DOOR; // Change door state when avatar reaches it
                 }
                 setAvatarToNewPosition(newX, newY);
                 checkDarkModeProximity();
@@ -1076,6 +1078,51 @@ public class World {
                     default -> map[avatarX][avatarY] = directionalSet[0]; // Default to front
                 }
             }
+        }
+    }
+
+    public void addConsumable(int x, int y, String type) {
+        // Create consumable based on type
+        Consumable consumable;
+        if (type.equals("Smiley Face")) {
+            consumable = new Consumable("Smiley Face", 10, Tileset.SMILEY_FACE_green_body_circle);
+        } else {
+            consumable = new Consumable("Normal Face", 5, Tileset.SMILEY_FACE_green_body_rhombus);
+        }
+
+        // Add to lists and map
+        consumables.add(consumable);
+        consumablePositions.add(new Point(x, y));
+        map[x][y] = consumable.getTile();
+    }
+
+    public void addObstacle(int x, int y, ObstacleType type) {
+        map[x][y] = type.getTile();
+        obstacles.put(new Point(x, y), type);
+    }
+
+    public List<Point> getConsumablesList() {
+        List<Point> consumableList = new ArrayList<>();
+        for (Point p : consumablePositions) {
+            consumableList.add(p);
+        }
+        return consumableList;
+    }
+
+    public Map<Point, ObstacleType> getObstacleMap() {
+        return obstacles;
+    }
+
+    public void setDoorPosition(int x, int y) {
+        doorX = x;
+        doorY = y;
+        // Also update the map tile to show the door
+        map[x][y] = Tileset.LOCKED_DOOR;
+    }
+
+    public void resetDoorState() {
+        if (map[doorX][doorY] == Tileset.UNLOCKED_DOOR) {
+            map[doorX][doorY] = Tileset.LOCKED_DOOR;
         }
     }
 }
