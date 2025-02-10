@@ -209,19 +209,14 @@ public class GameMenu implements EventListener {
 
     private void drawPostLoginMenu(Player player) {
         StdDraw.clear(StdDraw.BLACK);
-
-        // Load a font that supports Chinese characters
         Font font = new Font("SimSun", Font.PLAIN, 24);
         StdDraw.setFont(font);
 
-        // Check if saved game exists for this player
-        hasSavedGame = checkSavedGameExists(player.getUsername());
-
-        // Draw menu items
-        StdDraw.setPenColor(Color.WHITE);
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.text(0.5, 0.9, translationManager.getTranslation("main_menu"));
         StdDraw.text(0.5, 0.8, translationManager.getTranslation("welcome", player.getUsername()));
         StdDraw.text(0.5, 0.7, translationManager.getTranslation("points", player.getPoints()));
-        StdDraw.text(0.5, 0.6, translationManager.getTranslation("new_game"));
+        StdDraw.text(0.5, 0.6, "N - " + translationManager.getTranslation("new_game"));
 
         // Set color based on whether saved game exists
         if (hasSavedGame) {
@@ -229,11 +224,12 @@ public class GameMenu implements EventListener {
         } else {
             StdDraw.setPenColor(Color.GRAY);
         }
-        StdDraw.text(0.5, 0.5, translationManager.getTranslation("load_game"));
+        StdDraw.text(0.5, 0.5, "L - " + translationManager.getTranslation("load_game"));
 
         // Reset color to white for quit option
         StdDraw.setPenColor(Color.WHITE);
-        StdDraw.text(0.5, 0.4, translationManager.getTranslation("quit"));
+        StdDraw.text(0.5, 0.4, "C - " + translationManager.getTranslation("customize_avatar"));
+        StdDraw.text(0.5, 0.3, "Q - " + translationManager.getTranslation("quit"));
         StdDraw.show();
     }
 
@@ -422,9 +418,13 @@ public class GameMenu implements EventListener {
             // Draw preview image
             StdDraw.picture(x, previewY, avatar.getPreviewPath());
 
-            // Draw name
+            // Draw name and highlight current selection if changing avatar
             StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.text(x, textY, (i + 1) + ": " + avatar.getName());
+            String label = (i + 1) + ": " + avatar.getName();
+            if (player != null && player.getAvatarChoice() == avatar.getIndex()) {
+                label += " (Current)";
+            }
+            StdDraw.text(x, textY, label);
         }
 
         StdDraw.show();
@@ -606,29 +606,34 @@ public class GameMenu implements EventListener {
     }
 
     public void saveGame(Player player) {
+        if (player == null || world == null) {
+            return;
+        }
+
         String fileName = "game_data.txt";
         try {
-            StringBuilder contents = new StringBuilder();
-            contents.append(player.getUsername()).append("\n");
-            contents.append(world.getSeed()).append("\n");
-            contents.append(world.getAvatarX()).append("\n");
-            contents.append(world.getAvatarY()).append("\n");
-            contents.append(world.getChaserX()).append("\n");
-            contents.append(world.getChaserY()).append("\n");
-            contents.append(player.getPoints()).append("\n");
+            StringBuilder data = new StringBuilder();
+            data.append(player.getUsername()).append("\n");
+            data.append(player.getPoints()).append("\n");
+            data.append(player.getAvatarChoice()).append("\n"); // Add avatar choice to save data
+            data.append(world.getSeed()).append("\n");
+            data.append(world.getAvatarX()).append("\n");
+            data.append(world.getAvatarY()).append("\n");
+            data.append(world.getChaserX()).append("\n");
+            data.append(world.getChaserY()).append("\n");
 
             // Save door position
-            contents.append(world.getDoorX()).append(",").append(world.getDoorY()).append("\n");
+            data.append(world.getDoorX()).append(",").append(world.getDoorY()).append("\n");
 
             // Save consumables positions
             for (Point consumable : world.getConsumablePositions()) {
-                contents.append(consumable.x).append(",").append(consumable.y).append("\n");
+                data.append(consumable.x).append(",").append(consumable.y).append("\n");
             }
 
-            FileUtils.writeFile(fileName, contents.toString());
+            FileUtils.writeFile(fileName, data.toString());
             PlayerStorage.savePlayer(player); // Save player data
-        } catch (RuntimeException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("Error saving game: " + e.getMessage());
         }
     }
 
@@ -638,24 +643,24 @@ public class GameMenu implements EventListener {
             String contents = FileUtils.readFile(fileName);
             String[] lines = contents.split("\n");
 
-            // Check if the saved game belongs to the current player
-            if (!lines[0].equals(player.getUsername())) {
-                // Clear the screen and display the translated message
-                StdDraw.clear(StdDraw.BLACK);
-                StdDraw.setPenColor(StdDraw.WHITE);
-                StdDraw.text(0.5, 0.5, translationManager.getTranslation("no_saved_game")); // Use the translation
-                StdDraw.show();
-                StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
+            String savedUsername = lines[0];
+            if (!savedUsername.equals(player.getUsername())) {
                 return;
             }
 
-            world = new World(player, Long.parseLong(lines[1])); // Pass the player
-            world.setAvatarToNewPosition(Integer.parseInt(lines[2]), Integer.parseInt(lines[3]));
-            world.setChaserToNewPosition(Integer.parseInt(lines[4]), Integer.parseInt(lines[5]));
+            int points = Integer.parseInt(lines[1]);
+            int avatarChoice = Integer.parseInt(lines[2]); // Load avatar choice
+            long seed = Long.parseLong(lines[3]);
+            world = new World(player, seed);
+            world.setAvatarToNewPosition(Integer.parseInt(lines[4]), Integer.parseInt(lines[5]));
+            world.setChaserToNewPosition(Integer.parseInt(lines[6]), Integer.parseInt(lines[7]));
             gameStarted = true;
+            player.setPoints(points);
+            player.setAvatarChoice(avatarChoice); // Set the loaded avatar choice
+
             drawWorld();
-        } catch (RuntimeException e) {
-            e.printStackTrace(); // Ensure exceptions are printed
+        } catch (Exception e) {
+            System.err.println("Error loading game: " + e.getMessage());
         }
     }
 
@@ -767,6 +772,15 @@ public class GameMenu implements EventListener {
                     redraw = true;
                     currentState = GameState.MAIN_MENU;
                 }
+                break;
+            case 'c': // Add case for avatar customization
+                AudioManager.getInstance().playSound("menu");
+                int newAvatarChoice = showAvatarSelection();
+                player.setAvatarChoice(newAvatarChoice);
+                if (world != null) {
+                    world.updateAvatarTile();
+                }
+                redraw = true;
                 break;
             case 'q':
                 AudioManager.getInstance().playSound("menu");

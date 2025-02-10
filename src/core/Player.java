@@ -73,4 +73,8 @@ public class Player {
     public int getAvatarChoice() {
         return avatarChoice;
     }
+
+    public void setPoints(int points) {
+        this.points = points;
+    }
 }
