@@ -216,6 +216,8 @@ public class GameMenu implements EventListener {
         hasSavedGame = checkSavedGameExists(player.getUsername());
 
         StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.setXscale(0, 1);
+        StdDraw.setYscale(0, 1);
         StdDraw.text(0.5, 0.9, translationManager.getTranslation("main_menu"));
         StdDraw.text(0.5, 0.8, translationManager.getTranslation("welcome", player.getUsername()));
         StdDraw.text(0.5, 0.7, translationManager.getTranslation("points", player.getPoints()));
@@ -807,7 +809,9 @@ public class GameMenu implements EventListener {
         } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
             AudioManager.getInstance().playSound("menu");
             saveGame(player);
-            System.exit(0);
+            currentState = GameState.MAIN_MENU;
+            redraw = true;
+            quitSignBuilder.setLength(0);
         } else if (key == 'p') {
             AudioManager.getInstance().playSound("menu");
             world.togglePathDisplay();
