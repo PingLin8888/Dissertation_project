@@ -212,6 +212,9 @@ public class GameMenu implements EventListener {
         Font font = new Font("SimSun", Font.PLAIN, 24);
         StdDraw.setFont(font);
 
+        // Check if saved game exists for this player - do this check when drawing menu
+        hasSavedGame = checkSavedGameExists(player.getUsername());
+
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(0.5, 0.9, translationManager.getTranslation("main_menu"));
         StdDraw.text(0.5, 0.8, translationManager.getTranslation("welcome", player.getUsername()));
@@ -237,9 +240,12 @@ public class GameMenu implements EventListener {
         String fileName = "game_data.txt";
         try {
             String contents = FileUtils.readFile(fileName);
+            if (contents == null || contents.trim().isEmpty()) {
+                return false;
+            }
             String[] lines = contents.split("\n");
-            return lines[0].equals(username);
-        } catch (RuntimeException e) {
+            return lines.length > 0 && lines[0].equals(username);
+        } catch (Exception e) {
             return false;
         }
     }
@@ -351,15 +357,16 @@ public class GameMenu implements EventListener {
         // Check if player exists
         Player loadedPlayer = PlayerStorage.loadPlayer(username);
         if (loadedPlayer != null) {
+            // Check for saved game when loading player
+            hasSavedGame = checkSavedGameExists(username);
             return loadedPlayer;
         }
 
         // If new player, show avatar selection
         int avatarChoice = showAvatarSelection();
-
-        // Create new player with selected avatar
         Player newPlayer = new Player(username);
         newPlayer.setAvatarChoice(avatarChoice);
+        PlayerStorage.savePlayer(newPlayer); // Save the new player with their avatar choice
         return newPlayer;
     }
 
@@ -610,6 +617,7 @@ public class GameMenu implements EventListener {
             return;
         }
 
+        // Save both game state and player data
         String fileName = "game_data.txt";
         try {
             StringBuilder data = new StringBuilder();
@@ -631,7 +639,7 @@ public class GameMenu implements EventListener {
             }
 
             FileUtils.writeFile(fileName, data.toString());
-            PlayerStorage.savePlayer(player); // Save player data
+            PlayerStorage.savePlayer(player); // Save player data including avatar choice
         } catch (Exception e) {
             System.err.println("Error saving game: " + e.getMessage());
         }
@@ -649,14 +657,16 @@ public class GameMenu implements EventListener {
             }
 
             int points = Integer.parseInt(lines[1]);
-            int avatarChoice = Integer.parseInt(lines[2]); // Load avatar choice
+            // Skip loading the saved avatar choice (line[2]) and keep the current one
             long seed = Long.parseLong(lines[3]);
+
+            // Only update points, keep the current avatar choice
+            player.setPoints(points);
+
             world = new World(player, seed);
             world.setAvatarToNewPosition(Integer.parseInt(lines[4]), Integer.parseInt(lines[5]));
             world.setChaserToNewPosition(Integer.parseInt(lines[6]), Integer.parseInt(lines[7]));
             gameStarted = true;
-            player.setPoints(points);
-            player.setAvatarChoice(avatarChoice); // Set the loaded avatar choice
 
             drawWorld();
         } catch (Exception e) {
