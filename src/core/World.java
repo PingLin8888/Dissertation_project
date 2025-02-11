@@ -66,6 +66,9 @@ public class World {
     private static final long PATH_CACHE_DURATION = 500; // 500ms cache duration
     private long lastPathCalculation = 0;
 
+    // Add a map to store tiles that are underneath the chaser
+    private TETile tileUnderChaser = FLOOR; // Initialize to FLOOR
+
     public World() {
         this(null, SEEDDefault);
     }
@@ -259,9 +262,20 @@ public class World {
     }
 
     public void setChaserToNewPosition(int x, int y) {
-        map[chaserX][chaserY] = FLOOR;
+        // Store the tile at the new position before we move there
+        TETile newPosTile = map[x][y];
+
+        // Restore the tile that was under the chaser at the old position
+        map[chaserX][chaserY] = tileUnderChaser;
+
+        // Update chaser position
         chaserX = x;
         chaserY = y;
+
+        // Remember what tile is at the new position
+        tileUnderChaser = newPosTile;
+
+        // Place chaser at new position
         map[chaserX][chaserY] = CHASER;
     }
 
