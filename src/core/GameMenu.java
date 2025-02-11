@@ -91,13 +91,20 @@ public class GameMenu implements EventListener {
         // Set initial state
         currentState = GameState.LANGUAGE_SELECT;
 
+        // Reduce frame sleep time for more responsive input
+        long lastUpdateTime = System.currentTimeMillis();
+        final long FRAME_TIME = 16; // Target ~60 FPS
+
         while (true) {
+            long currentTime = System.currentTimeMillis();
+            long deltaTime = currentTime - lastUpdateTime;
+
             // Handle input
             boolean inputHandled = handleInput();
             boolean mouseMoved = detectMouseMove();
             boolean chaserMoved = false;
 
-            // Update game state
+            // Update game state using deltaTime
             if (currentState == GameState.IN_GAME) {
                 chaserMoved = updateChaser();
             }
@@ -107,7 +114,13 @@ public class GameMenu implements EventListener {
                 render();
             }
 
-            Thread.sleep(16); // Cap at ~60 FPS
+            // Calculate sleep time to maintain consistent frame rate
+            long sleepTime = Math.max(0, FRAME_TIME - (System.currentTimeMillis() - currentTime));
+            if (sleepTime > 0) {
+                Thread.sleep(sleepTime);
+            }
+
+            lastUpdateTime = currentTime;
         }
     }
 
@@ -168,19 +181,22 @@ public class GameMenu implements EventListener {
         char key = Character.toLowerCase(StdDraw.nextKeyTyped());
         redraw = true;
 
-        switch (currentState) {
-            case LANGUAGE_SELECT:
-                handleLanguageSelection(key);
-                break;
-            case LOGIN:
-                handleLoginInput(key);
-                break;
-            case MAIN_MENU:
-                handleMainMenuInput(key);
-                break;
-            case IN_GAME:
-                handleGameInput(key);
-                break;
+        // Handle movement keys first for faster response
+        if (currentState == GameState.IN_GAME) {
+            switch (key) {
+                case 'w', 'a', 's', 'd' -> {
+                    handleMovement(key);
+                    return true;
+                }
+            }
+            handleGameInput(key);
+        } else {
+            // Handle other states...
+            switch (currentState) {
+                case LANGUAGE_SELECT -> handleLanguageSelection(key);
+                case LOGIN -> handleLoginInput(key);
+                case MAIN_MENU -> handleMainMenuInput(key);
+            }
         }
         return true;
     }

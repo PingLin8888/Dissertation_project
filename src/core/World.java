@@ -59,6 +59,13 @@ public class World {
     // Field to track if the chaser sound is currently playing
     private boolean isChaserSoundPlaying = false;
 
+    private long lastProximityCheck = 0;
+
+    // Optimize path finding by caching results
+    private Map<String, ArrayList<Point>> pathCache = new HashMap<>();
+    private static final long PATH_CACHE_DURATION = 500; // 500ms cache duration
+    private long lastPathCalculation = 0;
+
     public World() {
         this(null, SEEDDefault);
     }
@@ -266,6 +273,8 @@ public class World {
         lastDirection = direction;
         int newX = avatarX;
         int newY = avatarY;
+
+        // Quick bounds and wall check first
         switch (Character.toLowerCase(direction)) {
             case 'w' -> newY += 1;
             case 's' -> newY -= 1;
@@ -273,62 +282,54 @@ public class World {
             case 'd' -> newX += 1;
         }
 
-        // Check if new position is within bounds
-        if (newX >= 0 && newX < WIDTH && newY >= 0 && newY < HEIGHT) {
-            TETile tileAtNewPosition = map[newX][newY];
-
-            // Handle collision with chaser:
-            if (tileAtNewPosition == CHASER) {
-                // Check if player has purchased and activated invisibility cure.
-                if (!player.isInvisible()) {
-                    // Stop chaser sound immediately when caught.
-                    AudioManager.getInstance().stopSound("chaser");
-                    eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
-                    return false;
-                }
-                // else allow safe passage if invisible
-            }
-
-            // Check for torch pickup
-            if (tileAtNewPosition == Tileset.TORCH) {
-                pickupTorch();
-                map[newX][newY] = FLOOR;
-                setAvatarToNewPosition(newX, newY);
-                return true;
-            }
-
-            Point newPos = new Point(newX, newY);
-            if (obstacles.containsKey(newPos)) {
-                handleObstacle(obstacles.get(newPos), newPos);
-                obstacles.remove(newPos);
-                map[newX][newY] = FLOOR;
-                return true;
-            }
-
-            // Check for consumables
-            for (Consumable consumable : consumables) {
-                if (tileAtNewPosition == consumable.getTile()) {
-                    AudioManager.getInstance().playSound("consume");
-                    player.addPoints(consumable.getPointValue());
-                    map[newX][newY] = FLOOR;
-                    eventDispatcher.dispatch(new Event(Event.EventType.CONSUMABLE_CONSUMED,
-                            "You got " + consumable.getPointValue() + " points!"));
-                    break;
-                }
-            }
-
-            // If the new position is not a wall, move is successful
-            if (tileAtNewPosition != WALL) {
-                if (newX == doorX && newY == doorY) {
-                    map[doorX][doorY] = Tileset.UNLOCKED_DOOR; // Change door state when avatar reaches it
-                }
-                setAvatarToNewPosition(newX, newY);
-                checkDarkModeProximity();
-                checkChaserProximity();
-                return true; // Move was successful
-            }
+        // Early exit if movement is blocked
+        if (newX < 0 || newX >= WIDTH || newY < 0 || newY >= HEIGHT || map[newX][newY] == WALL) {
+            return false;
         }
-        return false; // Move was blocked
+
+        TETile tileAtNewPosition = map[newX][newY];
+
+        // Handle collision with chaser first
+        if (tileAtNewPosition == CHASER && !player.isInvisible()) {
+            AudioManager.getInstance().stopSound("chaser");
+            eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
+            return false;
+        }
+
+        // Cache obstacle at new position
+        Point newPos = new Point(newX, newY);
+        ObstacleType obstacle = obstacles.get(newPos);
+
+        // Move avatar first for responsive feel
+        setAvatarToNewPosition(newX, newY);
+
+        // Handle special tiles after movement
+        if (obstacle != null) {
+            handleObstacle(obstacle, newPos);
+            obstacles.remove(newPos);
+            map[newX][newY] = FLOOR;
+        } else if (consumablePositions.contains(newPos)) {
+            handleConsumable(newPos, tileAtNewPosition);
+        }
+
+        if (tileAtNewPosition == Tileset.TORCH) {
+            pickupTorch();
+            map[newX][newY] = FLOOR;
+        }
+
+        // Check if reached door
+        if (newX == doorX && newY == doorY) {
+            map[doorX][doorY] = Tileset.UNLOCKED_DOOR;
+        }
+
+        // Perform proximity checks less frequently
+        if (System.currentTimeMillis() - lastProximityCheck > 100) {
+            checkDarkModeProximity();
+            checkChaserProximity();
+            lastProximityCheck = System.currentTimeMillis();
+        }
+
+        return true;
     }
 
     public void setAvatarToNewPosition(int newX, int newY) {
@@ -420,6 +421,15 @@ public class World {
     }
 
     private ArrayList<Point> findPath(Point start, Point goal) {
+        long currentTime = System.currentTimeMillis();
+
+        // Check cache first
+        String cacheKey = start.x + "," + start.y + ":" + goal.x + "," + goal.y;
+        if (pathCache.containsKey(cacheKey) && currentTime - lastPathCalculation < PATH_CACHE_DURATION) {
+            return new ArrayList<>(pathCache.get(cacheKey)); // Convert List to ArrayList
+        }
+
+        // Original path finding logic
         Map<Point, Double> gScore = new HashMap<>();
         PriorityQueue<Point> openSet = new PriorityQueue<>(
                 Comparator.comparingDouble(p -> gScore.getOrDefault(p, Double.POSITIVE_INFINITY)));
@@ -431,7 +441,11 @@ public class World {
         while (!openSet.isEmpty()) {
             Point current = openSet.poll();
             if (current.equals(goal)) {
-                return constructPath(comeFrom, current);
+                ArrayList<Point> path = constructPath(comeFrom, current);
+                // Store in cache
+                pathCache.put(cacheKey, new ArrayList<>(path));
+                lastPathCalculation = currentTime;
+                return path;
             }
 
             closedSet.add(current);
@@ -1123,6 +1137,21 @@ public class World {
     public void resetDoorState() {
         if (map[doorX][doorY] == Tileset.UNLOCKED_DOOR) {
             map[doorX][doorY] = Tileset.LOCKED_DOOR;
+        }
+    }
+
+    // Add this method to handle consumables
+    private void handleConsumable(Point pos, TETile tileAtPosition) {
+        for (Consumable consumable : consumables) {
+            if (tileAtPosition == consumable.getTile()) {
+                AudioManager.getInstance().playSound("consume");
+                player.addPoints(consumable.getPointValue());
+                map[pos.x][pos.y] = FLOOR;
+                eventDispatcher.dispatch(new Event(Event.EventType.CONSUMABLE_CONSUMED,
+                        "You got " + consumable.getPointValue() + " points!"));
+                consumablePositions.remove(pos);
+                break;
+            }
         }
     }
 }
