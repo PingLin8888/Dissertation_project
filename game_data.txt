@@ -1,30 +1,31 @@
 p
 9970
 1
-23
-67
-5
-19
-25
-45,20
-10
-21,27,Smiley Face
-27,42,Normal Face
-11,25,Smiley Face
-10,25,Smiley Face
-33,13,Smiley Face
-11,32,Smiley Face
-54,32,Smiley Face
-25,27,Smiley Face
-42,24,Normal Face
-13,25,Normal Face
+1739630116058
+61
+11
+32
 9
-41,13,ICE
-53,33,TELEPORTER
-12,34,DARK_MODE
-52,15,SPIKES
-37,24,ICE
-10,33,SPIKES
-32,10,TELEPORTER
-53,14,SPIKES
-41,11,SPIKES
+60,11
+10
+22,7,Smiley Face
+62,10,Smiley Face
+22,8,Normal Face
+41,20,Normal Face
+39,21,Normal Face
+66,39,Normal Face
+64,37,Smiley Face
+40,22,Normal Face
+37,19,Smiley Face
+62,8,Smiley Face
+10
+61,36,TELEPORTER
+59,37,TELEPORTER
+65,13,ICE
+42,20,DARK_MODE
+37,21,ICE
+42,18,DARK_MODE
+65,10,TELEPORTER
+66,40,ICE
+66,9,ICE
+42,22,ICE

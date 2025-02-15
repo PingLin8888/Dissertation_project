@@ -218,9 +218,6 @@ public class GameMenu implements EventListener {
         StdDraw.enableDoubleBuffering();
     }
 
-
-
-
     private void setDrawColor(Color color) {
         StdDraw.setPenColor(color);
     }
@@ -245,12 +242,10 @@ public class GameMenu implements EventListener {
         Font font = new Font("SimSun", Font.PLAIN, 24);
         StdDraw.setFont(font);
 
-        // Check if saved game exists for this player - do this check when drawing menu
-        hasSavedGame = checkSavedGameExists(player.getUsername());
-
-        StdDraw.text(40, 26, translationManager.getTranslation("main_menu"));
-        StdDraw.text(40, 24, translationManager.getTranslation("welcome", player.getUsername()));
-        StdDraw.text(40, 22, translationManager.getTranslation("points", player.getPoints()));
+        // More spread out menu items with consistent spacing
+        StdDraw.text(40, 35, translationManager.getTranslation("main_menu"));
+        StdDraw.text(40, 30, translationManager.getTranslation("welcome", player.getUsername()));
+        StdDraw.text(40, 25, translationManager.getTranslation("points", player.getPoints()));
         StdDraw.text(40, 20, "N - " + translationManager.getTranslation("new_game"));
 
         // Set color based on whether saved game exists
@@ -259,10 +254,13 @@ public class GameMenu implements EventListener {
         } else {
             StdDraw.setPenColor(Color.GRAY);
         }
-        StdDraw.text(40, 18, "L - " + translationManager.getTranslation("load_game"));
-        // Reset color to white for quit option
-        StdDraw.text(40, 16, "C - " + translationManager.getTranslation("change_avatar"));
-        StdDraw.text(40, 14, "Q - " + translationManager.getTranslation("quit"));
+        StdDraw.text(40, 15, "L - " + translationManager.getTranslation("load_game"));
+
+        // Reset color to white for remaining options
+        StdDraw.setPenColor(Color.WHITE);
+        StdDraw.text(40, 10, "C - " + translationManager.getTranslation("change_avatar"));
+        StdDraw.text(40, 5, "Q - " + translationManager.getTranslation("quit"));
+
         StdDraw.show();
     }
 
@@ -370,10 +368,11 @@ public class GameMenu implements EventListener {
     }
 
     private void renderHUD() {
-        StdDraw.textLeft(0.01, 44, hudCache.playerInfo);
-        StdDraw.textLeft(0.01, 43, hudCache.pointsInfo);
-        StdDraw.textLeft(0.01, 42, hudCache.tileDescription);
-        StdDraw.textLeft(0.01, 41, hudCache.instructions);
+        // Spread out HUD elements with better spacing
+        StdDraw.textLeft(2, 42, hudCache.playerInfo);
+        StdDraw.textLeft(2, 40, hudCache.pointsInfo);
+        StdDraw.textLeft(2, 38, hudCache.tileDescription);
+        StdDraw.textLeft(2, 36, hudCache.instructions);
     }
 
     private Player loginOrCreateProfile() {
@@ -433,8 +432,8 @@ public class GameMenu implements EventListener {
 
     private int showAvatarSelection() {
         StdDraw.clear(StdDraw.BLACK);
-        StdDraw.text(40, 24, translationManager.getTranslation("choose_avatar"));
-        StdDraw.text(40, 22, translationManager.getTranslation("skip_selection"));
+        StdDraw.text(40, 30, translationManager.getTranslation("choose_avatar"));
+        StdDraw.text(40, 25, translationManager.getTranslation("skip_selection"));
 
         // Calculate positions for avatar display
         // Adjust coordinates to match the 80x45 scale
@@ -633,9 +632,13 @@ public class GameMenu implements EventListener {
         cleanupGameSounds();
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.text(40, 20, "Congratulations!");
-        StdDraw.text(40, 23, "You've completed all " + MAX_LEVEL + " levels!");
-        StdDraw.text(40, 26, "Final Score: " + player.getPoints());
+
+        // Center the completion message with good spacing
+        StdDraw.text(40, 30, "Congratulations!");
+        StdDraw.text(40, 25, "You've completed all " + MAX_LEVEL + " levels!");
+        StdDraw.text(40, 20, "Final Score: " + player.getPoints());
+        StdDraw.text(40, 15, "Press any key to continue");
+
         StdDraw.show();
         StdDraw.pause(3000);
     }
@@ -990,10 +993,11 @@ public class GameMenu implements EventListener {
         Font font = new Font("SimSun", Font.PLAIN, 24);
         StdDraw.setFont(font);
 
-        StdDraw.text(40, 28, translationManager.getTranslation("game_paused"));
-        StdDraw.text(40, 26, translationManager.getTranslation("press_p_resume"));
-        StdDraw.text(40, 24, translationManager.getTranslation("press_n_restart"));
-        StdDraw.text(40, 22, ":Q - " + translationManager.getTranslation("save_and_quit"));
+        // Increased vertical spacing between lines
+        StdDraw.text(40, 35, translationManager.getTranslation("game_paused"));
+        StdDraw.text(40, 28, translationManager.getTranslation("press_p_resume"));
+        StdDraw.text(40, 21, translationManager.getTranslation("press_n_restart"));
+        StdDraw.text(40, 14, ":Q - " + translationManager.getTranslation("save_and_quit"));
 
         StdDraw.show();
     }
