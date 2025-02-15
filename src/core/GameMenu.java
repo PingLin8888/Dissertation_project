@@ -75,6 +75,9 @@ public class GameMenu implements EventListener {
     // Add these fields to GameMenu class
     private char lastDirection = 's'; // Default facing down
 
+    // Add new field
+    private boolean isPaused = false;
+
     public GameMenu() {
         initializeTranslations();
     }
@@ -149,7 +152,9 @@ public class GameMenu implements EventListener {
                 drawPostLoginMenu(player);
                 break;
             case IN_GAME:
-                renderGameScreen();
+                if (!isPaused) {
+                    renderGameScreen();
+                }
                 break;
         }
 
@@ -159,9 +164,11 @@ public class GameMenu implements EventListener {
 
     private void renderLanguageSelect() {
         StdDraw.setPenColor(Color.WHITE);
-        StdDraw.text(0.5, 0.6, "Select Language");
-        StdDraw.text(0.5, 0.5, "Press E for English");
-        StdDraw.text(0.5, 0.4, "按 'C' 选择中文");
+        StdDraw.setXscale(0, world.getWIDTH());
+        StdDraw.setYscale(0, world.getHEIGHT());
+        StdDraw.text(40, 26, "Select Language");
+        StdDraw.text(40, 24, "Press E for English");
+        StdDraw.text(40, 22, "按 'C' 选择中文");
     }
 
     private void renderGameScreen() {
@@ -170,6 +177,7 @@ public class GameMenu implements EventListener {
         if (world.isShowPath() && world.getPathToAvatar() != null) {
             drawPath();
         }
+        StdDraw.show();
         renderNotifications();
     }
 
@@ -217,8 +225,10 @@ public class GameMenu implements EventListener {
         StdDraw.setPenColor(Color.WHITE);
         String loginText = translationManager.getTranslation("login");
         String quitText = translationManager.getTranslation("quit");
-        StdDraw.text(0.5, 0.65, loginText);
-        StdDraw.text(0.5, 0.5, quitText);
+        StdDraw.setXscale(0, world.getWIDTH());
+        StdDraw.setYscale(0, world.getHEIGHT());
+        StdDraw.text(40, 24, loginText);
+        StdDraw.text(40, 22, quitText);
 
         // Show the back buffer
         StdDraw.show();
@@ -233,12 +243,12 @@ public class GameMenu implements EventListener {
         hasSavedGame = checkSavedGameExists(player.getUsername());
 
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.setXscale(0, 1);
-        StdDraw.setYscale(0, 1);
-        StdDraw.text(0.5, 0.9, translationManager.getTranslation("main_menu"));
-        StdDraw.text(0.5, 0.8, translationManager.getTranslation("welcome", player.getUsername()));
-        StdDraw.text(0.5, 0.7, translationManager.getTranslation("points", player.getPoints()));
-        StdDraw.text(0.5, 0.6, "N - " + translationManager.getTranslation("new_game"));
+        StdDraw.setXscale(0, world.getWIDTH());
+        StdDraw.setYscale(0, world.getHEIGHT());
+        StdDraw.text(40, 26, translationManager.getTranslation("main_menu"));
+        StdDraw.text(40, 24, translationManager.getTranslation("welcome", player.getUsername()));
+        StdDraw.text(40, 22, translationManager.getTranslation("points", player.getPoints()));
+        StdDraw.text(40, 20, "N - " + translationManager.getTranslation("new_game"));
 
         // Set color based on whether saved game exists
         if (hasSavedGame) {
@@ -246,12 +256,13 @@ public class GameMenu implements EventListener {
         } else {
             StdDraw.setPenColor(Color.GRAY);
         }
-        StdDraw.text(0.5, 0.5, "L - " + translationManager.getTranslation("load_game"));
-
+        StdDraw.text(40, 18, "L - " + translationManager.getTranslation("load_game"));
+        StdDraw.setXscale(0, world.getWIDTH());
+        StdDraw.setYscale(0, world.getHEIGHT());
         // Reset color to white for quit option
         StdDraw.setPenColor(Color.WHITE);
-        StdDraw.text(0.5, 0.4, "C - " + translationManager.getTranslation("change_avatar"));
-        StdDraw.text(0.5, 0.3, "Q - " + translationManager.getTranslation("quit"));
+        StdDraw.text(40, 16, "C - " + translationManager.getTranslation("change_avatar"));
+        StdDraw.text(40, 14, "Q - " + translationManager.getTranslation("quit"));
         StdDraw.show();
     }
 
@@ -360,6 +371,8 @@ public class GameMenu implements EventListener {
 
     private void renderHUD() {
         StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.setXscale(0, world.getWIDTH());
+        StdDraw.setYscale(0, world.getHEIGHT());
         StdDraw.textLeft(0.01, 44, hudCache.playerInfo);
         StdDraw.textLeft(0.01, 43, hudCache.pointsInfo);
         StdDraw.textLeft(0.01, 42, hudCache.tileDescription);
@@ -391,7 +404,9 @@ public class GameMenu implements EventListener {
 
     private String getUsernameInput() {
         StringBuilder usernameBuilder = new StringBuilder();
-        StdDraw.text(0.5, 0.6, translationManager.getTranslation("enter_username"));
+        StdDraw.setXscale(0, world.getWIDTH());
+        StdDraw.setYscale(0, world.getHEIGHT());
+        StdDraw.text(40, 24, translationManager.getTranslation("enter_username"));
         StdDraw.show();
 
         while (true) {
@@ -413,7 +428,7 @@ public class GameMenu implements EventListener {
 
                 // Redraw
                 StdDraw.clear(StdDraw.BLACK);
-                StdDraw.text(0.5, 0.6, translationManager.getTranslation("enter_username") + " " + usernameBuilder);
+                StdDraw.text(40, 24, translationManager.getTranslation("enter_username") + " " + usernameBuilder);
                 StdDraw.show();
             }
             StdDraw.pause(10);
@@ -424,16 +439,19 @@ public class GameMenu implements EventListener {
     private int showAvatarSelection() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.setXscale(0, world.getWIDTH());
+        StdDraw.setYscale(0, world.getHEIGHT());
 
         // Show title
-        StdDraw.text(0.5, 0.8, translationManager.getTranslation("choose_avatar"));
-        StdDraw.text(0.5, 0.75, translationManager.getTranslation("skip_selection"));
+        StdDraw.text(40, 24, translationManager.getTranslation("choose_avatar"));
+        StdDraw.text(40, 22, translationManager.getTranslation("skip_selection"));
 
         // Calculate positions for avatar display
-        double startX = 0.3;
-        double spacing = 0.4;
-        double previewY = 0.4;
-        double textY = 0.2;
+        // Adjust coordinates to match the 80x45 scale
+        double startX = 24; // 30% of 80 ≈ 24
+        double spacing = 32; // 40% of 80 = 32
+        double previewY = 18; // 40% of 45 = 18
+        double textY = 9; // 20% of 45 = 9
 
         // Display avatar options
         AvatarOption[] options = AvatarTileset.AVATAR_OPTIONS;
@@ -476,10 +494,12 @@ public class GameMenu implements EventListener {
     private void createNewGame() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.setXscale(0, world.getWIDTH());
+        StdDraw.setYscale(0, world.getHEIGHT());
 
         // Use the translation for "Enter seed for world generation or press R for a
         // random world:"
-        StdDraw.text(0.5, 0.6, translationManager.getTranslation("enter_seed"));
+        StdDraw.text(40, 24, translationManager.getTranslation("enter_seed"));
         StdDraw.show();
 
         StringBuilder seedInput = new StringBuilder();
@@ -496,7 +516,7 @@ public class GameMenu implements EventListener {
                     seedInput.append(key);
                     StdDraw.clear(StdDraw.BLACK);
                     StdDraw.setPenColor(StdDraw.WHITE);
-                    StdDraw.text(0.5, 0.6, translationManager.getTranslation("enter_seed") + " " + seedInput);
+                    StdDraw.text(40, 24, translationManager.getTranslation("enter_seed") + " " + seedInput);
                     StdDraw.show();
                 } else if (key == '\n' || key == '\r') {
                     System.out.println("Seed entered: " + seedInput.toString());
@@ -778,10 +798,10 @@ public class GameMenu implements EventListener {
     private void handleRestart() throws InterruptedException {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
-        StdDraw.setXscale(0, 1);
-        StdDraw.setYscale(0, 1);
-        StdDraw.text(0.5, 0.6, translationManager.getTranslation("restart_confirm"));
-        StdDraw.text(0.5, 0.5, translationManager.getTranslation("restart_options"));
+        StdDraw.setXscale(0, world.getWIDTH());
+        StdDraw.setYscale(0, world.getHEIGHT());
+        StdDraw.text(40, 24, translationManager.getTranslation("restart_confirm"));
+        StdDraw.text(40, 22, translationManager.getTranslation("restart_options"));
         StdDraw.show();
 
         // Wait for user confirmation
@@ -853,7 +873,9 @@ public class GameMenu implements EventListener {
                     // Show no saved game message
                     StdDraw.clear(StdDraw.BLACK);
                     StdDraw.setPenColor(StdDraw.WHITE);
-                    StdDraw.text(0.5, 0.5, translationManager.getTranslation("no_saved_game"));
+                    StdDraw.setXscale(0, world.getWIDTH());
+                    StdDraw.setYscale(0, world.getHEIGHT());
+                    StdDraw.text(40, 24, translationManager.getTranslation("no_saved_game"));
                     StdDraw.show();
                     StdDraw.pause(2000);
 
@@ -891,24 +913,37 @@ public class GameMenu implements EventListener {
             redraw = true;
             quitSignBuilder.setLength(0);
         } else if (key == 'p') {
+            // Toggle pause state
+            isPaused = !isPaused;
             AudioManager.getInstance().playSound("menu");
-            world.togglePathDisplay();
-        } else if (key == 'n') {
-            handleRestart();
-        } else if (key == 'v') {
-            // When V is pressed, try to purchase invisibility cure.
-            if (player.purchaseInvisibilityCure()) {
-                // Update the avatar tile to reflect invisibility.
-                world.updateAvatarTile();
-                // Reduce walk sound volume.
-                AudioManager.getInstance().setWalkVolume(0.1f);
-                notifications.add(new Notification("Invisibility activated!", System.currentTimeMillis() + 2000));
+            if (isPaused) {
+                // Pause all game sounds
+                AudioManager.getInstance().stopSound("chaser");
+                AudioManager.getInstance().stopSound("eerie");
+                drawPauseMenu();
             } else {
-                notifications.add(new Notification("Cannot activate invisibility!", System.currentTimeMillis() + 2000));
+                // Resume game, redraw game screen
+                redraw = true;
             }
-            redraw = true;
-        } else if (key == 'w' || key == 'a' || key == 's' || key == 'd') {
-            handleMovement(key);
+        } else if (!isPaused) { // Only process other inputs if not paused
+            if (key == 'n') {
+                handleRestart();
+            } else if (key == 'v') {
+                // When V is pressed, try to purchase invisibility cure.
+                if (player.purchaseInvisibilityCure()) {
+                    // Update the avatar tile to reflect invisibility.
+                    world.updateAvatarTile();
+                    // Reduce walk sound volume.
+                    AudioManager.getInstance().setWalkVolume(0.1f);
+                    notifications.add(new Notification("Invisibility activated!", System.currentTimeMillis() + 2000));
+                } else {
+                    notifications
+                            .add(new Notification("Cannot activate invisibility!", System.currentTimeMillis() + 2000));
+                }
+                redraw = true;
+            } else if (key == 'w' || key == 'a' || key == 's' || key == 'd') {
+                handleMovement(key);
+            }
         }
     }
 
@@ -935,7 +970,9 @@ public class GameMenu implements EventListener {
             // Clear the screen and display the message
             StdDraw.clear(StdDraw.BLACK);
             StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.text(0.5, 0.5, translationManager.getTranslation("game_over"));
+            StdDraw.setXscale(0, world.getWIDTH());
+            StdDraw.setYscale(0, world.getHEIGHT());
+            StdDraw.text(40, 24, translationManager.getTranslation("game_over"));
             StdDraw.show();
             StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
 
@@ -974,5 +1011,22 @@ public class GameMenu implements EventListener {
         AudioManager.getInstance().stopSound("chaser");
         AudioManager.getInstance().fadeOutSound("eerie", 2000);
         AudioManager.getInstance().stopSound("walk");
+    }
+
+    // Add new method to draw pause menu
+    private void drawPauseMenu() {
+        StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(StdDraw.WHITE);
+        Font font = new Font("SimSun", Font.PLAIN, 24);
+        StdDraw.setFont(font);
+        StdDraw.setXscale(0, world.getWIDTH());
+        StdDraw.setYscale(0, world.getHEIGHT());
+
+        StdDraw.text(40, 28, translationManager.getTranslation("game_paused"));
+        StdDraw.text(40, 26, translationManager.getTranslation("press_p_resume"));
+        StdDraw.text(40, 24, translationManager.getTranslation("press_n_restart"));
+        StdDraw.text(40, 22, ":Q - " + translationManager.getTranslation("save_and_quit"));
+
+        StdDraw.show();
     }
 }

@@ -7,13 +7,12 @@ import tileengine.AvatarTileset;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
-import java.util.function.Predicate;
 
 public class World {
 
     // build your own world!
-    final private static int WIDTH = 80;
-    final private static int HEIGHT = 45;
+    static int WIDTH = 80;
+    static int HEIGHT = 45;
     final private static TETile UNUSED = Tileset.NOTHING;
     final static TETile FLOOR = Tileset.FLOOR;
     final static TETile WALL = Tileset.WALL;
@@ -1167,5 +1166,12 @@ public class World {
                 break;
             }
         }
+    }
+    public static int getHEIGHT() {
+        return HEIGHT;
+    }
+
+    public static int getWIDTH() {
+        return WIDTH;
     }
 }
