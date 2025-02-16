@@ -994,12 +994,16 @@ public class GameMenu implements EventListener {
                     currentState = GameState.MAIN_MENU;
                 }
                 break;
-            case 'c': // Add case for avatar customization
+            case 'c': // Avatar customization
                 AudioManager.getInstance().playSound("menu");
                 int newAvatarChoice = showAvatarSelection();
                 player.setAvatarChoice(newAvatarChoice);
                 if (world != null) {
                     world.updateAvatarTile();
+                }
+                // Save game after avatar change to persist the choice
+                if (hasSavedGame) {
+                    saveGame(player);
                 }
                 redraw = true;
                 break;
