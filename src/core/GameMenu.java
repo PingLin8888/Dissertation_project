@@ -494,19 +494,43 @@ public class GameMenu implements EventListener {
         // Get username first
         String username = getUsernameInput();
 
-        // Check if player exists
-        Player loadedPlayer = PlayerStorage.loadPlayer(username);
-        if (loadedPlayer != null) {
-            // Check for saved game when loading player
-            hasSavedGame = checkSavedGameExists(username);
-            return loadedPlayer;
+        // Check if save file exists
+        String saveFile = SAVES_DIR + "/" + username + SAVE_FILE_SUFFIX;
+        if (new File(saveFile).exists()) {
+            try {
+                // Load basic player info from save file
+                String contents = FileUtils.readFile(saveFile);
+                String[] lines = contents.split("\n");
+
+                // Verify username
+                if (!lines[0].equals(username)) {
+                    return createNewPlayer(username);
+                }
+
+                // Load player data from first few lines of save file
+                int points = Integer.parseInt(lines[1]);
+                int avatarChoice = Integer.parseInt(lines[2]);
+
+                Player player = new Player(username, points);
+                player.setAvatarChoice(avatarChoice);
+                hasSavedGame = true;
+                return player;
+
+            } catch (Exception e) {
+                System.err.println("Error loading player data: " + e.getMessage());
+                return createNewPlayer(username);
+            }
         }
 
+        return createNewPlayer(username);
+    }
+
+    private Player createNewPlayer(String username) {
         // If new player, show avatar selection
         int avatarChoice = showAvatarSelection();
         Player newPlayer = new Player(username);
         newPlayer.setAvatarChoice(avatarChoice);
-        PlayerStorage.savePlayer(newPlayer); // Save the new player with their avatar choice
+        hasSavedGame = false;
         return newPlayer;
     }
 
