@@ -79,10 +79,11 @@ public class GameMenu implements EventListener {
     private boolean isPaused = false;
 
     // Add these fields at the top of GameMenu class
-    private List<MenuText> menuItems = new ArrayList<>();
+    private List<AnimatedMenuItem> menuItems = new ArrayList<>();
     private boolean animationInProgress = false;
 
-    private class MenuText {
+    // Replace both AnimatedText and MenuText with this unified class
+    private class AnimatedMenuItem {
         String text;
         double y;
         double targetY;
@@ -90,37 +91,31 @@ public class GameMenu implements EventListener {
         boolean isLoadGame;
         private long startTime;
 
-        MenuText(String text, double targetY, boolean isLoadGame, long delayMs) { // Added delayMs
+        AnimatedMenuItem(String text, double targetY, boolean isLoadGame, long delayMs) {
             this.text = text;
             this.targetY = targetY;
-            this.y = targetY - 20; // Increased offset for more dramatic effect
+            this.y = targetY - 20; // Start below target
             this.isLoadGame = isLoadGame;
-            this.startTime = System.currentTimeMillis() + delayMs; // Add delay to start time
+            this.startTime = System.currentTimeMillis() + delayMs;
         }
 
         void update() {
-            // Don't start animating until it's this item's turn
             if (System.currentTimeMillis() < startTime) {
                 return;
             }
 
-            // Calculate how long this item has been animating (in seconds)
             double elapsed = (System.currentTimeMillis() - startTime) / 1000.0;
-
-            // Animation takes 0.5 seconds
             double progress = Math.min(1.0, elapsed / 0.5);
-
-            // Smooth out the animation using easing
             double ease = 1 - Math.pow(1 - progress, 3);
 
-            // Update position and transparency
             y = targetY - (20 * (1 - ease));
             alpha = ease;
         }
 
         void draw() {
-            Font menuFont = new Font("SimSun", Font.PLAIN, 24);
-            StdDraw.setFont(menuFont);
+            // Use consistent font across all menus
+//            Font menuFont = new Font("SimSun", Font.PLAIN, 24);
+//            StdDraw.setFont(menuFont);
 
             // Draw shadow with current transparency
             Color shadowColor = new Color(0, 0, 0, (float) alpha);
@@ -138,6 +133,10 @@ public class GameMenu implements EventListener {
             StdDraw.text(40, y, text);
         }
     }
+
+    // Update the menu item lists to use the new class
+    private List<AnimatedMenuItem> languageMenuItems = new ArrayList<>();
+    private List<AnimatedMenuItem> loginMenuItems = new ArrayList<>();
 
     public GameMenu() {
         initializeTranslations();
@@ -230,12 +229,27 @@ public class GameMenu implements EventListener {
     }
 
     private void renderLanguageSelect() {
-        // No need to setup drawing here, already done in render()
-        StdDraw.setPenColor(Color.white);
+        if (languageMenuItems.isEmpty()) {
+            double startY = 35;
+            double spacing = 5;
+            long baseDelay = 0;
+            long delayIncrement = 200;
 
-        StdDraw.text(40, 26, "Select Language");
-        StdDraw.text(40, 24, "Press E for English");
-        StdDraw.text(40, 22, "按 'C' 选择中文");
+            languageMenuItems.add(new AnimatedMenuItem("Select Language", startY, false, baseDelay));
+            languageMenuItems.add(new AnimatedMenuItem("Press E for English",
+                    startY - spacing, false, baseDelay + delayIncrement));
+            languageMenuItems.add(new AnimatedMenuItem("按 'C' 选择中文",
+                    startY - spacing * 2, false, baseDelay + delayIncrement * 2));
+        }
+
+        StdDraw.clear(new Color(0.1f, 0.1f, 0.1f));
+
+        for (AnimatedMenuItem item : languageMenuItems) {
+            item.update();
+            item.draw();
+        }
+
+        StdDraw.show();
     }
 
     private void renderGameScreen() {
@@ -291,18 +305,25 @@ public class GameMenu implements EventListener {
     }
 
     private void drawLoginMenu() {
-        // Load a font that supports Chinese characters
-        Font font = new Font("SimSun", Font.PLAIN, 24);
-        StdDraw.setFont(font);
-        StdDraw.setPenColor(Color.white);
+        if (loginMenuItems.isEmpty()) {
+            double startY = 35;
+            double spacing = 5;
+            long baseDelay = 0;
+            long delayIncrement = 200;
 
-        // Draw everything to the back buffer
-        String loginText = translationManager.getTranslation("login");
-        String quitText = translationManager.getTranslation("quit");
-        StdDraw.text(40, 24, loginText);
-        StdDraw.text(40, 22, quitText);
+            loginMenuItems.add(new AnimatedMenuItem(translationManager.getTranslation("login"),
+                    startY, false, baseDelay));
+            loginMenuItems.add(new AnimatedMenuItem(translationManager.getTranslation("quit"),
+                    startY - spacing, false, baseDelay + delayIncrement));
+        }
 
-        // Show the back buffer
+        StdDraw.clear(new Color(0.1f, 0.1f, 0.1f));
+
+        for (AnimatedMenuItem item : loginMenuItems) {
+            item.update();
+            item.draw();
+        }
+
         StdDraw.show();
     }
 
@@ -314,26 +335,26 @@ public class GameMenu implements EventListener {
             long delayIncrement = 100; // Each item appears 100ms after the previous
 
             // Add menu items with staggered delays
-            menuItems.add(new MenuText(translationManager.getTranslation("main_menu"),
+            menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("main_menu"),
                     startY, false, baseDelay));
-            menuItems.add(new MenuText(translationManager.getTranslation("welcome", player.getUsername()),
+            menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("welcome", player.getUsername()),
                     startY - spacing, false, baseDelay + delayIncrement));
-            menuItems.add(new MenuText(translationManager.getTranslation("points", player.getPoints()),
+            menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("points", player.getPoints()),
                     startY - spacing * 2, false, baseDelay + delayIncrement * 2));
-            menuItems.add(new MenuText("N - " + translationManager.getTranslation("new_game"),
+            menuItems.add(new AnimatedMenuItem("N - " + translationManager.getTranslation("new_game"),
                     startY - spacing * 3, false, baseDelay + delayIncrement * 3));
-            menuItems.add(new MenuText("L - " + translationManager.getTranslation("load_game"),
+            menuItems.add(new AnimatedMenuItem("L - " + translationManager.getTranslation("load_game"),
                     startY - spacing * 4, true, baseDelay + delayIncrement * 4));
-            menuItems.add(new MenuText("C - " + translationManager.getTranslation("change_avatar"),
+            menuItems.add(new AnimatedMenuItem("C - " + translationManager.getTranslation("change_avatar"),
                     startY - spacing * 5, false, baseDelay + delayIncrement * 5));
-            menuItems.add(new MenuText("Q - " + translationManager.getTranslation("quit"),
+            menuItems.add(new AnimatedMenuItem("Q - " + translationManager.getTranslation("quit"),
                     startY - spacing * 6, false, baseDelay + delayIncrement * 6));
         }
 
         StdDraw.clear(new Color(0.1f, 0.1f, 0.1f));
 
         // Update and draw all items
-        for (MenuText item : menuItems) {
+        for (AnimatedMenuItem item : menuItems) {
             item.update();
             item.draw();
         }
@@ -899,11 +920,13 @@ public class GameMenu implements EventListener {
             AudioManager.getInstance().playSound("menu");
             currentLanguage = Language.ENGLISH;
             currentState = GameState.LOGIN;
+            languageMenuItems.clear(); // Clear animations
             initializeTranslations();
         } else if (key == 'c') {
             AudioManager.getInstance().playSound("menu");
             currentLanguage = Language.CHINESE;
             currentState = GameState.LOGIN;
+            languageMenuItems.clear(); // Clear animations
             initializeTranslations();
         }
     }
