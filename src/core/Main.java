@@ -13,7 +13,5 @@ public class Main {
         // main menu with options. navigate via keyboard
         GameMenu gameMenu = new GameMenu();
         gameMenu.createGameMenu();
-        // GameInterface gameInterface = new GameInterface();
-        // gameInterface.launch();
     }
 }

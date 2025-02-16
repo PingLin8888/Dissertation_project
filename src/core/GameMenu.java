@@ -78,6 +78,67 @@ public class GameMenu implements EventListener {
     // Add new field
     private boolean isPaused = false;
 
+    // Add these fields at the top of GameMenu class
+    private List<MenuText> menuItems = new ArrayList<>();
+    private boolean animationInProgress = false;
+
+    private class MenuText {
+        String text;
+        double y;
+        double targetY;
+        double alpha = 0;
+        boolean isLoadGame;
+        private long startTime;
+
+        MenuText(String text, double targetY, boolean isLoadGame, long delayMs) { // Added delayMs
+            this.text = text;
+            this.targetY = targetY;
+            this.y = targetY - 20; // Increased offset for more dramatic effect
+            this.isLoadGame = isLoadGame;
+            this.startTime = System.currentTimeMillis() + delayMs; // Add delay to start time
+        }
+
+        void update() {
+            // Don't start animating until it's this item's turn
+            if (System.currentTimeMillis() < startTime) {
+                return;
+            }
+
+            // Calculate how long this item has been animating (in seconds)
+            double elapsed = (System.currentTimeMillis() - startTime) / 1000.0;
+
+            // Animation takes 0.5 seconds
+            double progress = Math.min(1.0, elapsed / 0.5);
+
+            // Smooth out the animation using easing
+            double ease = 1 - Math.pow(1 - progress, 3);
+
+            // Update position and transparency
+            y = targetY - (20 * (1 - ease));
+            alpha = ease;
+        }
+
+        void draw() {
+            Font menuFont = new Font("SimSun", Font.PLAIN, 24);
+            StdDraw.setFont(menuFont);
+
+            // Draw shadow with current transparency
+            Color shadowColor = new Color(0, 0, 0, (float) alpha);
+            StdDraw.setPenColor(shadowColor);
+            StdDraw.text(40.2, y - 0.2, text);
+
+            // Draw main text with current transparency
+            Color textColor;
+            if (isLoadGame && !hasSavedGame) {
+                textColor = new Color(0.5f, 0.5f, 0.5f, (float) alpha);
+            } else {
+                textColor = new Color(1f, 1f, 1f, (float) alpha);
+            }
+            StdDraw.setPenColor(textColor);
+            StdDraw.text(40, y, text);
+        }
+    }
+
     public GameMenu() {
         initializeTranslations();
     }
@@ -101,18 +162,23 @@ public class GameMenu implements EventListener {
             long currentTime = System.currentTimeMillis();
             long deltaTime = currentTime - lastUpdateTime;
 
+            // Always update and render when in menu states
+            boolean needsRender = currentState == GameState.MAIN_MENU ||
+                    currentState == GameState.LANGUAGE_SELECT ||
+                    currentState == GameState.LOGIN;
+
             // Handle input
             boolean inputHandled = handleInput();
-            boolean mouseMoved = detectMouseMove();
             boolean chaserMoved = false;
 
             // Update game state using deltaTime
             if (currentState == GameState.IN_GAME) {
                 chaserMoved = updateChaser();
+                needsRender = inputHandled || chaserMoved || detectMouseMove();
             }
 
             // Render if needed
-            if (redraw || inputHandled || mouseMoved || chaserMoved) {
+            if (needsRender || redraw) {
                 render();
             }
 
@@ -165,6 +231,8 @@ public class GameMenu implements EventListener {
 
     private void renderLanguageSelect() {
         // No need to setup drawing here, already done in render()
+        StdDraw.setPenColor(Color.white);
+
         StdDraw.text(40, 26, "Select Language");
         StdDraw.text(40, 24, "Press E for English");
         StdDraw.text(40, 22, "按 'C' 选择中文");
@@ -226,6 +294,7 @@ public class GameMenu implements EventListener {
         // Load a font that supports Chinese characters
         Font font = new Font("SimSun", Font.PLAIN, 24);
         StdDraw.setFont(font);
+        StdDraw.setPenColor(Color.white);
 
         // Draw everything to the back buffer
         String loginText = translationManager.getTranslation("login");
@@ -238,28 +307,36 @@ public class GameMenu implements EventListener {
     }
 
     private void drawPostLoginMenu(Player player) {
-        StdDraw.clear(StdDraw.BLACK);
-        Font font = new Font("SimSun", Font.PLAIN, 24);
-        StdDraw.setFont(font);
+        if (menuItems.isEmpty()) { // Only initialize once
+            double startY = 42;
+            double spacing = 4;
+            long baseDelay = 0; // Start of animations
+            long delayIncrement = 100; // Each item appears 100ms after the previous
 
-        // More spread out menu items with consistent spacing
-        StdDraw.text(40, 35, translationManager.getTranslation("main_menu"));
-        StdDraw.text(40, 30, translationManager.getTranslation("welcome", player.getUsername()));
-        StdDraw.text(40, 25, translationManager.getTranslation("points", player.getPoints()));
-        StdDraw.text(40, 20, "N - " + translationManager.getTranslation("new_game"));
-
-        // Set color based on whether saved game exists
-        if (hasSavedGame) {
-            StdDraw.setPenColor(Color.WHITE);
-        } else {
-            StdDraw.setPenColor(Color.GRAY);
+            // Add menu items with staggered delays
+            menuItems.add(new MenuText(translationManager.getTranslation("main_menu"),
+                    startY, false, baseDelay));
+            menuItems.add(new MenuText(translationManager.getTranslation("welcome", player.getUsername()),
+                    startY - spacing, false, baseDelay + delayIncrement));
+            menuItems.add(new MenuText(translationManager.getTranslation("points", player.getPoints()),
+                    startY - spacing * 2, false, baseDelay + delayIncrement * 2));
+            menuItems.add(new MenuText("N - " + translationManager.getTranslation("new_game"),
+                    startY - spacing * 3, false, baseDelay + delayIncrement * 3));
+            menuItems.add(new MenuText("L - " + translationManager.getTranslation("load_game"),
+                    startY - spacing * 4, true, baseDelay + delayIncrement * 4));
+            menuItems.add(new MenuText("C - " + translationManager.getTranslation("change_avatar"),
+                    startY - spacing * 5, false, baseDelay + delayIncrement * 5));
+            menuItems.add(new MenuText("Q - " + translationManager.getTranslation("quit"),
+                    startY - spacing * 6, false, baseDelay + delayIncrement * 6));
         }
-        StdDraw.text(40, 15, "L - " + translationManager.getTranslation("load_game"));
 
-        // Reset color to white for remaining options
-        StdDraw.setPenColor(Color.WHITE);
-        StdDraw.text(40, 10, "C - " + translationManager.getTranslation("change_avatar"));
-        StdDraw.text(40, 5, "Q - " + translationManager.getTranslation("quit"));
+        StdDraw.clear(new Color(0.1f, 0.1f, 0.1f));
+
+        // Update and draw all items
+        for (MenuText item : menuItems) {
+            item.update();
+            item.draw();
+        }
 
         StdDraw.show();
     }
@@ -369,10 +446,11 @@ public class GameMenu implements EventListener {
 
     private void renderHUD() {
         // Spread out HUD elements with better spacing
-        StdDraw.textLeft(2, 42, hudCache.playerInfo);
-        StdDraw.textLeft(2, 40, hudCache.pointsInfo);
-        StdDraw.textLeft(2, 38, hudCache.tileDescription);
-        StdDraw.textLeft(2, 36, hudCache.instructions);
+        StdDraw.setPenColor(Color.white);
+        StdDraw.textLeft(0.1, 44, hudCache.playerInfo);
+        StdDraw.textLeft(0.1, 43, hudCache.pointsInfo);
+        StdDraw.textLeft(0.1, 42, hudCache.tileDescription);
+        StdDraw.text(40, 44, hudCache.instructions);
     }
 
     private Player loginOrCreateProfile() {
@@ -399,6 +477,7 @@ public class GameMenu implements EventListener {
     }
 
     private String getUsernameInput() {
+        StdDraw.setPenColor(Color.white);
         StringBuilder usernameBuilder = new StringBuilder();
         StdDraw.text(40, 24, translationManager.getTranslation("enter_username"));
         StdDraw.show();
@@ -432,6 +511,7 @@ public class GameMenu implements EventListener {
 
     private int showAvatarSelection() {
         StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(Color.white);
         StdDraw.text(40, 30, translationManager.getTranslation("choose_avatar"));
         StdDraw.text(40, 25, translationManager.getTranslation("skip_selection"));
 
@@ -482,6 +562,7 @@ public class GameMenu implements EventListener {
 
     private void createNewGame() {
         StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(Color.white);
 
         StdDraw.text(40, 24, translationManager.getTranslation("enter_seed"));
         StdDraw.show();
@@ -779,7 +860,7 @@ public class GameMenu implements EventListener {
         if (!notifications.isEmpty()) {
             Notification latestNotification = notifications.get(notifications.size() - 1);
             StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.textLeft(0.01, 40, latestNotification.getMessage());
+            StdDraw.textLeft(0.01, 41, latestNotification.getMessage());
         }
     }
 
@@ -842,8 +923,11 @@ public class GameMenu implements EventListener {
     }
 
     private void handleMainMenuInput(char key) {
+        StdDraw.setPenColor(Color.white);
+
         switch (key) {
             case 'n':
+                menuItems.clear(); // Clear menu items when leaving menu
                 AudioManager.getInstance().playSound("menu");
                 createNewGame();
                 AudioManager.getInstance().playSound("gamestart");
@@ -945,8 +1029,9 @@ public class GameMenu implements EventListener {
         if (world.getChaserX() == world.getAvatarX() && world.getChaserY() == world.getAvatarY()) {
             // Play game over sound
             AudioManager.getInstance().playSound("gameover");
-
+            StdDraw.clear(StdDraw.BLACK);
             // Clear the screen and display the message
+            StdDraw.setPenColor(Color.white);
             StdDraw.text(40, 24, translationManager.getTranslation("game_over"));
             StdDraw.show();
             StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
@@ -992,6 +1077,7 @@ public class GameMenu implements EventListener {
     private void drawPauseMenu() {
         Font font = new Font("SimSun", Font.PLAIN, 24);
         StdDraw.setFont(font);
+        StdDraw.setPenColor(Color.white);
 
         // Increased vertical spacing between lines
         StdDraw.text(40, 35, translationManager.getTranslation("game_paused"));
