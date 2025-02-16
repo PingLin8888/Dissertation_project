@@ -12,6 +12,12 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Date;
 
 /**
  * Inspired by GPT.
@@ -138,6 +144,14 @@ public class GameMenu implements EventListener {
     private List<AnimatedMenuItem> languageMenuItems = new ArrayList<>();
     private List<AnimatedMenuItem> loginMenuItems = new ArrayList<>();
 
+    // Add these constants at the top of GameMenu class
+    private static final String SAVES_DIR = "saves";
+    private static final String AUTO_SAVE_PREFIX = "auto_";
+    private static final String SAVE_FILE_SUFFIX = "_save.txt";
+    private static final int MAX_AUTO_SAVES = 3;
+    private static final long AUTO_SAVE_INTERVAL = 300000; // 5 minutes in milliseconds
+    private long lastAutoSaveTime = 0;
+
     public GameMenu() {
         initializeTranslations();
     }
@@ -160,6 +174,11 @@ public class GameMenu implements EventListener {
         while (true) {
             long currentTime = System.currentTimeMillis();
             long deltaTime = currentTime - lastUpdateTime;
+
+            // Add auto-save check
+            if (currentState == GameState.IN_GAME) {
+                checkAndAutoSave();
+            }
 
             // Always update and render when in menu states
             boolean needsRender = currentState == GameState.MAIN_MENU ||
@@ -366,17 +385,8 @@ public class GameMenu implements EventListener {
     }
 
     private boolean checkSavedGameExists(String username) {
-        String fileName = "game_data.txt";
-        try {
-            String contents = FileUtils.readFile(fileName);
-            if (contents == null || contents.trim().isEmpty()) {
-                return false;
-            }
-            String[] lines = contents.split("\n");
-            return lines.length > 0 && lines[0].equals(username);
-        } catch (Exception e) {
-            return false;
-        }
+        String saveFile = SAVES_DIR + "/" + username + SAVE_FILE_SUFFIX;
+        return new File(saveFile).exists();
     }
 
     private void drawPath() {
@@ -753,53 +763,14 @@ public class GameMenu implements EventListener {
             return;
         }
 
-        String fileName = "game_data.txt";
+        // Create saves directory if it doesn't exist
+        new File(SAVES_DIR).mkdirs();
+
+        // Single save file per user
+        String fileName = String.format("%s/%s%s", SAVES_DIR, player.getUsername(), SAVE_FILE_SUFFIX);
+
         try {
-            StringBuilder data = new StringBuilder();
-            // Basic game state
-            data.append(player.getUsername()).append("\n");
-            data.append(player.getPoints()).append("\n");
-            data.append(player.getAvatarChoice()).append("\n");
-            data.append(world.getSeed()).append("\n");
-            data.append(world.getAvatarX()).append("\n");
-            data.append(world.getAvatarY()).append("\n");
-            data.append(world.getChaserX()).append("\n");
-            data.append(world.getChaserY()).append("\n");
-
-            // Save door position
-            data.append(world.getDoorX()).append(",").append(world.getDoorY()).append("\n");
-
-            // Save only remaining consumables (those that haven't been eaten)
-            List<Point> remainingConsumables = new ArrayList<>();
-            TETile[][] worldMap = world.getMap();
-            for (Point p : world.getConsumablesList()) {
-                // Only save if the consumable is still there (not eaten)
-                if (worldMap[p.x][p.y] == Tileset.SMILEY_FACE_green_body_circle ||
-                        worldMap[p.x][p.y] == Tileset.SMILEY_FACE_green_body_rhombus) {
-                    remainingConsumables.add(p);
-                }
-            }
-
-            // Save number of remaining consumables
-            data.append(remainingConsumables.size()).append("\n");
-            // Save each remaining consumable with its type
-            for (Point p : remainingConsumables) {
-                TETile tile = worldMap[p.x][p.y];
-                String type = (tile == Tileset.SMILEY_FACE_green_body_circle) ? "Smiley Face" : "Normal Face";
-                data.append(p.x).append(",").append(p.y).append(",").append(type).append("\n");
-            }
-
-            // Save obstacles
-            Map<Point, ObstacleType> obstacles = world.getObstacleMap();
-            data.append(obstacles.size()).append("\n");
-            for (Map.Entry<Point, ObstacleType> entry : obstacles.entrySet()) {
-                Point p = entry.getKey();
-                data.append(p.x).append(",")
-                        .append(p.y).append(",")
-                        .append(entry.getValue().name()).append("\n");
-            }
-
-            FileUtils.writeFile(fileName, data.toString());
+            saveGameToFile(fileName);
             PlayerStorage.savePlayer(player);
         } catch (Exception e) {
             System.err.println("Error saving game: " + e.getMessage());
@@ -807,36 +778,51 @@ public class GameMenu implements EventListener {
     }
 
     public void loadGame(Player player) {
-        String fileName = "game_data.txt";
+        String saveFile = SAVES_DIR + "/" + player.getUsername() + SAVE_FILE_SUFFIX;
+        File file = new File(saveFile);
+
+        if (!file.exists()) {
+            System.err.println("No save file found for player: " + player.getUsername());
+            return;
+        }
+
         try {
-            String contents = FileUtils.readFile(fileName);
+            String contents = FileUtils.readFile(saveFile);
             String[] lines = contents.split("\n");
             int currentLine = 0;
 
+            // Verify username
             String savedUsername = lines[currentLine++];
             if (!savedUsername.equals(player.getUsername())) {
+                System.err.println("Save file username mismatch");
                 return;
             }
 
+            // Load basic game state
             int points = Integer.parseInt(lines[currentLine++]);
-            currentLine++; // Skip avatar choice line
+            int avatarChoice = Integer.parseInt(lines[currentLine++]);
             long seed = Long.parseLong(lines[currentLine++]);
             int avatarX = Integer.parseInt(lines[currentLine++]);
             int avatarY = Integer.parseInt(lines[currentLine++]);
             int chaserX = Integer.parseInt(lines[currentLine++]);
             int chaserY = Integer.parseInt(lines[currentLine++]);
 
-            // Create world with seed but don't populate items yet (pass 0,0 to prevent door
-            // placement)
+            // Load door position
+            String[] doorPos = lines[currentLine++].split(",");
+            int doorX = Integer.parseInt(doorPos[0]);
+            int doorY = Integer.parseInt(doorPos[1]);
+
+            // Update player state first (before creating world)
+            player.setPoints(points);
+            player.setAvatarChoice(avatarChoice);
+
+            // Create new world with seed but don't populate items yet
             world = new World(player, seed, 0, 0);
 
             // Set positions
             world.setAvatarToNewPosition(avatarX, avatarY);
             world.setChaserToNewPosition(chaserX, chaserY);
-
-            // Load door position
-            String[] doorPos = lines[currentLine++].split(",");
-            world.setDoorPosition(Integer.parseInt(doorPos[0]), Integer.parseInt(doorPos[1]));
+            world.setDoorPosition(doorX, doorY);
 
             // Load consumables
             int numConsumables = Integer.parseInt(lines[currentLine++]);
@@ -858,11 +844,17 @@ public class GameMenu implements EventListener {
                 world.addObstacle(x, y, type);
             }
 
-            player.setPoints(points);
+            // Set game state
             gameStarted = true;
-            drawWorld();
+
+            // Add notification about load
+            notifications.add(new Notification(
+                    "Game loaded successfully",
+                    System.currentTimeMillis() + 3000));
+
         } catch (Exception e) {
             System.err.println("Error loading game: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -965,6 +957,7 @@ public class GameMenu implements EventListener {
                 if (hasSavedGame) {
                     AudioManager.getInstance().playSound("menu");
                     loadGame(player);
+                    drawWorld();
                     AudioManager.getInstance().playSound("gamestart");
                     currentState = GameState.IN_GAME;
                 } else {
@@ -1115,5 +1108,83 @@ public class GameMenu implements EventListener {
         StdDraw.text(40, 14, ":Q - " + translationManager.getTranslation("save_and_quit"));
 
         StdDraw.show();
+    }
+
+    // Add this method to handle auto-saves
+    private void checkAndAutoSave() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastAutoSaveTime >= AUTO_SAVE_INTERVAL) {
+            autoSave();
+            lastAutoSaveTime = currentTime;
+        }
+    }
+
+    private void autoSave() {
+        if (player == null || world == null || !gameStarted) {
+            return;
+        }
+
+        // Use the same save file as manual save
+        String fileName = String.format("%s/%s%s", SAVES_DIR, player.getUsername(), SAVE_FILE_SUFFIX);
+
+        try {
+            saveGameToFile(fileName);
+        } catch (Exception e) {
+            System.err.println("Error during auto-save: " + e.getMessage());
+        }
+    }
+
+    // Common save function used by both manual and auto-save
+    private void saveGameToFile(String fileName) throws IOException {
+        StringBuilder data = new StringBuilder();
+
+        // Basic game state
+        data.append(player.getUsername()).append("\n")
+                .append(player.getPoints()).append("\n")
+                .append(player.getAvatarChoice()).append("\n")
+                .append(world.getSeed()).append("\n")
+                .append(world.getAvatarX()).append("\n")
+                .append(world.getAvatarY()).append("\n")
+                .append(world.getChaserX()).append("\n")
+                .append(world.getChaserY()).append("\n");
+
+        // Door position
+        data.append(world.getDoorX()).append(",").append(world.getDoorY()).append("\n");
+
+        // Save consumables and obstacles
+        saveConsumables(data);
+        saveObstacles(data);
+
+        FileUtils.writeFile(fileName, data.toString());
+    }
+
+    private void saveConsumables(StringBuilder data) {
+        List<Point> remainingConsumables = new ArrayList<>();
+        TETile[][] worldMap = world.getMap();
+
+        for (Point p : world.getConsumablesList()) {
+            if (worldMap[p.x][p.y] == Tileset.SMILEY_FACE_green_body_circle ||
+                    worldMap[p.x][p.y] == Tileset.SMILEY_FACE_green_body_rhombus) {
+                remainingConsumables.add(p);
+            }
+        }
+
+        data.append(remainingConsumables.size()).append("\n");
+        for (Point p : remainingConsumables) {
+            TETile tile = worldMap[p.x][p.y];
+            String type = (tile == Tileset.SMILEY_FACE_green_body_circle) ? "Smiley Face" : "Normal Face";
+            data.append(p.x).append(",").append(p.y).append(",").append(type).append("\n");
+        }
+    }
+
+    private void saveObstacles(StringBuilder data) {
+        Map<Point, ObstacleType> obstacles = world.getObstacleMap();
+        data.append(obstacles.size()).append("\n");
+        for (Map.Entry<Point, ObstacleType> entry : obstacles.entrySet()) {
+            Point p = entry.getKey();
+            data.append(p.x).append(",")
+                    .append(p.y).append(",")
+                    .append(entry.getValue().name()).append("\n");
+        }
     }
 }
