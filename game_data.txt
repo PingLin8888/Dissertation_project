@@ -1,31 +1,31 @@
-p
-11685
-1
-1739714318786
-42
-13
-17
-28
-42,21
+jhjhd
+5
+0
+1739720452655
+71
+7
+4
+8
+33,5
 10
-59,37,Smiley Face
-38,30,Smiley Face
-57,37,Normal Face
-56,38,Smiley Face
-60,38,Normal Face
-39,32,Normal Face
-12,38,Normal Face
-42,37,Smiley Face
-58,26,Smiley Face
-19,38,Smiley Face
+61,17,Normal Face
+66,7,Normal Face
+52,17,Normal Face
+65,13,Normal Face
+15,6,Normal Face
+4,24,Smiley Face
+68,11,Normal Face
+38,12,Smiley Face
+29,4,Smiley Face
+71,9,Normal Face
 10
-61,36,SPIKES
-39,30,DARK_MODE
-52,3,SPIKES
-49,36,SPIKES
-52,39,TELEPORTER
-60,28,DARK_MODE
-47,10,ICE
-32,19,ICE
-51,7,SPIKES
-38,20,ICE
+36,4,SPIKES
+38,13,SPIKES
+13,5,ICE
+11,2,TELEPORTER
+67,13,TELEPORTER
+8,6,TELEPORTER
+35,10,DARK_MODE
+73,10,DARK_MODE
+44,12,SPIKES
+62,16,TELEPORTER

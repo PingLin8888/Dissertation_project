@@ -114,8 +114,8 @@ public class GameMenu implements EventListener {
 
         void draw() {
             // Use consistent font across all menus
-//            Font menuFont = new Font("SimSun", Font.PLAIN, 24);
-//            StdDraw.setFont(menuFont);
+            // Font menuFont = new Font("SimSun", Font.PLAIN, 24);
+            // StdDraw.setFont(menuFont);
 
             // Draw shadow with current transparency
             Color shadowColor = new Color(0, 0, 0, (float) alpha);
@@ -328,11 +328,14 @@ public class GameMenu implements EventListener {
     }
 
     private void drawPostLoginMenu(Player player) {
-        if (menuItems.isEmpty()) { // Only initialize once
+        if (menuItems.isEmpty()) {
+            // Update hasSavedGame status before showing menu
+            hasSavedGame = checkSavedGameExists(player.getUsername());
+
             double startY = 42;
             double spacing = 4;
-            long baseDelay = 0; // Start of animations
-            long delayIncrement = 100; // Each item appears 100ms after the previous
+            long baseDelay = 0;
+            long delayIncrement = 100;
 
             // Add menu items with staggered delays
             menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("main_menu"),
@@ -950,25 +953,26 @@ public class GameMenu implements EventListener {
 
         switch (key) {
             case 'n':
-                menuItems.clear(); // Clear menu items when leaving menu
+                menuItems.clear();
                 AudioManager.getInstance().playSound("menu");
                 createNewGame();
                 AudioManager.getInstance().playSound("gamestart");
                 currentState = GameState.IN_GAME;
                 break;
             case 'l':
+                // Update hasSavedGame status before attempting to load
+                hasSavedGame = checkSavedGameExists(player.getUsername());
                 if (hasSavedGame) {
                     AudioManager.getInstance().playSound("menu");
                     loadGame(player);
                     AudioManager.getInstance().playSound("gamestart");
                     currentState = GameState.IN_GAME;
                 } else {
-                    // Show no saved game message
+                    StdDraw.clear(StdDraw.BLACK);
                     StdDraw.text(40, 24, translationManager.getTranslation("no_saved_game"));
                     StdDraw.show();
                     StdDraw.pause(2000);
 
-                    // Return to main menu
                     redraw = true;
                     currentState = GameState.MAIN_MENU;
                 }
@@ -985,6 +989,7 @@ public class GameMenu implements EventListener {
             case 'q':
                 AudioManager.getInstance().playSound("menu");
                 saveGame(player);
+                cleanupGameSounds();
                 System.exit(0);
                 break;
         }
@@ -999,6 +1004,7 @@ public class GameMenu implements EventListener {
             saveGame(player);
             cleanupGameSounds();
             currentState = GameState.MAIN_MENU;
+            hasSavedGame = true; // Update flag after saving
             redraw = true;
             quitSignBuilder.setLength(0);
         } else if (key == 'p') {
