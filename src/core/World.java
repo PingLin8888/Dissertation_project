@@ -1047,7 +1047,7 @@ public class World {
     }
 
     // Update the checkChaserProximity method to consider invisibility
-    private void checkChaserProximity() {
+    void checkChaserProximity() {
         // If player is invisible, stop chaser sound regardless of proximity
         if (player.isInvisible()) {
             if (isChaserSoundPlaying) {
@@ -1179,5 +1179,11 @@ public class World {
 
     public static int getWIDTH() {
         return WIDTH;
+    }
+
+    // Add method to handle sound state
+    public void stopChaserSound() {
+        AudioManager.getInstance().stopSound("chaser");
+        isChaserSoundPlaying = false; // Update the state flag
     }
 }

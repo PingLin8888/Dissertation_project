@@ -14,10 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Date;
 
 /**
  * Inspired by GPT.
@@ -1028,11 +1024,12 @@ public class GameMenu implements EventListener {
             AudioManager.getInstance().playSound("menu");
             if (isPaused) {
                 // Pause all game sounds
-                AudioManager.getInstance().stopSound("chaser");
+                world.stopChaserSound(); // Use new method to properly update state
                 AudioManager.getInstance().stopSound("eerie");
                 drawPauseMenu();
             } else {
-                // Resume game, redraw game screen
+                // Resume game, check proximity for sounds
+                world.checkChaserProximity();
                 redraw = true;
             }
         } else if (!isPaused) { // Only process other inputs if not paused
