@@ -1046,12 +1046,20 @@ public class World {
         }
     }
 
-    // New method to check if the chaser is within 5 tiles of the avatar
+    // Update the checkChaserProximity method to consider invisibility
     private void checkChaserProximity() {
-        // Use pathfinding to get actual distance
+        // If player is invisible, stop chaser sound regardless of proximity
+        if (player.isInvisible()) {
+            if (isChaserSoundPlaying) {
+                AudioManager.getInstance().fadeOutSound("chaser", 2000);
+                isChaserSoundPlaying = false;
+            }
+            return;
+        }
+
+        // Original proximity check logic for visible players
         List<Point> path = findPath(new Point(chaserX, chaserY), new Point(avatarX, avatarY));
 
-        // If no path exists or path is null, chaser can't reach avatar
         if (path == null || path.isEmpty()) {
             if (isChaserSoundPlaying) {
                 AudioManager.getInstance().fadeOutSound("chaser", 2000);
@@ -1060,12 +1068,9 @@ public class World {
             return;
         }
 
-        // Use path length as actual distance
         int pathDistance = path.size();
 
-        // Adjust threshold based on actual path length
-        if (pathDistance <= 8) { // Reduced from 15 to 8 since path length is typically longer than direct
-                                 // distance
+        if (pathDistance <= 8) {
             if (!isChaserSoundPlaying) {
                 AudioManager.getInstance().playSound("chaser");
                 isChaserSoundPlaying = true;
@@ -1167,6 +1172,7 @@ public class World {
             }
         }
     }
+
     public static int getHEIGHT() {
         return HEIGHT;
     }
