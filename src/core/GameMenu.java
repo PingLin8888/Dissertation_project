@@ -164,10 +164,7 @@ public class GameMenu implements EventListener {
         setupCanvas();
         ter = new TERenderer();
 
-        // Set initial state
         currentState = GameState.LANGUAGE_SELECT;
-
-        // Reduce frame sleep time for more responsive input
         long lastUpdateTime = System.currentTimeMillis();
         final long FRAME_TIME = 16; // Target ~60 FPS
 
@@ -176,7 +173,7 @@ public class GameMenu implements EventListener {
             long deltaTime = currentTime - lastUpdateTime;
 
             // Add auto-save check
-            if (currentState == GameState.IN_GAME) {
+            if (currentState == GameState.IN_GAME && !isPaused) { // Don't auto-save when paused
                 checkAndAutoSave();
             }
 
@@ -190,7 +187,7 @@ public class GameMenu implements EventListener {
             boolean chaserMoved = false;
 
             // Update game state using deltaTime
-            if (currentState == GameState.IN_GAME) {
+            if (currentState == GameState.IN_GAME && !isPaused) { // Don't update chaser when paused
                 chaserMoved = updateChaser();
                 needsRender = inputHandled || chaserMoved || detectMouseMove();
             }
@@ -223,8 +220,7 @@ public class GameMenu implements EventListener {
 
     private void render() {
         StdDraw.clear(StdDraw.BLACK);
-
-        setDrawColor(Color.WHITE); // Set default color
+        setDrawColor(Color.WHITE);
 
         switch (currentState) {
             case LANGUAGE_SELECT:
@@ -237,8 +233,9 @@ public class GameMenu implements EventListener {
                 drawPostLoginMenu(player);
                 break;
             case IN_GAME:
-                if (!isPaused) {
-                    renderGameScreen();
+                renderGameScreen();
+                if (isPaused) {
+                    drawPauseOverlay(); // Draw pause menu on top of game world
                 }
                 break;
         }
@@ -1122,8 +1119,7 @@ public class GameMenu implements EventListener {
 
     // Add new method to draw pause menu
     private void drawPauseMenu() {
-        Font font = new Font("SimSun", Font.PLAIN, 24);
-        StdDraw.setFont(font);
+
         StdDraw.setPenColor(Color.white);
 
         // Increased vertical spacing between lines
@@ -1211,5 +1207,22 @@ public class GameMenu implements EventListener {
                     .append(p.y).append(",")
                     .append(entry.getValue().name()).append("\n");
         }
+    }
+
+    // Add a new method to draw semi-transparent pause overlay
+    private void drawPauseOverlay() {
+        // Draw semi-transparent dark overlay
+        StdDraw.setPenColor(new Color(0, 0, 0, 0.5f));
+        StdDraw.filledRectangle(World.getWIDTH() / 2.0, World.getHEIGHT() / 2.0,
+                World.getWIDTH() / 2.0, World.getHEIGHT() / 2.0);
+
+        // Draw pause menu
+        StdDraw.setPenColor(Color.WHITE);
+        double centerY = World.getHEIGHT() / 2.0;
+
+        StdDraw.text(40, centerY + 5, translationManager.getTranslation("game_paused"));
+        StdDraw.text(40, centerY, translationManager.getTranslation("press_p_resume"));
+        StdDraw.text(40, centerY - 5, translationManager.getTranslation("press_n_restart"));
+        StdDraw.text(40, centerY - 10, ":Q - " + translationManager.getTranslation("save_and_quit"));
     }
 }
