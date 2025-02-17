@@ -348,7 +348,6 @@ public class GameMenu implements EventListener {
 
     private void drawPostLoginMenu(Player player) {
         if (menuItems.isEmpty()) {
-            // Update hasSavedGame status before showing menu
             hasSavedGame = checkSavedGameExists(player.getUsername());
 
             double startY = 42;
@@ -356,7 +355,6 @@ public class GameMenu implements EventListener {
             long baseDelay = 0;
             long delayIncrement = 100;
 
-            // Add menu items with staggered delays
             menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("main_menu"),
                     startY, false, baseDelay));
             menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("welcome", player.getUsername()),
@@ -969,7 +967,6 @@ public class GameMenu implements EventListener {
 
         switch (key) {
             case 'n':
-                menuItems.clear();
                 AudioManager.getInstance().playSound("menu");
                 createNewGame();
                 AudioManager.getInstance().playSound("gamestart");
@@ -1022,10 +1019,10 @@ public class GameMenu implements EventListener {
             quitSignBuilder.append(key);
         } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
             AudioManager.getInstance().playSound("menu");
-            saveGame(player);
+            saveGame(player); // This saves the current points
             cleanupGameSounds();
             currentState = GameState.MAIN_MENU;
-            hasSavedGame = true; // Update flag after saving
+            menuItems.clear(); // Clear menu items to force refresh with new points
             redraw = true;
             quitSignBuilder.setLength(0);
         } else if (key == 'p') {
