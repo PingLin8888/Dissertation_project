@@ -1012,10 +1012,10 @@ public class GameMenu implements EventListener {
             quitSignBuilder.append(key);
         } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
             AudioManager.getInstance().playSound("menu");
-            saveGame(player); // This saves the current points
+            saveGame(player);
             cleanupGameSounds();
             currentState = GameState.MAIN_MENU;
-            menuItems.clear(); // Clear menu items to force refresh with new points
+            menuItems.clear();
             redraw = true;
             quitSignBuilder.setLength(0);
         } else if (key == 'p') {
@@ -1023,24 +1023,20 @@ public class GameMenu implements EventListener {
             isPaused = !isPaused;
             AudioManager.getInstance().playSound("menu");
             if (isPaused) {
-                // Pause all game sounds
-                world.stopChaserSound(); // Use new method to properly update state
+                world.stopChaserSound();
                 AudioManager.getInstance().stopSound("eerie");
                 drawPauseMenu();
             } else {
-                // Resume game, check proximity for sounds
                 world.checkChaserProximity();
                 redraw = true;
             }
-        } else if (!isPaused) { // Only process other inputs if not paused
-            if (key == 'n') {
-                handleRestart();
-            } else if (key == 'v') {
+        } else if (key == 'n') { // Move restart check outside of !isPaused block
+            handleRestart();
+        } else if (!isPaused) { // Other game controls only work when not paused
+            if (key == 'v') {
                 // When V is pressed, try to purchase invisibility cure.
                 if (player.purchaseInvisibilityCure()) {
-                    // Update the avatar tile to reflect invisibility.
                     world.updateAvatarTile();
-                    // Reduce walk sound volume.
                     AudioManager.getInstance().setWalkVolume(0.1f);
                     notifications.add(new Notification("Invisibility activated!", System.currentTimeMillis() + 2000));
                 } else {
