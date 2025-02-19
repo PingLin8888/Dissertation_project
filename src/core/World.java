@@ -49,9 +49,7 @@ public class World {
     private int visionRadius = 5; // Default vision radius
     private TETile[][] visibleMap; // For storing what player can actually see
 
-    private long lastFlashTime = 0;
     private static final long FLASH_INTERVAL = 1000; // 4 seconds in milliseconds
-    private boolean isFlashing = false;
 
     // Field to track whether the eerie sound is currently playing
     private boolean isEerieSoundPlaying = false;
@@ -916,17 +914,11 @@ public class World {
         }
 
         long currentTime = System.currentTimeMillis();
-        isFlashing = (currentTime - lastFlashTime) < 500; // Flash lasts 0.5 seconds
 
         // Update path flash state
         if (currentTime - lastPathFlashTime >= PATH_FLASH_INTERVAL) {
             lastPathFlashTime = currentTime;
             showPathThisFrame = !showPathThisFrame; // Toggle path visibility
-        }
-
-        if (currentTime - lastFlashTime >= FLASH_INTERVAL) {
-            lastFlashTime = currentTime;
-            AudioManager.getInstance().playSound("flash");
         }
 
         // Create a new map filled with darkness
@@ -948,13 +940,11 @@ public class World {
         }
 
         // During flash, show chaser and door regardless of distance
-        if (isFlashing) {
             // Show chaser
             visibleMap[chaserX][chaserY] = map[chaserX][chaserY];
 
             // Show door
             visibleMap[doorX][doorY] = map[doorX][doorY];
-        }
 
         // Show path with independent flashing
         if (pathToAvatar != null && !pathToAvatar.isEmpty() && showPathThisFrame) {
