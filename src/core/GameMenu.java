@@ -185,7 +185,7 @@ public class GameMenu implements EventListener {
             // Update game state using deltaTime
             if (currentState == GameState.IN_GAME && !isPaused) { // Don't update chaser when paused
                 chaserMoved = updateChaser();
-//                needsRender = inputHandled || chaserMoved || detectMouseMove();
+                // needsRender = inputHandled || chaserMoved || detectMouseMove();
                 needsRender = inputHandled || chaserMoved;
             }
 
@@ -268,10 +268,10 @@ public class GameMenu implements EventListener {
     private void renderGameScreen() {
         ter.renderFrame(world.getVisibleMap());
         updateHUD();
-//        if (world.isShowPath() && world.getPathToAvatar() != null) {
-//            drawPath();
-//        }
-//        StdDraw.show();
+        // if (world.isShowPath() && world.getPathToAvatar() != null) {
+        // drawPath();
+        // }
+        // StdDraw.show();
         renderNotifications();
     }
 
@@ -418,8 +418,6 @@ public class GameMenu implements EventListener {
         // Render the HUD
         renderHUD();
     }
-
-
 
     private String getTileDescription(TETile tile) {
         // Get the tile in front of the avatar based on last movement direction
@@ -824,6 +822,11 @@ public class GameMenu implements EventListener {
             int doorX = Integer.parseInt(doorPos[0]);
             int doorY = Integer.parseInt(doorPos[1]);
 
+            // Load dark mode state
+            String[] darkModeData = lines[currentLine++].split(",");
+            boolean isDarkMode = Boolean.parseBoolean(darkModeData[0]);
+            int visionRadius = Integer.parseInt(darkModeData[1]);
+
             // Update player state first (before creating world)
             player.setPoints(points);
             player.setAvatarChoice(avatarChoice);
@@ -835,6 +838,9 @@ public class GameMenu implements EventListener {
             world.setAvatarToNewPosition(avatarX, avatarY);
             world.setChaserToNewPosition(chaserX, chaserY);
             world.setDoorPosition(doorX, doorY);
+
+            // Set dark mode state
+            world.setDarkMode(isDarkMode, visionRadius);
 
             // Load consumables
             int numConsumables = Integer.parseInt(lines[currentLine++]);
@@ -1161,6 +1167,9 @@ public class GameMenu implements EventListener {
 
         // Door position
         data.append(world.getDoorX()).append(",").append(world.getDoorY()).append("\n");
+
+        // Dark mode state
+        data.append(world.isDarkMode()).append(",").append(world.getVisionRadius()).append("\n");
 
         // Save consumables and obstacles
         saveConsumables(data);

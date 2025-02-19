@@ -940,11 +940,11 @@ public class World {
         }
 
         // During flash, show chaser and door regardless of distance
-            // Show chaser
-            visibleMap[chaserX][chaserY] = map[chaserX][chaserY];
+        // Show chaser
+        visibleMap[chaserX][chaserY] = map[chaserX][chaserY];
 
-            // Show door
-            visibleMap[doorX][doorY] = map[doorX][doorY];
+        // Show door
+        visibleMap[doorX][doorY] = map[doorX][doorY];
 
         // Show path with independent flashing
         if (pathToAvatar != null && !pathToAvatar.isEmpty() && showPathThisFrame) {
@@ -1185,5 +1185,18 @@ public class World {
     public void stopChaserSound() {
         AudioManager.getInstance().stopSound("chaser");
         isChaserSoundPlaying = false; // Update the state flag
+    }
+
+    public boolean isDarkMode() {
+        return isDarkMode;
+    }
+
+    public void setDarkMode(boolean darkMode, int visionRadius) {
+        this.isDarkMode = darkMode;
+        this.visionRadius = visionRadius;
+    }
+
+    public int getVisionRadius() {
+        return visionRadius;
     }
 }
