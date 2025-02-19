@@ -68,6 +68,10 @@ public class World {
     // Add a map to store tiles that are underneath the chaser
     private TETile tileUnderChaser = FLOOR; // Initialize to FLOOR
 
+    private long lastPathFlashTime = 0;
+    private static final long PATH_FLASH_INTERVAL = 500; // 0.5 seconds
+    private boolean showPathThisFrame = false;
+
     public World() {
         this(null, SEEDDefault);
     }
@@ -914,6 +918,12 @@ public class World {
         long currentTime = System.currentTimeMillis();
         isFlashing = (currentTime - lastFlashTime) < 500; // Flash lasts 0.5 seconds
 
+        // Update path flash state
+        if (currentTime - lastPathFlashTime >= PATH_FLASH_INTERVAL) {
+            lastPathFlashTime = currentTime;
+            showPathThisFrame = !showPathThisFrame; // Toggle path visibility
+        }
+
         if (currentTime - lastFlashTime >= FLASH_INTERVAL) {
             lastFlashTime = currentTime;
             AudioManager.getInstance().playSound("flash");
@@ -944,14 +954,14 @@ public class World {
 
             // Show door
             visibleMap[doorX][doorY] = map[doorX][doorY];
+        }
 
-            // Only show path if it exists
-            if (pathToAvatar != null && !pathToAvatar.isEmpty()) {
-                for (Point p : pathToAvatar) {
-                    // Only set the path tile if it's not the chaser's position
-                    if (!((p.x == chaserX && p.y == chaserY) || (p.x == avatarX && p.y == avatarY))) {
-                        visibleMap[p.x][p.y] = Tileset.PATH;
-                    }
+        // Show path with independent flashing
+        if (pathToAvatar != null && !pathToAvatar.isEmpty() && showPathThisFrame) {
+            for (Point p : pathToAvatar) {
+                // Only set the path tile if it's not the chaser's position or avatar position
+                if (!((p.x == chaserX && p.y == chaserY) || (p.x == avatarX && p.y == avatarY))) {
+                    visibleMap[p.x][p.y] = Tileset.PATH;
                 }
             }
         }

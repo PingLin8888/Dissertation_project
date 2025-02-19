@@ -185,7 +185,8 @@ public class GameMenu implements EventListener {
             // Update game state using deltaTime
             if (currentState == GameState.IN_GAME && !isPaused) { // Don't update chaser when paused
                 chaserMoved = updateChaser();
-                needsRender = inputHandled || chaserMoved || detectMouseMove();
+//                needsRender = inputHandled || chaserMoved || detectMouseMove();
+                needsRender = inputHandled || chaserMoved;
             }
 
             // Render if needed
@@ -267,10 +268,10 @@ public class GameMenu implements EventListener {
     private void renderGameScreen() {
         ter.renderFrame(world.getVisibleMap());
         updateHUD();
-        if (world.isShowPath() && world.getPathToAvatar() != null) {
-            drawPath();
-        }
-        StdDraw.show();
+//        if (world.isShowPath() && world.getPathToAvatar() != null) {
+//            drawPath();
+//        }
+//        StdDraw.show();
         renderNotifications();
     }
 
@@ -418,11 +419,7 @@ public class GameMenu implements EventListener {
         renderHUD();
     }
 
-    private String getInstructions(TETile tile) {
-        // Implement the logic to determine instructions based on the tile
-        // This is a placeholder and should be replaced with the actual implementation
-        return "No instructions available for this tile.";
-    }
+
 
     private String getTileDescription(TETile tile) {
         // Get the tile in front of the avatar based on last movement direction
