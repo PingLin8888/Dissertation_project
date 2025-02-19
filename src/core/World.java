@@ -70,6 +70,8 @@ public class World {
     private static final long PATH_FLASH_INTERVAL = 500; // 0.5 seconds
     private boolean showPathThisFrame = false;
 
+    private Set<Point> torchPositions = new HashSet<>();
+
     public World() {
         this(null, SEEDDefault);
     }
@@ -322,14 +324,12 @@ public class World {
         if (obstacle != null) {
             handleObstacle(obstacle, newPos);
             obstacles.remove(newPos);
-            map[newX][newY] = FLOOR;
         } else if (consumablePositions.contains(newPos)) {
             handleConsumable(newPos, tileAtNewPosition);
         }
 
         if (tileAtNewPosition == Tileset.TORCH) {
             pickupTorch();
-            map[newX][newY] = FLOOR;
         }
 
         // Check if reached door
@@ -982,7 +982,7 @@ public class World {
         // Try to place torch in one of these positions
         for (Point p : adjacentPositions) {
             if (isValidTorchPosition(p)) {
-                map[p.x][p.y] = Tileset.TORCH;
+                addTorch(p.x, p.y);
                 eventDispatcher.dispatch(new Event(Event.EventType.OBSTACLE_HIT,
                         "A torch glimmers nearby..."));
                 return;
@@ -1003,6 +1003,10 @@ public class World {
     }
 
     public void pickupTorch() {
+        // Remove the torch from the current position
+        Point currentPos = new Point(avatarX, avatarY);
+        torchPositions.remove(currentPos);
+
         visionRadius = 15; // Increased from 7 to 15 for better visibility
         AudioManager.getInstance().playSound("torch");
         eventDispatcher.dispatch(new Event(Event.EventType.ITEM_PICKUP,
@@ -1164,7 +1168,6 @@ public class World {
             if (tileAtPosition == consumable.getTile()) {
                 AudioManager.getInstance().playSound("consume");
                 player.addPoints(consumable.getPointValue());
-                map[pos.x][pos.y] = FLOOR;
                 eventDispatcher.dispatch(new Event(Event.EventType.CONSUMABLE_CONSUMED,
                         "You got " + consumable.getPointValue() + " points!"));
                 consumablePositions.remove(pos);
@@ -1198,5 +1201,14 @@ public class World {
 
     public int getVisionRadius() {
         return visionRadius;
+    }
+
+    public void addTorch(int x, int y) {
+        torchPositions.add(new Point(x, y));
+        map[x][y] = Tileset.TORCH;
+    }
+
+    public List<Point> getTorchPositions() {
+        return new ArrayList<>(torchPositions);
     }
 }

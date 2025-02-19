@@ -842,6 +842,15 @@ public class GameMenu implements EventListener {
             // Set dark mode state
             world.setDarkMode(isDarkMode, visionRadius);
 
+            // Load torch positions
+            int numTorches = Integer.parseInt(lines[currentLine++]);
+            for (int i = 0; i < numTorches; i++) {
+                String[] torchPos = lines[currentLine++].split(",");
+                int x = Integer.parseInt(torchPos[0]);
+                int y = Integer.parseInt(torchPos[1]);
+                world.addTorch(x, y);
+            }
+
             // Load consumables
             int numConsumables = Integer.parseInt(lines[currentLine++]);
             for (int i = 0; i < numConsumables; i++) {
@@ -1170,6 +1179,13 @@ public class GameMenu implements EventListener {
 
         // Dark mode state
         data.append(world.isDarkMode()).append(",").append(world.getVisionRadius()).append("\n");
+
+        // Save torch positions
+        List<Point> torchPositions = world.getTorchPositions();
+        data.append(torchPositions.size()).append("\n");
+        for (Point p : torchPositions) {
+            data.append(p.x).append(",").append(p.y).append("\n");
+        }
 
         // Save consumables and obstacles
         saveConsumables(data);
