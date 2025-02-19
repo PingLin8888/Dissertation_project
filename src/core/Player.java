@@ -44,12 +44,12 @@ public class Player {
     }
 
     public boolean purchaseInvisibilityCure() {
-        int cost = 50; // Cost for the cure
-        if (points >= cost && !isInvisible) {
+        int cost = 10; // Cost for the cure
+        if (points >= cost ) {
             points -= cost;
             isInvisible = true;
             // Set invisibility expiration timestamp (5 seconds from now)
-            invisibilityEndTime = System.currentTimeMillis() + 5000;
+            invisibilityEndTime = System.currentTimeMillis() + 10000;
             // Immediately reduce walk volume
             AudioManager.getInstance().setWalkVolume(0.1f);
             return true;

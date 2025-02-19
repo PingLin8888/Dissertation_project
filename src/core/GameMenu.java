@@ -208,7 +208,6 @@ public class GameMenu implements EventListener {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastChaserMoveTime >= CHASER_MOVE_INTERVAL) {
             world.moveChaser();
-            checkChaserEncounter();
             lastChaserMoveTime = currentTime;
             return true;
         }
@@ -671,12 +670,36 @@ public class GameMenu implements EventListener {
     private void handleMovement(char key) {
         lastDirection = key; // Update last direction before moving
         if (world.moveAvatar(key)) {
-            AudioManager.getInstance().playSound("walk");
-            hudNeedsUpdate = true;
-            if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
-                exitDoor();
+            if (world.isChaserIsDead()) {
+                endGame();
+            } else {
+                AudioManager.getInstance().playSound("walk");
+                hudNeedsUpdate = true;
+                if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
+                    exitDoor();
+                }
             }
         }
+    }
+
+    private void endGame() {
+        AudioManager.getInstance().stopSound("chaser");
+
+
+
+        // Play game over sound
+        AudioManager.getInstance().playSound("gameover");
+        StdDraw.clear(StdDraw.BLACK);
+        // Clear the screen and display the message
+        StdDraw.setPenColor(Color.white);
+        StdDraw.text(40, 24, translationManager.getTranslation("game_over"));
+        StdDraw.show();
+        StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
+
+        // Reset game state to show the post-login menu
+        gameStarted = false;
+        currentState = GameState.MAIN_MENU; // Update the game state
+        redraw = true;
     }
 
     private void exitDoor() {
@@ -1072,25 +1095,6 @@ public class GameMenu implements EventListener {
             return true;
         }
         return false;
-    }
-
-    private void checkChaserEncounter() {
-        if (world.getChaserX() == world.getAvatarX() && world.getChaserY() == world.getAvatarY()) {
-            // Play game over sound
-            AudioManager.getInstance().playSound("gameover");
-            StdDraw.clear(StdDraw.BLACK);
-            // Clear the screen and display the message
-            StdDraw.setPenColor(Color.white);
-            StdDraw.text(40, 24, translationManager.getTranslation("game_over"));
-            StdDraw.show();
-            StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
-
-            // Reset game state to show the post-login menu
-            gameStarted = false;
-            currentState = GameState.MAIN_MENU; // Update the game state
-            redraw = true;
-            System.out.println("Game state reset to post-login menu.");
-        }
     }
 
     // Add this method to get the position of the tile the avatar is facing

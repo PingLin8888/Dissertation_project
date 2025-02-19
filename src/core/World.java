@@ -22,6 +22,7 @@ public class World {
 
     private int avatarX, avatarY;
     private int chaserX, chaserY;
+    private boolean chaserIsDead = false;
     private boolean isShowPath;
     private List<Point> pathToAvatar;
 
@@ -223,6 +224,23 @@ public class World {
         return neighbors;
     }
 
+    // Centralized method to check for chaser-avatar collision and handle the
+    // outcome
+    private boolean handleChaserCollision() {
+        if (chaserX == avatarX && chaserY == avatarY && !player.isInvisible()) {
+            AudioManager.getInstance().stopSound("chaser");
+            eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
+            chaserIsDead = true;
+            return true;
+        }
+        return false;
+
+
+
+
+
+    }
+
     public void moveChaser() {
         if (player.isInvisible()) {
             // In search mode: perform a random walk using adjacent tiles.
@@ -240,13 +258,6 @@ public class World {
                 setChaserToNewPosition(next.x, next.y);
             }
             checkChaserProximity();
-            // Check for collision after random movement.
-            if (chaserX == avatarX && chaserY == avatarY) {
-                if (!player.isInvisible()) {
-                    AudioManager.getInstance().stopSound("chaser");
-                    eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
-                }
-            }
         } else {
             // Normal chasing mode.
             pathToAvatar = findPath(new Point(chaserX, chaserY), new Point(avatarX, avatarY));
@@ -254,12 +265,7 @@ public class World {
                 Point next = pathToAvatar.getFirst();
                 setChaserToNewPosition(next.x, next.y);
                 checkChaserProximity();
-                if (chaserX == avatarX && chaserY == avatarY) {
-                    if (!player.isInvisible()) {
-                        AudioManager.getInstance().stopSound("chaser");
-                        eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
-                    }
-                }
+                handleChaserCollision();
             }
         }
     }
@@ -307,11 +313,24 @@ public class World {
         TETile tileAtNewPosition = map[newX][newY];
 
         // Handle collision with chaser first
-        if (tileAtNewPosition == CHASER && !player.isInvisible()) {
-            AudioManager.getInstance().stopSound("chaser");
-            eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
-            return false;
-        }
+//        if (handleChaserCollision()) {
+//            return false;
+            // Move to temporary position to check collision
+//            int oldX = avatarX;
+//            int oldY = avatarY;
+//            avatarX = newX;
+//            avatarY = newY;
+//
+//            if (handleChaserCollision()) {
+//                // Reset position if collision occurred
+//                avatarX = oldX;
+//                avatarY = oldY;
+//                return false;
+//            }
+//            // Reset position for normal movement handling
+//            avatarX = oldX;
+//            avatarY = oldY;
+//        }
 
         // Cache obstacle at new position
         Point newPos = new Point(newX, newY);
@@ -319,6 +338,9 @@ public class World {
 
         // Move avatar first for responsive feel
         setAvatarToNewPosition(newX, newY);
+        if (handleChaserCollision()){
+            return true;
+        }
 
         // Handle special tiles after movement
         if (obstacle != null) {
@@ -1210,5 +1232,13 @@ public class World {
 
     public List<Point> getTorchPositions() {
         return new ArrayList<>(torchPositions);
+    }
+
+    public boolean isChaserIsDead() {
+        return chaserIsDead;
+    }
+
+    public void setChaserIsDead(boolean chaserIsDead) {
+        this.chaserIsDead = chaserIsDead;
     }
 }
