@@ -306,7 +306,7 @@ public class World {
 
         TETile tileAtNewPosition = map[newX][newY];
 
-      // Cache obstacle at new position
+        // Cache obstacle at new position
         Point newPos = new Point(newX, newY);
         ObstacleType obstacle = obstacles.get(newPos);
 
@@ -939,8 +939,8 @@ public class World {
         // Show door
         visibleMap[doorX][doorY] = map[doorX][doorY];
 
-        // Show path with independent flashing
-        if (pathToAvatar != null && !pathToAvatar.isEmpty() && showPathThisFrame) {
+        // Only show path if player is not invisible and path exists
+        if (!player.isInvisible() && pathToAvatar != null && !pathToAvatar.isEmpty() && showPathThisFrame) {
             for (Point p : pathToAvatar) {
                 // Only set the path tile if it's not the chaser's position or avatar position
                 if (!((p.x == chaserX && p.y == chaserY) || (p.x == avatarX && p.y == avatarY))) {
