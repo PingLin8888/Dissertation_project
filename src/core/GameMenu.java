@@ -188,6 +188,9 @@ public class GameMenu implements EventListener {
                 // needsRender = inputHandled || chaserMoved || detectMouseMove();
                 needsRender = inputHandled || chaserMoved;
             }
+            if (currentState == GameState.IN_GAME && world.handleChaserCollision()) {
+                endGame();
+            }
 
             // Render if needed
             if (needsRender || redraw) {
@@ -670,22 +673,16 @@ public class GameMenu implements EventListener {
     private void handleMovement(char key) {
         lastDirection = key; // Update last direction before moving
         if (world.moveAvatar(key)) {
-            if (world.isChaserIsDead()) {
-                endGame();
-            } else {
-                AudioManager.getInstance().playSound("walk");
-                hudNeedsUpdate = true;
-                if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
-                    exitDoor();
-                }
+            AudioManager.getInstance().playSound("walk");
+            hudNeedsUpdate = true;
+            if (world.getAvatarX() == world.getDoorX() && world.getAvatarY() == world.getDoorY()) {
+                exitDoor();
             }
         }
     }
 
     private void endGame() {
         AudioManager.getInstance().stopSound("chaser");
-
-
 
         // Play game over sound
         AudioManager.getInstance().playSound("gameover");

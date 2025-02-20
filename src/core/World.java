@@ -226,7 +226,7 @@ public class World {
 
     // Centralized method to check for chaser-avatar collision and handle the
     // outcome
-    private boolean handleChaserCollision() {
+    boolean handleChaserCollision() {
         if (chaserX == avatarX && chaserY == avatarY && !player.isInvisible()) {
             AudioManager.getInstance().stopSound("chaser");
             eventDispatcher.dispatch(new Event(Event.EventType.GAME_OVER, "The chaser caught you!"));
@@ -234,11 +234,6 @@ public class World {
             return true;
         }
         return false;
-
-
-
-
-
     }
 
     public void moveChaser() {
@@ -265,7 +260,6 @@ public class World {
                 Point next = pathToAvatar.getFirst();
                 setChaserToNewPosition(next.x, next.y);
                 checkChaserProximity();
-                handleChaserCollision();
             }
         }
     }
@@ -312,35 +306,12 @@ public class World {
 
         TETile tileAtNewPosition = map[newX][newY];
 
-        // Handle collision with chaser first
-//        if (handleChaserCollision()) {
-//            return false;
-            // Move to temporary position to check collision
-//            int oldX = avatarX;
-//            int oldY = avatarY;
-//            avatarX = newX;
-//            avatarY = newY;
-//
-//            if (handleChaserCollision()) {
-//                // Reset position if collision occurred
-//                avatarX = oldX;
-//                avatarY = oldY;
-//                return false;
-//            }
-//            // Reset position for normal movement handling
-//            avatarX = oldX;
-//            avatarY = oldY;
-//        }
-
-        // Cache obstacle at new position
+      // Cache obstacle at new position
         Point newPos = new Point(newX, newY);
         ObstacleType obstacle = obstacles.get(newPos);
 
         // Move avatar first for responsive feel
         setAvatarToNewPosition(newX, newY);
-        if (handleChaserCollision()){
-            return true;
-        }
 
         // Handle special tiles after movement
         if (obstacle != null) {
