@@ -706,8 +706,7 @@ public class GameMenu implements EventListener {
 
     private void exitDoor() {
         // Stop all ongoing sound effects
-        AudioManager.getInstance().stopSound("chaser");
-        AudioManager.getInstance().fadeOutSound("eerie", 2000);
+        AudioManager.getInstance().stopAllSoundsExcept("gamePass");
         AudioManager.getInstance().playSound("gamePass");
 
         // Award points based on current level
@@ -934,6 +933,12 @@ public class GameMenu implements EventListener {
     }
 
     private void handleRestart() throws InterruptedException {
+        // Pause the game if it wasn't already paused
+        boolean wasPaused = isPaused;
+        if (!wasPaused) {
+            handlePause();
+        }
+
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(40, 24, translationManager.getTranslation("restart_confirm"));
@@ -946,16 +951,17 @@ public class GameMenu implements EventListener {
                 char response = Character.toLowerCase(StdDraw.nextKeyTyped());
                 if (response == 'y') {
                     AudioManager.getInstance().playSound("menu");
-                    // Restart the game
-                    // gameStarted = false;
-                    // createGameMenu();
+                    gameStarted = false;
                     currentState = GameState.MAIN_MENU;
                     break;
                 } else if (response == 'n') {
                     AudioManager.getInstance().playSound("menu");
-                    // Return to the current game
+                    // Only resume if game wasn't paused before
+                    if (!wasPaused) {
+                        handlePause();
+                    }
                     redraw = true;
-                    drawWorld(); // Redraw the current world
+                    drawWorld();
                     break;
                 }
             }
@@ -1057,19 +1063,7 @@ public class GameMenu implements EventListener {
             redraw = true;
             quitSignBuilder.setLength(0);
         } else if (key == 'p') {
-            // Toggle pause state
-            isPaused = !isPaused;
-            AudioManager.getInstance().playSound("menu");
-            if (isPaused) {
-                AudioManager.getInstance().pauseAllSounds();
-                player.pauseInvisibility(); // Pause invisibility duration
-                drawPauseMenu();
-            } else {
-                AudioManager.getInstance().resumeAllSounds();
-                player.resumeInvisibility(); // Resume invisibility duration
-                world.checkChaserProximity();
-                redraw = true;
-            }
+            handlePause();
         } else if (key == 'n') { // Move restart check outside of !isPaused block
             handleRestart();
         } else if (!isPaused) { // Other game controls only work when not paused
@@ -1087,6 +1081,22 @@ public class GameMenu implements EventListener {
             } else if (key == 'w' || key == 'a' || key == 's' || key == 'd') {
                 handleMovement(key);
             }
+        }
+    }
+
+    private void handlePause() {
+        // Toggle pause state
+        isPaused = !isPaused;
+        AudioManager.getInstance().playSound("menu");
+        if (isPaused) {
+            AudioManager.getInstance().pauseAllSounds();
+            player.pauseInvisibility(); // Pause invisibility duration
+            drawPauseMenu();
+        } else {
+            AudioManager.getInstance().resumeAllSounds();
+            player.resumeInvisibility(); // Resume invisibility duration
+            world.checkChaserProximity();
+            redraw = true;
         }
     }
 
