@@ -1062,9 +1062,11 @@ public class GameMenu implements EventListener {
             AudioManager.getInstance().playSound("menu");
             if (isPaused) {
                 AudioManager.getInstance().pauseAllSounds();
+                player.pauseInvisibility(); // Pause invisibility duration
                 drawPauseMenu();
             } else {
                 AudioManager.getInstance().resumeAllSounds();
+                player.resumeInvisibility(); // Resume invisibility duration
                 world.checkChaserProximity();
                 redraw = true;
             }

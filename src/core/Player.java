@@ -5,6 +5,8 @@ public class Player {
     private int points;
     private boolean isInvisible = false;
     private long invisibilityEndTime = 0;
+    private long remainingInvisibilityDuration = 0; // Track remaining duration when paused
+    private static final long INVISIBILITY_DURATION = 10000; // 10 seconds in milliseconds
     private int avatarChoice = 0; // Default avatar
 
     public Player(String username) {
@@ -39,17 +41,13 @@ public class Player {
         }
     }
 
-    public boolean isInvisible() {
-        return isInvisible;
-    }
-
     public boolean purchaseInvisibilityCure() {
         int cost = 10; // Cost for the cure
         if (points >= cost) {
             points -= cost;
             isInvisible = true;
-            // Set invisibility expiration timestamp (5 seconds from now)
-            invisibilityEndTime = System.currentTimeMillis() + 10000;
+            // Set invisibility expiration timestamp
+            invisibilityEndTime = System.currentTimeMillis() + INVISIBILITY_DURATION;
             // Immediately reduce walk volume
             AudioManager.getInstance().setWalkVolume(0.1f);
             // Start playing invisibility sound effect
@@ -70,6 +68,26 @@ public class Player {
             return true; // Indicate that invisibility just wore off
         }
         return false; // No change in invisibility state
+    }
+
+    // Add method to handle game pause
+    public void pauseInvisibility() {
+        if (isInvisible) {
+            // Calculate remaining duration when paused
+            remainingInvisibilityDuration = Math.max(0, invisibilityEndTime - System.currentTimeMillis());
+        }
+    }
+
+    // Add method to handle game unpause
+    public void resumeInvisibility() {
+        if (isInvisible && remainingInvisibilityDuration > 0) {
+            // Reset end time based on remaining duration
+            invisibilityEndTime = System.currentTimeMillis() + remainingInvisibilityDuration;
+        }
+    }
+
+    public boolean isInvisible() {
+        return isInvisible;
     }
 
     public void setAvatarChoice(int choice) {
