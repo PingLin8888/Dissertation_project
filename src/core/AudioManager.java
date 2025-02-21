@@ -15,6 +15,21 @@ public class AudioManager {
     private static AudioManager instance;
     private final Map<String, Clip> soundCache;
     private final Set<String> activeSounds; // Track currently active sounds
+
+    // Sound type constants
+    private static final String SOUND_EERIE = "eerie";
+    private static final String SOUND_CHASER = "chaser";
+    private static final String SOUND_INVISIBILITY = "invisibility";
+    private static final String SOUND_MENU = "menu";
+    private static final String SOUND_CONSUME = "consume";
+    private static final String SOUND_GAMEOVER = "gameover";
+    private static final String SOUND_GAMEPASS = "gamePass";
+    private static final String SOUND_GAMESTART = "gamestart";
+    private static final String SOUND_WALK = "walk";
+    private static final String SOUND_TELEPORT = "teleport";
+    private static final String SOUND_SLIDE = "slide";
+    private static final String SOUND_DAMAGE = "damage";
+
     // Different channels for different types of sounds
     private static final float EFFECTS_VOLUME = 0.7f;
     private static final float WALK_VOLUME = 0.3f;
@@ -33,19 +48,19 @@ public class AudioManager {
     }
 
     private void initializeSounds() {
-        // Load all sounds at startup
-        loadSound("menu", "/sounds/bookOpen_was_cilck.wav");
-        loadSound("consume", "/sounds/handleCoins.wav");
-        loadSound("gameover", "/sounds/404743__owlstorm__retro-video-game-sfx-fail.wav");
-        loadSound("gamePass", "/sounds/397355__plasterbrain__tada-fanfare-a.wav");
-        loadSound("gamestart", "/sounds/243020__plasterbrain__game-start.wav");
-        loadSound("walk", "/sounds/329601__inspectorj__footsteps-dry-leaves-c.wav");
-        loadSound("teleport", "/sounds/laser5.wav");
-        loadSound("slide", "/sounds/lowThreeTone.wav");
-        loadSound("damage", "/sounds/laser8.wav");
-        loadSound("eerie", "/sounds/near_dark.wav");
-        loadSound("chaser", "/sounds/chaser.wav");
-        loadSound("invisibility", "/sounds/invisibility_loop.wav");
+        // Load all sounds at startup using constants
+        loadSound(SOUND_MENU, "/sounds/bookOpen_was_cilck.wav");
+        loadSound(SOUND_CONSUME, "/sounds/handleCoins.wav");
+        loadSound(SOUND_GAMEOVER, "/sounds/404743__owlstorm__retro-video-game-sfx-fail.wav");
+        loadSound(SOUND_GAMEPASS, "/sounds/397355__plasterbrain__tada-fanfare-a.wav");
+        loadSound(SOUND_GAMESTART, "/sounds/243020__plasterbrain__game-start.wav");
+        loadSound(SOUND_WALK, "/sounds/329601__inspectorj__footsteps-dry-leaves-c.wav");
+        loadSound(SOUND_TELEPORT, "/sounds/laser5.wav");
+        loadSound(SOUND_SLIDE, "/sounds/lowThreeTone.wav");
+        loadSound(SOUND_DAMAGE, "/sounds/laser8.wav");
+        loadSound(SOUND_EERIE, "/sounds/near_dark.wav");
+        loadSound(SOUND_CHASER, "/sounds/chaser.wav");
+        loadSound(SOUND_INVISIBILITY, "/sounds/invisibility_loop.wav");
     }
 
     private void loadSound(String soundId, String resourcePath) {
@@ -60,7 +75,7 @@ public class AudioManager {
             AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(resource);
 
             // For footstep sounds, trim the duration
-            if (soundId.equals("walk")) {
+            if (soundId.equals(SOUND_WALK)) {
                 // Convert to PCM format if needed
                 AudioFormat format = audioInputStream.getFormat();
                 if (!format.getEncoding().equals(AudioFormat.Encoding.PCM_SIGNED)) {
@@ -101,9 +116,9 @@ public class AudioManager {
 
     // Helper method to check if a sound should loop
     private boolean isLoopingSound(String soundId) {
-        return soundId.equals("eerie") ||
-                soundId.equals("chaser") ||
-                soundId.equals("invisibility");
+        return soundId.equals(SOUND_EERIE) ||
+                soundId.equals(SOUND_CHASER) ||
+                soundId.equals(SOUND_INVISIBILITY);
     }
 
     public void playSound(String soundId) {
@@ -127,7 +142,7 @@ public class AudioManager {
         if (clip != null && clip.isRunning()) {
             clip.stop();
             clip.setFramePosition(0);
-            activeSounds.remove(soundId); // Remove from active sounds
+            activeSounds.remove(soundId);
         }
     }
 
@@ -193,11 +208,10 @@ public class AudioManager {
     }
 
     public void setWalkVolume(float volume) {
-        Clip clip = soundCache.get("walk");
+        Clip clip = soundCache.get(SOUND_WALK);
         if (clip != null) {
             try {
                 FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-                // When volume is 1.0, gain is 0 dB. For a given volume in [0,1], use:
                 float dB = (float) (20 * Math.log10(volume));
                 gainControl.setValue(dB);
             } catch (Exception e) {
@@ -238,7 +252,7 @@ public class AudioManager {
         }
     }
 
-    // Method to resume all active sounds
+    // New method to resume all active sounds
     public void resumeAllSounds() {
         for (String soundId : activeSounds) {
             Clip clip = soundCache.get(soundId);
