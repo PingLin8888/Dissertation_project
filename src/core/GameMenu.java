@@ -189,7 +189,7 @@ public class GameMenu implements EventListener {
                 needsRender = inputHandled || chaserMoved;
             }
             if (currentState == GameState.IN_GAME && world.handleChaserCollision()) {
-                endGame();
+                failGame();
             }
 
             // Render if needed
@@ -399,7 +399,11 @@ public class GameMenu implements EventListener {
 
     private void updateHUD() {
         // Update player invisibility status in case the duration has expired.
-        player.updateInvisibility();
+        if (player.updateInvisibility()) {
+            // Add notification when invisibility wears off
+            AudioManager.getInstance().playSound("menu");
+            notifications.add(new Notification("Invisibility has worn off!", System.currentTimeMillis() + 2000));
+        }
         // Update the avatar tile based on current invisibility state.
         world.updateAvatarTile();
 
@@ -681,8 +685,9 @@ public class GameMenu implements EventListener {
         }
     }
 
-    private void endGame() {
-        AudioManager.getInstance().stopSound("chaser");
+    private void failGame() {
+        // Stop all sounds except gameover
+        AudioManager.getInstance().stopAllSoundsExcept("gameover");
 
         // Play game over sound
         AudioManager.getInstance().playSound("gameover");
@@ -752,8 +757,9 @@ public class GameMenu implements EventListener {
 
     private void showLevelCompleteMessage(int pointsEarned) {
         cleanupGameSounds();
+        AudioManager.getInstance().stopAllSoundsExcept("gamePass");
+
         StdDraw.clear(StdDraw.BLACK);
-        AudioManager.getInstance().stopSound("chaser"); // Stop any lingering chaser sound.
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(40, 20, "Level " + currentLevel + " Complete!");
         StdDraw.text(40, 23, "Points earned: " + pointsEarned);

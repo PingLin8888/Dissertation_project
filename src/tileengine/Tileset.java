@@ -49,14 +49,13 @@ public class Tileset {
         public static final TETile TELEPORTER = new TETile('○', Color.magenta, Color.black, "teleporter",
                         "assets/images/teleporter.png");
         public static final TETile DARK_MODE = new TETile(' ', Color.cyan, Color.black, "dark mode",
-                "assets/images/DARK_MODE.png");
+                        "assets/images/DARK_MODE.png");
         // Items
         public static final TETile TORCH = new TETile('*', Color.yellow, Color.orange,
                         "torch", "assets/images/torch.png");
         public static final TETile SMILEY_FACE_green_body_circle = new TETile('*', Color.yellow, Color.orange,
-                "torch", "assets/images/smiley_green_body_circle.png");
+                        "torch", "assets/images/smiley_green_body_circle.png");
         public static final TETile SMILEY_FACE_green_body_rhombus = new TETile('*', Color.yellow, Color.orange,
-                "torch", "assets/images/SMILEY_FACE_green_body_rhombus.png");
-
+                        "torch", "assets/images/SMILEY_FACE_green_body_rhombus.png");
 
 }

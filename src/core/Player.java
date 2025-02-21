@@ -45,25 +45,31 @@ public class Player {
 
     public boolean purchaseInvisibilityCure() {
         int cost = 10; // Cost for the cure
-        if (points >= cost ) {
+        if (points >= cost) {
             points -= cost;
             isInvisible = true;
             // Set invisibility expiration timestamp (5 seconds from now)
             invisibilityEndTime = System.currentTimeMillis() + 10000;
             // Immediately reduce walk volume
             AudioManager.getInstance().setWalkVolume(0.1f);
+            // Start playing invisibility sound effect
+            AudioManager.getInstance().playLoopingSound("invisibility");
             return true;
         }
         return false;
     }
 
-    // New method to update invisibility status based on time
-    public void updateInvisibility() {
+    // Returns true if invisibility just wore off this update
+    public boolean updateInvisibility() {
         if (isInvisible && System.currentTimeMillis() >= invisibilityEndTime) {
             isInvisible = false;
             // Restore normal walk volume when invisibility expires.
             AudioManager.getInstance().setWalkVolume(0.3f);
+            // Stop invisibility sound effect
+            AudioManager.getInstance().stopLoopingSound("invisibility");
+            return true; // Indicate that invisibility just wore off
         }
+        return false; // No change in invisibility state
     }
 
     public void setAvatarChoice(int choice) {

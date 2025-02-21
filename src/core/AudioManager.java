@@ -41,7 +41,7 @@ public class AudioManager {
         loadSound("damage", "/sounds/laser8.wav");
         loadSound("eerie", "/sounds/near_dark.wav");
         loadSound("chaser", "/sounds/chaser.wav");
-
+        loadSound("invisibility", "/sounds/invisibility_loop.wav");
     }
 
     private void loadSound(String soundId, String resourcePath) {
@@ -161,6 +161,15 @@ public class AudioManager {
         }
     }
 
+    public void stopAllSoundsExcept(String exceptSoundId) {
+        for (Map.Entry<String, Clip> entry : soundCache.entrySet()) {
+            String soundId = entry.getKey();
+            if (!soundId.equals(exceptSoundId)) {
+                stopSound(soundId);
+            }
+        }
+    }
+
     public void cleanup() {
         for (Clip clip : soundCache.values()) {
             clip.close();
@@ -179,6 +188,22 @@ public class AudioManager {
             } catch (Exception e) {
                 System.err.println("Error setting walk volume: " + e.getMessage());
             }
+        }
+    }
+
+    public void playLoopingSound(String soundId) {
+        Clip clip = soundCache.get(soundId);
+        if (clip != null) {
+            clip.setFramePosition(0);
+            clip.loop(Clip.LOOP_CONTINUOUSLY);
+        }
+    }
+
+    public void stopLoopingSound(String soundId) {
+        Clip clip = soundCache.get(soundId);
+        if (clip != null) {
+            clip.stop();
+            clip.setFramePosition(0);
         }
     }
 }
