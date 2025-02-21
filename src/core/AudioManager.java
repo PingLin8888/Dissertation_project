@@ -8,16 +8,20 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 public class AudioManager {
     private static AudioManager instance;
     private final Map<String, Clip> soundCache;
+    private final Set<String> activeSounds; // Track currently active sounds
     // Different channels for different types of sounds
     private static final float EFFECTS_VOLUME = 0.7f;
     private static final float WALK_VOLUME = 0.3f;
 
     private AudioManager() {
         soundCache = new HashMap<>();
+        activeSounds = new HashSet<>();
         initializeSounds();
     }
 
@@ -95,24 +99,35 @@ public class AudioManager {
         }
     }
 
+    // Helper method to check if a sound should loop
+    private boolean isLoopingSound(String soundId) {
+        return soundId.equals("eerie") ||
+                soundId.equals("chaser") ||
+                soundId.equals("invisibility");
+    }
+
     public void playSound(String soundId) {
         Clip clip = soundCache.get(soundId);
         if (clip != null && !clip.isRunning()) { // Only play if not already playing
             try {
                 clip.setFramePosition(0);
                 clip.start();
+                // Only add to activeSounds if it's a looping sound
+                if (isLoopingSound(soundId)) {
+                    activeSounds.add(soundId);
+                }
             } catch (Exception e) {
                 System.err.println("Error playing sound " + soundId + ": " + e.getMessage());
             }
         }
     }
 
-    // New method to stop a sound immediately
     public void stopSound(String soundId) {
         Clip clip = soundCache.get(soundId);
         if (clip != null && clip.isRunning()) {
             clip.stop();
             clip.setFramePosition(0);
+            activeSounds.remove(soundId); // Remove from active sounds
         }
     }
 
@@ -162,11 +177,11 @@ public class AudioManager {
     }
 
     public void stopAllSoundsExcept(String exceptSoundId) {
-        for (Map.Entry<String, Clip> entry : soundCache.entrySet()) {
-            String soundId = entry.getKey();
-            if (!soundId.equals(exceptSoundId)) {
-                stopSound(soundId);
-            }
+        Set<String> soundsToStop = new HashSet<>(activeSounds);
+        soundsToStop.remove(exceptSoundId);
+
+        for (String soundId : soundsToStop) {
+            stopSound(soundId);
         }
     }
 
@@ -192,10 +207,15 @@ public class AudioManager {
     }
 
     public void playLoopingSound(String soundId) {
+        if (!isLoopingSound(soundId)) {
+            System.err.println("Warning: Attempting to loop non-looping sound: " + soundId);
+            return;
+        }
         Clip clip = soundCache.get(soundId);
         if (clip != null) {
             clip.setFramePosition(0);
             clip.loop(Clip.LOOP_CONTINUOUSLY);
+            activeSounds.add(soundId);
         }
     }
 
@@ -204,6 +224,27 @@ public class AudioManager {
         if (clip != null) {
             clip.stop();
             clip.setFramePosition(0);
+            activeSounds.remove(soundId); // Remove from active sounds
+        }
+    }
+
+    // New method to pause all active sounds
+    public void pauseAllSounds() {
+        for (String soundId : activeSounds) {
+            Clip clip = soundCache.get(soundId);
+            if (clip != null && clip.isRunning()) {
+                clip.stop();
+            }
+        }
+    }
+
+    // Method to resume all active sounds
+    public void resumeAllSounds() {
+        for (String soundId : activeSounds) {
+            Clip clip = soundCache.get(soundId);
+            if (clip != null && isLoopingSound(soundId)) {
+                clip.loop(Clip.LOOP_CONTINUOUSLY);
+            }
         }
     }
 }

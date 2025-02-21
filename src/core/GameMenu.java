@@ -756,7 +756,6 @@ public class GameMenu implements EventListener {
     }
 
     private void showLevelCompleteMessage(int pointsEarned) {
-        cleanupGameSounds();
         AudioManager.getInstance().stopAllSoundsExcept("gamePass");
 
         StdDraw.clear(StdDraw.BLACK);
@@ -769,7 +768,8 @@ public class GameMenu implements EventListener {
     }
 
     private void showNewLevelMessage() {
-        cleanupGameSounds();
+        AudioManager.getInstance().stopAllSoundsExcept("gamestart");
+
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.text(40, 20, "Level " + currentLevel);
@@ -780,7 +780,7 @@ public class GameMenu implements EventListener {
     }
 
     private void showGameCompleteMessage() {
-        cleanupGameSounds();
+        AudioManager.getInstance().stopAllSoundsExcept("gamePass");
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
 
@@ -1038,7 +1038,7 @@ public class GameMenu implements EventListener {
             case 'q':
                 AudioManager.getInstance().playSound("menu");
                 saveGame(player);
-                cleanupGameSounds();
+                AudioManager.getInstance().stopAllSoundsExcept("menu");
                 System.exit(0);
                 break;
         }
@@ -1051,7 +1051,7 @@ public class GameMenu implements EventListener {
         } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
             AudioManager.getInstance().playSound("menu");
             saveGame(player);
-            cleanupGameSounds();
+            AudioManager.getInstance().stopAllSoundsExcept("menu");
             currentState = GameState.MAIN_MENU;
             menuItems.clear();
             redraw = true;
@@ -1061,10 +1061,10 @@ public class GameMenu implements EventListener {
             isPaused = !isPaused;
             AudioManager.getInstance().playSound("menu");
             if (isPaused) {
-                world.stopChaserSound();
-                AudioManager.getInstance().stopSound("eerie");
+                AudioManager.getInstance().pauseAllSounds();
                 drawPauseMenu();
             } else {
+                AudioManager.getInstance().resumeAllSounds();
                 world.checkChaserProximity();
                 redraw = true;
             }
@@ -1120,13 +1120,6 @@ public class GameMenu implements EventListener {
             return new Point(x, y);
         }
         return null;
-    }
-
-    private void cleanupGameSounds() {
-        // Stop all game-related sounds
-        AudioManager.getInstance().stopSound("chaser");
-        AudioManager.getInstance().fadeOutSound("eerie", 2000);
-        AudioManager.getInstance().stopSound("walk");
     }
 
     // Add new method to draw pause menu
