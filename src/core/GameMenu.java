@@ -728,8 +728,9 @@ public class GameMenu implements EventListener {
             // Return to main menu
             gameStarted = false;
             currentState = GameState.MAIN_MENU;
+            // Clear menu items to force refresh
+            menuItems.clear();
         }
-
     }
 
     private void createNextLevel() {
@@ -791,6 +792,13 @@ public class GameMenu implements EventListener {
 
         StdDraw.show();
         StdDraw.pause(3000);
+
+
+        // Wait for any key press
+        while (!StdDraw.hasNextKeyTyped()) {
+            StdDraw.pause(10);
+        }
+        StdDraw.nextKeyTyped(); // Clear the key press
     }
 
     public void saveGame(Player player) {
@@ -1059,7 +1067,7 @@ public class GameMenu implements EventListener {
             saveGame(player);
             AudioManager.getInstance().stopAllSoundsExcept("menu");
             currentState = GameState.MAIN_MENU;
-            menuItems.clear();
+            menuItems.clear(); // Clear menu items to force refresh
             redraw = true;
             quitSignBuilder.setLength(0);
         } else if (key == 'p') {
