@@ -108,29 +108,307 @@ public class World {
         NUMBER_OF_CONSUMABLES = numConsumables;
         consumables.add(new Consumable("Smiley Face", 10, Tileset.SMILEY_FACE_green_body_circle));
         consumables.add(new Consumable("Normal Face", 5, Tileset.SMILEY_FACE_green_body_rhombus));
-        // consumables.add(new Consumable("Angry Face", -5, Tileset.ANGRY_FACE));
 
-        Random rand = new Random();
+        // Create zones for better distribution
+        List<Zone> zones = createZones();
 
-        // Create a list of available positions from usedSpaces
-        List<Point> availablePositions = new ArrayList<>(usedSpaces);
+        // Calculate items per zone
+        int itemsPerZone = Math.max(1, numConsumables / zones.size());
+        int remainingItems = numConsumables % zones.size();
 
-        // Filter available positions to only include floor tiles and exclude the
-        // avatar's and chaser's positions
-        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR ||
-                (point.x == avatarX && point.y == avatarY) ||
-                (point.x == chaserX && point.y == chaserY));
+        Random rand = new Random(seed);
 
-        for (int i = 0; i < NUMBER_OF_CONSUMABLES; i++) {
-            if (availablePositions.isEmpty()) {
-                break; // Exit if there are no available positions
+        // Distribute items across zones
+        for (Zone zone : zones) {
+            int zoneItems = itemsPerZone + (remainingItems > 0 ? 1 : 0);
+            remainingItems--;
+
+            List<Point> zonePositions = getAvailablePositionsInZone(zone);
+
+            // Apply weighted distribution within zone
+            for (int i = 0; i < zoneItems && !zonePositions.isEmpty(); i++) {
+                Point position = selectPositionWithWeights(zonePositions, zone);
+                if (position != null) {
+                    // Select consumable type based on position value
+                    Consumable consumable = selectConsumableByValue(position, zone);
+                    map[position.x][position.y] = consumable.getTile();
+                    consumablePositions.add(position);
+                    zonePositions.remove(position);
+                }
             }
-            Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
-            Consumable consumable = consumables.get(rand.nextInt(consumables.size()));
-            map[position.x][position.y] = consumable.getTile();
-            consumablePositions.add(position); // Store the position of the consumable
-            availablePositions.remove(position);
         }
+    }
+
+    private void populateObstacles(int numObstacles) {
+        List<Zone> zones = createZones();
+        Random rand = new Random(seed);
+
+        // Calculate base obstacles per zone
+        int obstaclesPerZone = Math.max(1, numObstacles / zones.size());
+        int remainingObstacles = numObstacles % zones.size();
+
+        // Ensure minimum dark rooms (20% of total)
+        int totalDarkRooms = Math.max(1, numObstacles / 5);
+        int darkRoomsPerZone = Math.max(1, totalDarkRooms / zones.size());
+
+        for (Zone zone : zones) {
+            int zoneObstacles = obstaclesPerZone + (remainingObstacles > 0 ? 1 : 0);
+            remainingObstacles--;
+
+            List<Point> zonePositions = getAvailablePositionsInZone(zone);
+
+            // Place dark rooms first with proper spacing
+            for (int i = 0; i < darkRoomsPerZone && !zonePositions.isEmpty(); i++) {
+                Point position = selectPositionForDarkRoom(zonePositions, zone);
+                if (position != null) {
+                    obstacles.put(position, ObstacleType.DARK_MODE);
+                    map[position.x][position.y] = ObstacleType.DARK_MODE.getTile();
+                    removeNearbyPositions(zonePositions, position, 5); // Ensure spacing
+                }
+            }
+
+            // Place other obstacles with weighted distribution
+            int remainingZoneObstacles = zoneObstacles - darkRoomsPerZone;
+            for (int i = 0; i < remainingZoneObstacles && !zonePositions.isEmpty(); i++) {
+                Point position = selectPositionWithWeights(zonePositions, zone);
+                if (position != null) {
+                    ObstacleType obstacle = selectObstacleByLocation(position, zone);
+                    obstacles.put(position, obstacle);
+                    map[position.x][position.y] = obstacle.getTile();
+                    removeNearbyPositions(zonePositions, position, 3); // Smaller spacing for regular obstacles
+                }
+            }
+        }
+    }
+
+    // Helper class for world zones
+    private class Zone {
+        int startX, startY, endX, endY;
+        double difficulty; // 0.0 to 1.0, based on distance from start
+
+        Zone(int startX, int startY, int endX, int endY) {
+            this.startX = startX;
+            this.startY = startY;
+            this.endX = endX;
+            this.endY = endY;
+            this.difficulty = calculateZoneDifficulty();
+        }
+
+        private double calculateZoneDifficulty() {
+            // Calculate center point of zone
+            int centerX = (startX + endX) / 2;
+            int centerY = (startY + endY) / 2;
+
+            // Calculate distance from avatar start position
+            double distFromStart = Math.sqrt(
+                    Math.pow(centerX - avatarX, 2) +
+                            Math.pow(centerY - avatarY, 2));
+
+            // Normalize distance to 0-1 range
+            return Math.min(1.0, distFromStart / (Math.sqrt(WIDTH * WIDTH + HEIGHT * HEIGHT)));
+        }
+    }
+
+    private List<Zone> createZones() {
+        List<Zone> zones = new ArrayList<>();
+        int zoneSize = 10; // Adjust based on world size
+
+        for (int x = 0; x < WIDTH; x += zoneSize) {
+            for (int y = 0; y < HEIGHT; y += zoneSize) {
+                int endX = Math.min(x + zoneSize, WIDTH);
+                int endY = Math.min(y + zoneSize, HEIGHT);
+                zones.add(new Zone(x, y, endX, endY));
+            }
+        }
+
+        return zones;
+    }
+
+    private List<Point> getAvailablePositionsInZone(Zone zone) {
+        List<Point> positions = new ArrayList<>();
+
+        for (int x = zone.startX; x < zone.endX; x++) {
+            for (int y = zone.startY; y < zone.endY; y++) {
+                if (map[x][y] == FLOOR &&
+                        (x != avatarX || y != avatarY) &&
+                        (x != chaserX || y != chaserY) &&
+                        (x != doorX || y != doorY)) {
+                    positions.add(new Point(x, y));
+                }
+            }
+        }
+
+        return positions;
+    }
+
+    private Point selectPositionWithWeights(List<Point> positions, Zone zone) {
+        if (positions.isEmpty())
+            return null;
+
+        // Calculate weights for each position
+        double[] weights = new double[positions.size()];
+        double totalWeight = 0;
+
+        for (int i = 0; i < positions.size(); i++) {
+            Point p = positions.get(i);
+            double weight = calculatePositionWeight(p, zone);
+            weights[i] = weight;
+            totalWeight += weight;
+        }
+
+        // Select position based on weights
+        double selection = random.nextDouble() * totalWeight;
+        double currentSum = 0;
+
+        for (int i = 0; i < weights.length; i++) {
+            currentSum += weights[i];
+            if (currentSum >= selection) {
+                return positions.get(i);
+            }
+        }
+
+        return positions.get(0);
+    }
+
+    private double calculatePositionWeight(Point p, Zone zone) {
+        // Base weight
+        double weight = 1.0;
+
+        // Factor in distance from walls (prefer positions away from walls)
+        weight *= getWallDistanceFactor(p);
+
+        // Factor in distance from other items
+        weight *= getItemSpacingFactor(p);
+
+        // Factor in zone difficulty
+        weight *= (1.0 + zone.difficulty);
+
+        // Factor in path accessibility
+        weight *= getPathAccessibilityFactor(p);
+
+        return weight;
+    }
+
+    private double getWallDistanceFactor(Point p) {
+        int wallCount = 0;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                int newX = p.x + dx;
+                int newY = p.y + dy;
+                if (newX >= 0 && newX < WIDTH && newY >= 0 && newY < HEIGHT) {
+                    if (map[newX][newY] == WALL)
+                        wallCount++;
+                }
+            }
+        }
+        return 1.0 - (wallCount / 8.0);
+    }
+
+    private double getItemSpacingFactor(Point p) {
+        double minDistance = Double.MAX_VALUE;
+
+        // Check distance to consumables
+        for (Point other : consumablePositions) {
+            double dist = Math.sqrt(Math.pow(p.x - other.x, 2) + Math.pow(p.y - other.y, 2));
+            minDistance = Math.min(minDistance, dist);
+        }
+
+        // Check distance to obstacles
+        for (Point other : obstacles.keySet()) {
+            double dist = Math.sqrt(Math.pow(p.x - other.x, 2) + Math.pow(p.y - other.y, 2));
+            minDistance = Math.min(minDistance, dist);
+        }
+
+        return Math.min(1.0, minDistance / 5.0);
+    }
+
+    private double getPathAccessibilityFactor(Point p) {
+        // Calculate accessibility based on number of accessible neighbors
+        int accessibleNeighbors = 0;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0)
+                    continue;
+                int newX = p.x + dx;
+                int newY = p.y + dy;
+                if (newX >= 0 && newX < WIDTH && newY >= 0 && newY < HEIGHT) {
+                    if (map[newX][newY] == FLOOR)
+                        accessibleNeighbors++;
+                }
+            }
+        }
+        return accessibleNeighbors / 8.0;
+    }
+
+    private Consumable selectConsumableByValue(Point position, Zone zone) {
+        // Higher value consumables in more difficult zones
+        if (random.nextDouble() < zone.difficulty) {
+            return consumables.get(0); // Smiley Face (higher value)
+        } else {
+            return consumables.get(1); // Normal Face (lower value)
+        }
+    }
+
+    private ObstacleType selectObstacleByLocation(Point position, Zone zone) {
+        double roll = random.nextDouble();
+
+        // More dangerous obstacles in difficult zones
+        if (zone.difficulty > 0.7) {
+            if (roll < 0.4)
+                return ObstacleType.SPIKES;
+            else if (roll < 0.7)
+                return ObstacleType.TELEPORTER;
+            else
+                return ObstacleType.ICE;
+        } else if (zone.difficulty > 0.3) {
+            if (roll < 0.3)
+                return ObstacleType.SPIKES;
+            else if (roll < 0.6)
+                return ObstacleType.TELEPORTER;
+            else
+                return ObstacleType.ICE;
+        } else {
+            if (roll < 0.2)
+                return ObstacleType.SPIKES;
+            else if (roll < 0.5)
+                return ObstacleType.TELEPORTER;
+            else
+                return ObstacleType.ICE;
+        }
+    }
+
+    private Point selectPositionForDarkRoom(List<Point> positions, Zone zone) {
+        // Find position with good spacing from other dark rooms
+        Point bestPosition = null;
+        double bestScore = -1;
+
+        for (Point p : positions) {
+            double score = 1.0;
+
+            // Check distance from other dark rooms
+            for (Map.Entry<Point, ObstacleType> entry : obstacles.entrySet()) {
+                if (entry.getValue() == ObstacleType.DARK_MODE) {
+                    double distance = Math.sqrt(
+                            Math.pow(p.x - entry.getKey().x, 2) +
+                                    Math.pow(p.y - entry.getKey().y, 2));
+                    score *= Math.min(1.0, distance / 10.0);
+                }
+            }
+
+            // Factor in zone difficulty
+            score *= (1.0 + zone.difficulty);
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestPosition = p;
+            }
+        }
+
+        return bestPosition;
+    }
+
+    private void removeNearbyPositions(List<Point> positions, Point center, int radius) {
+        positions.removeIf(p -> Math.sqrt(Math.pow(p.x - center.x, 2) + Math.pow(p.y - center.y, 2)) <= radius);
     }
 
     public void placeAvatar() {
@@ -782,40 +1060,6 @@ public class World {
             case DARK_MODE:
                 handleDarkRoom(position);
                 break;
-        }
-    }
-
-    private void populateObstacles(int numObstacles) {
-        Random rand = new Random(seed);
-        List<Point> availablePositions = new ArrayList<>(usedSpaces);
-
-        // Filter available positions to only include floor tiles
-        availablePositions.removeIf(point -> map[point.x][point.y] != FLOOR ||
-                (point.x == avatarX && point.y == avatarY) ||
-                (point.x == chaserX && point.y == chaserY));
-
-        // Ensure at least some dark rooms (20% of obstacles will be dark rooms)
-        int numDarkModeTrap = Math.max(1, numObstacles / 5);
-
-        // Place dark rooms first
-        for (int i = 0; i < numDarkModeTrap && !availablePositions.isEmpty(); i++) {
-            Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
-            obstacles.put(position, ObstacleType.DARK_MODE);
-            map[position.x][position.y] = ObstacleType.DARK_MODE.getTile();
-
-            availablePositions.remove(position);
-        }
-
-        // Place other obstacles
-        for (int i = numDarkModeTrap; i < numObstacles && !availablePositions.isEmpty(); i++) {
-            Point position = availablePositions.get(rand.nextInt(availablePositions.size()));
-            ObstacleType obstacle = ObstacleType.values()[rand.nextInt(ObstacleType.values().length - 1)]; // -1 to
-                                                                                                           // exclude
-                                                                                                           // DARK_ROOM
-
-            obstacles.put(position, obstacle);
-            map[position.x][position.y] = obstacle.getTile();
-            availablePositions.remove(position);
         }
     }
 
