@@ -101,4 +101,20 @@ public class Player {
     public void setPoints(int points) {
         this.points = points;
     }
+
+    // Add this method to set invisibility state and remaining duration
+    public void setInvisibilityState(boolean isInvisible, long remainingDuration) {
+        this.isInvisible = isInvisible;
+        if (isInvisible) {
+            this.remainingInvisibilityDuration = remainingDuration;
+            this.invisibilityEndTime = System.currentTimeMillis() + remainingDuration;
+        } else {
+            this.remainingInvisibilityDuration = 0;
+        }
+    }
+
+    // Add a getter for remainingInvisibilityDuration
+    public long getRemainingInvisibilityDuration() {
+        return remainingInvisibilityDuration;
+    }
 }

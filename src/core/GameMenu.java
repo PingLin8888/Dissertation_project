@@ -793,7 +793,6 @@ public class GameMenu implements EventListener {
         StdDraw.show();
         StdDraw.pause(3000);
 
-
         // Wait for any key press
         while (!StdDraw.hasNextKeyTyped()) {
             StdDraw.pause(10);
@@ -859,6 +858,15 @@ public class GameMenu implements EventListener {
             String[] darkModeData = lines[currentLine++].split(",");
             boolean isDarkMode = Boolean.parseBoolean(darkModeData[0]);
             int visionRadius = Integer.parseInt(darkModeData[1]);
+
+            // Load invisibility state
+            String[] invisibilityData = lines[currentLine++].split(",");
+            boolean isInvisible = Boolean.parseBoolean(invisibilityData[0]);
+            long remainingDuration = Long.parseLong(invisibilityData[1]);
+            if (isInvisible) {
+                player.setInvisibilityState(true, remainingDuration);
+                player.resumeInvisibility();
+            }
 
             // Update player state first (before creating world)
             player.setPoints(points);
@@ -1199,6 +1207,10 @@ public class GameMenu implements EventListener {
 
         // Dark mode state
         data.append(world.isDarkMode()).append(",").append(world.getVisionRadius()).append("\n");
+
+        // Use pauseInvisibility to determine remaining duration
+        player.pauseInvisibility();
+        data.append(player.isInvisible()).append(",").append(player.getRemainingInvisibilityDuration()).append("\n");
 
         // Save torch positions
         List<Point> torchPositions = world.getTorchPositions();
