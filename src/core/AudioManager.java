@@ -261,4 +261,12 @@ public class AudioManager {
             }
         }
     }
+
+    // Add a method to stop all currently playing sounds
+    public void stopAllSounds() {
+        for (String soundId : activeSounds) {
+            stopSound(soundId);
+        }
+        activeSounds.clear();
+    }
 }

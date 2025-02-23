@@ -1259,7 +1259,7 @@ public class World {
         }
     }
 
-    private void checkDarkModeProximity() {
+    public void checkDarkModeProximity() {
         boolean isNear = false;
         Point avatarPos = new Point(avatarX, avatarY);
 
@@ -1287,7 +1287,7 @@ public class World {
         }
     }
 
-    // Update the checkChaserProximity method to consider invisibility
+    // Update the checkChaserProximity method to consider invisibility sound effect
     void checkChaserProximity() {
         // If player is invisible, stop chaser sound regardless of proximity
         if (player.isInvisible()) {

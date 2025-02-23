@@ -866,6 +866,7 @@ public class GameMenu implements EventListener {
             if (isInvisible) {
                 player.setInvisibilityState(true, remainingDuration);
                 player.resumeInvisibility();
+                AudioManager.getInstance().playLoopingSound("invisibility");
             }
 
             // Update player state first (before creating world)
@@ -1105,13 +1106,17 @@ public class GameMenu implements EventListener {
         isPaused = !isPaused;
         AudioManager.getInstance().playSound("menu");
         if (isPaused) {
-            AudioManager.getInstance().pauseAllSounds();
+            AudioManager.getInstance().stopAllSounds();
             player.pauseInvisibility(); // Pause invisibility duration
             drawPauseMenu();
         } else {
-            AudioManager.getInstance().resumeAllSounds();
+            // Start relevant sounds based on game state
+            if (player.isInvisible()) {
+                AudioManager.getInstance().playLoopingSound("invisibility");
+            }
             player.resumeInvisibility(); // Resume invisibility duration
             world.checkChaserProximity();
+            world.checkDarkModeProximity();
             redraw = true;
         }
     }
