@@ -714,23 +714,12 @@ public class GameMenu implements EventListener {
         player.addPoints(levelPoints);
         hudNeedsUpdate = true;
 
-        if (currentLevel < MAX_LEVEL) {
-            // Show level completion message
-            showLevelCompleteMessage(levelPoints);
+        // Show level completion message
+        showLevelCompleteMessage(levelPoints);
 
-            // Advance to next level
-            currentLevel++;
-            createNextLevel();
-        } else {
-            // Show game completion message
-            showGameCompleteMessage();
-
-            // Return to main menu
-            gameStarted = false;
-            currentState = GameState.MAIN_MENU;
-            // Clear menu items to force refresh
-            menuItems.clear();
-        }
+        // Advance to next level
+        currentLevel++;
+        createNextLevel();
     }
 
     private void createNextLevel() {
@@ -777,27 +766,6 @@ public class GameMenu implements EventListener {
         StdDraw.text(40, 26, "Chaser is faster now!");
         StdDraw.show();
         StdDraw.pause(3000);
-    }
-
-    private void showGameCompleteMessage() {
-        AudioManager.getInstance().stopAllSoundsExcept("gamePass");
-        StdDraw.clear(StdDraw.BLACK);
-        StdDraw.setPenColor(StdDraw.WHITE);
-
-        // Center the completion message with good spacing
-        StdDraw.text(40, 30, "Congratulations!");
-        StdDraw.text(40, 25, "You've completed all " + MAX_LEVEL + " levels!");
-        StdDraw.text(40, 20, "Final Score: " + player.getPoints());
-        StdDraw.text(40, 15, "Press any key to continue");
-
-        StdDraw.show();
-        StdDraw.pause(3000);
-
-        // Wait for any key press
-        while (!StdDraw.hasNextKeyTyped()) {
-            StdDraw.pause(10);
-        }
-        StdDraw.nextKeyTyped(); // Clear the key press
     }
 
     public void saveGame(Player player) {
