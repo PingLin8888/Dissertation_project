@@ -264,7 +264,10 @@ public class AudioManager {
 
     // Add a method to stop all currently playing sounds
     public void stopAllSounds() {
-        for (String soundId : activeSounds) {
+        // Create a copy of the activeSounds set to avoid
+        // ConcurrentModificationException
+        Set<String> soundsToStop = new HashSet<>(activeSounds);
+        for (String soundId : soundsToStop) {
             stopSound(soundId);
         }
         activeSounds.clear();

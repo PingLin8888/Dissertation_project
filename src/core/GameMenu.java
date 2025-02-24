@@ -921,6 +921,12 @@ public class GameMenu implements EventListener {
                     "Game loaded successfully",
                     System.currentTimeMillis() + 3000));
 
+            // Check and play chaser sound if nearby
+            world.checkChaserProximity();
+
+            // Check and play eerie sound if near dark mode obstacle
+            world.checkDarkModeProximity();
+
         } catch (Exception e) {
             System.err.println("Error loading game: " + e.getMessage());
             e.printStackTrace();
