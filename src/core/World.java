@@ -1456,4 +1456,10 @@ public class World {
     public void setChaserIsDead(boolean chaserIsDead) {
         this.chaserIsDead = chaserIsDead;
     }
+
+    // Add a method to reset sound flags
+    public void resetSoundFlags() {
+        isEerieSoundPlaying = false;
+        isChaserSoundPlaying = false;
+    }
 }

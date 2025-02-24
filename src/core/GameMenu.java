@@ -1110,13 +1110,21 @@ public class GameMenu implements EventListener {
             player.pauseInvisibility(); // Pause invisibility duration
             drawPauseMenu();
         } else {
+            // Reset sound flags on unpause
+            world.resetSoundFlags();
+
             // Start relevant sounds based on game state
             if (player.isInvisible()) {
                 AudioManager.getInstance().playLoopingSound("invisibility");
             }
             player.resumeInvisibility(); // Resume invisibility duration
+
+            // Check and play chaser sound if nearby
             world.checkChaserProximity();
+
+            // Check and play eerie sound if near dark mode obstacle
             world.checkDarkModeProximity();
+
             redraw = true;
         }
     }
