@@ -357,13 +357,13 @@ public class GameMenu implements EventListener {
                     startY - spacing, false, baseDelay + delayIncrement));
             menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("points", player.getPoints()),
                     startY - spacing * 2, false, baseDelay + delayIncrement * 2));
-            menuItems.add(new AnimatedMenuItem("N - " + translationManager.getTranslation("new_game"),
+            menuItems.add(new AnimatedMenuItem("1 - New Game from Scratch",
                     startY - spacing * 3, false, baseDelay + delayIncrement * 3));
-            menuItems.add(new AnimatedMenuItem("L - " + translationManager.getTranslation("load_game"),
+            menuItems.add(new AnimatedMenuItem("2 - Continue",
                     startY - spacing * 4, true, baseDelay + delayIncrement * 4));
-            menuItems.add(new AnimatedMenuItem("C - " + translationManager.getTranslation("change_avatar"),
+            menuItems.add(new AnimatedMenuItem("3 - Change Avatar",
                     startY - spacing * 5, false, baseDelay + delayIncrement * 5));
-            menuItems.add(new AnimatedMenuItem("Q - " + translationManager.getTranslation("quit"),
+            menuItems.add(new AnimatedMenuItem("4 - Quit",
                     startY - spacing * 6, false, baseDelay + delayIncrement * 6));
         }
 
@@ -997,35 +997,29 @@ public class GameMenu implements EventListener {
     }
 
     private void handleMainMenuInput(char key) {
-        StdDraw.setPenColor(Color.white);
-
         switch (key) {
-            case 'n':
-                AudioManager.getInstance().playSound("menu");
-                createNewGame();
-                AudioManager.getInstance().playSound("gamestart");
-                currentState = GameState.IN_GAME;
+            case '1':
+                if (confirmNewGame()) {
+                    createNewGame();
+                    AudioManager.getInstance().playSound("gamestart");
+                    currentState = GameState.IN_GAME;
+                }
                 break;
-            case 'l':
-                // Update hasSavedGame status before attempting to load
-                hasSavedGame = checkSavedGameExists(player.getUsername());
+            case '2':
                 if (hasSavedGame) {
-                    AudioManager.getInstance().playSound("menu");
                     loadGame(player);
                     drawWorld();
                     AudioManager.getInstance().playSound("gamestart");
                     currentState = GameState.IN_GAME;
                 } else {
+                    // Handle case where no saved game exists
                     StdDraw.clear(StdDraw.BLACK);
                     StdDraw.text(40, 24, translationManager.getTranslation("no_saved_game"));
                     StdDraw.show();
                     StdDraw.pause(2000);
-
-                    redraw = true;
-                    currentState = GameState.MAIN_MENU;
                 }
                 break;
-            case 'c': // Avatar customization
+            case '3':
                 AudioManager.getInstance().playSound("menu");
                 int newAvatarChoice = showAvatarSelection();
                 player.setAvatarChoice(newAvatarChoice);
@@ -1038,7 +1032,7 @@ public class GameMenu implements EventListener {
                 }
                 redraw = true;
                 break;
-            case 'q':
+            case '4':
                 AudioManager.getInstance().playSound("menu");
                 saveGame(player);
                 AudioManager.getInstance().stopAllSoundsExcept("menu");
@@ -1264,5 +1258,25 @@ public class GameMenu implements EventListener {
         StdDraw.text(40, centerY, translationManager.getTranslation("press_p_resume"));
         StdDraw.text(40, centerY - 5, translationManager.getTranslation("press_n_restart"));
         StdDraw.text(40, centerY - 10, ":Q - " + translationManager.getTranslation("save_and_quit"));
+    }
+
+    // Add confirmation prompt for new game
+    private boolean confirmNewGame() {
+        StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(Color.WHITE);
+        StdDraw.text(40, 24, "Starting a new game will reset your progress.");
+        StdDraw.text(40, 22, "Are you sure you want to continue? (Y/N)");
+        StdDraw.show();
+
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char key = Character.toLowerCase(StdDraw.nextKeyTyped());
+                if (key == 'y') {
+                    return true; // Confirm new game
+                } else if (key == 'n') {
+                    return false; // Cancel new game
+                }
+            }
+        }
     }
 }
