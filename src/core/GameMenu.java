@@ -229,7 +229,7 @@ public class GameMenu implements EventListener {
                 drawLoginMenu();
                 break;
             case MAIN_MENU:
-                drawPostLoginMenu(player);
+                drawPostMainMenu(player);
                 break;
             case IN_GAME:
                 renderGameScreen();
@@ -342,7 +342,7 @@ public class GameMenu implements EventListener {
         StdDraw.show();
     }
 
-    private void drawPostLoginMenu(Player player) {
+    private void drawPostMainMenu(Player player) {
         if (menuItems.isEmpty()) {
             hasSavedGame = checkSavedGameExists(player.getUsername());
 
@@ -495,6 +495,7 @@ public class GameMenu implements EventListener {
             try {
                 // Load basic player info from save file
                 String contents = FileUtils.readFile(saveFile);
+                System.out.println("Contents of save file: " + contents);
                 String[] lines = contents.split("\n");
 
                 // Verify username
@@ -503,14 +504,29 @@ public class GameMenu implements EventListener {
                 }
 
                 // Load player data from first few lines of save file
+                System.out.println("Attempting to parse points: " + lines[1]);
                 int points = Integer.parseInt(lines[1]);
+                System.out.println("Attempting to parse avatarChoice: " + lines[2]);
                 int avatarChoice = Integer.parseInt(lines[2]);
-                int currentLevelFromFile = Integer.parseInt(lines[3]);
+                System.out.println("Attempting to parse seed: " + lines[3]);
+                long seed = Long.parseLong(lines[3]);
+                System.out.println("Attempting to parse avatarX: " + lines[4]);
+                int avatarX = Integer.parseInt(lines[4]);
+                System.out.println("Attempting to parse avatarY: " + lines[5]);
+                int avatarY = Integer.parseInt(lines[5]);
+                System.out.println("Attempting to parse chaserX: " + lines[6]);
+                int chaserX = Integer.parseInt(lines[6]);
+                System.out.println("Attempting to parse chaserY: " + lines[7]);
+                int chaserY = Integer.parseInt(lines[7]);
+                System.out.println("Attempting to parse currentLevel: " + lines[8]);
+                int currentLevelFromFile = Integer.parseInt(lines[8]);
                 currentLevel = currentLevelFromFile;
 
                 Player player = new Player(username, points);
                 player.setAvatarChoice(avatarChoice);
                 hasSavedGame = true;
+                System.out.println("Input Username: " + username);
+                System.out.println("Saved Username: " + lines[0]);
                 return player;
 
             } catch (Exception e) {
