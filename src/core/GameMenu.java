@@ -752,8 +752,14 @@ public class GameMenu implements EventListener {
         StdDraw.text(40, 20, "Level " + currentLevel + " Complete!");
         StdDraw.text(40, 23, "Points earned: " + pointsEarned);
         StdDraw.text(40, 26, "Total points: " + player.getPoints());
+        StdDraw.text(40, 29, "Press any key to continue...");
         StdDraw.show();
-        StdDraw.pause(3000);
+
+        // Wait for any key press
+        while (!StdDraw.hasNextKeyTyped()) {
+            StdDraw.pause(10);
+        }
+        StdDraw.nextKeyTyped(); // Clear the key press
     }
 
     private void showNewLevelMessage() {
