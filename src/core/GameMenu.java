@@ -357,14 +357,16 @@ public class GameMenu implements EventListener {
                     startY - spacing, false, baseDelay + delayIncrement));
             menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("points", player.getPoints()),
                     startY - spacing * 2, false, baseDelay + delayIncrement * 2));
-            menuItems.add(new AnimatedMenuItem("1 - New Game from Scratch",
+            menuItems.add(new AnimatedMenuItem("Level: " + currentLevel,
                     startY - spacing * 3, false, baseDelay + delayIncrement * 3));
+            menuItems.add(new AnimatedMenuItem("1 - New Game from Scratch",
+                    startY - spacing * 4, false, baseDelay + delayIncrement * 4));
             menuItems.add(new AnimatedMenuItem("2 - Continue",
-                    startY - spacing * 4, true, baseDelay + delayIncrement * 4));
+                    startY - spacing * 5, true, baseDelay + delayIncrement * 5));
             menuItems.add(new AnimatedMenuItem("3 - Change Avatar",
-                    startY - spacing * 5, false, baseDelay + delayIncrement * 5));
-            menuItems.add(new AnimatedMenuItem("4 - Quit",
                     startY - spacing * 6, false, baseDelay + delayIncrement * 6));
+            menuItems.add(new AnimatedMenuItem("4 - Quit",
+                    startY - spacing * 7, false, baseDelay + delayIncrement * 7));
         }
 
         StdDraw.clear(new Color(0.1f, 0.1f, 0.1f));
@@ -475,7 +477,8 @@ public class GameMenu implements EventListener {
         StdDraw.setPenColor(Color.white);
         StdDraw.textLeft(0.1, 44, hudCache.playerInfo);
         StdDraw.textLeft(0.1, 43, hudCache.pointsInfo);
-        StdDraw.textLeft(0.1, 42, hudCache.tileDescription);
+        StdDraw.textLeft(0.1, 42, "Level: " + currentLevel);
+        StdDraw.textLeft(0.1, 41, hudCache.tileDescription);
         StdDraw.text(40, 44, hudCache.instructions);
     }
 
@@ -502,6 +505,8 @@ public class GameMenu implements EventListener {
                 // Load player data from first few lines of save file
                 int points = Integer.parseInt(lines[1]);
                 int avatarChoice = Integer.parseInt(lines[2]);
+                int currentLevelFromFile = Integer.parseInt(lines[3]);
+                currentLevel = currentLevelFromFile;
 
                 Player player = new Player(username, points);
                 player.setAvatarChoice(avatarChoice);
@@ -822,6 +827,7 @@ public class GameMenu implements EventListener {
             int avatarY = Integer.parseInt(lines[currentLine++]);
             int chaserX = Integer.parseInt(lines[currentLine++]);
             int chaserY = Integer.parseInt(lines[currentLine++]);
+            currentLevel = Integer.parseInt(lines[currentLine++]); // Load current level
 
             // Load door position
             String[] doorPos = lines[currentLine++].split(",");
@@ -925,7 +931,7 @@ public class GameMenu implements EventListener {
         if (!notifications.isEmpty()) {
             Notification latestNotification = notifications.get(notifications.size() - 1);
             StdDraw.setPenColor(StdDraw.WHITE);
-            StdDraw.textLeft(0.01, 41, latestNotification.getMessage());
+            StdDraw.textLeft(0.01, 40, latestNotification.getMessage());
         }
     }
 
@@ -1187,7 +1193,8 @@ public class GameMenu implements EventListener {
                 .append(world.getAvatarX()).append("\n")
                 .append(world.getAvatarY()).append("\n")
                 .append(world.getChaserX()).append("\n")
-                .append(world.getChaserY()).append("\n");
+                .append(world.getChaserY()).append("\n")
+                .append(currentLevel).append("\n"); // Add current level
 
         // Door position
         data.append(world.getDoorX()).append(",").append(world.getDoorY()).append("\n");
