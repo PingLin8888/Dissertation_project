@@ -148,8 +148,12 @@ public class GameMenu implements EventListener {
     private static final long AUTO_SAVE_INTERVAL = 300000; // 5 minutes in milliseconds
     private long lastAutoSaveTime = 0;
 
+    private SettingsMenu settingsMenu;
+
     public GameMenu() {
         initializeTranslations();
+        settingsMenu = new SettingsMenu(translationManager);
+        Settings.getInstance().loadSettings(); // Load saved settings
     }
 
     private void initializeTranslations() {
@@ -234,7 +238,10 @@ public class GameMenu implements EventListener {
             case IN_GAME:
                 renderGameScreen();
                 if (isPaused) {
-                    drawPauseOverlay(); // Draw pause menu on top of game world
+                    drawPauseOverlay();
+                }
+                if (settingsMenu.isVisible()) {
+                    settingsMenu.render();
                 }
                 break;
         }
@@ -1056,6 +1063,11 @@ public class GameMenu implements EventListener {
     }
 
     private void handleGameInput(char key) throws InterruptedException {
+        if (settingsMenu.isVisible()) {
+            settingsMenu.handleInput(key);
+            return;
+        }
+
         if (key == ':') {
             quitSignBuilder.setLength(0);
             quitSignBuilder.append(key);
@@ -1069,11 +1081,12 @@ public class GameMenu implements EventListener {
             quitSignBuilder.setLength(0);
         } else if (key == 'p') {
             handlePause();
-        } else if (key == 'n') { // Move restart check outside of !isPaused block
+        } else if (key == 'o') { // New key for settings
+            settingsMenu.show();
+        } else if (key == 'n') {
             handleRestart();
-        } else if (!isPaused) { // Other game controls only work when not paused
+        } else if (!isPaused) {
             if (key == 'v') {
-                // When V is pressed, try to purchase invisibility cure.
                 if (player.purchaseInvisibilityCure()) {
                     world.updateAvatarTile();
                     AudioManager.getInstance().setWalkVolume(0.1f);
@@ -1153,15 +1166,12 @@ public class GameMenu implements EventListener {
 
     // Add new method to draw pause menu
     private void drawPauseMenu() {
-
         StdDraw.setPenColor(Color.white);
-
-        // Increased vertical spacing between lines
         StdDraw.text(40, 35, translationManager.getTranslation("game_paused"));
         StdDraw.text(40, 28, translationManager.getTranslation("press_p_resume"));
         StdDraw.text(40, 21, translationManager.getTranslation("press_n_restart"));
         StdDraw.text(40, 14, ":Q - " + translationManager.getTranslation("save_and_quit"));
-
+        StdDraw.text(40, 7, "O - " + translationManager.getTranslation("open_settings"));
         StdDraw.show();
     }
 

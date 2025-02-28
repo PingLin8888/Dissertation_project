@@ -34,6 +34,10 @@ public class AudioManager {
     private static final float EFFECTS_VOLUME = 0.7f;
     private static final float WALK_VOLUME = 0.3f;
 
+    private float masterVolume = 1.0f;
+    private float musicVolume = 0.7f;
+    private float sfxVolume = 0.5f;
+
     private AudioManager() {
         soundCache = new HashMap<>();
         activeSounds = new HashSet<>();
@@ -271,5 +275,41 @@ public class AudioManager {
             stopSound(soundId);
         }
         activeSounds.clear();
+    }
+
+    public void setMasterVolume(float volume) {
+        this.masterVolume = volume;
+        updateAllVolumes();
+    }
+
+    public void setMusicVolume(float volume) {
+        this.musicVolume = volume;
+        updateAllVolumes();
+    }
+
+    public void setSFXVolume(float volume) {
+        this.sfxVolume = volume;
+        updateAllVolumes();
+    }
+
+    private void updateAllVolumes() {
+        for (Map.Entry<String, Clip> entry : soundCache.entrySet()) {
+            String soundId = entry.getKey();
+            Clip clip = entry.getValue();
+
+            if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                float effectiveVolume = masterVolume * (isMusic(soundId) ? musicVolume : sfxVolume);
+                float dB = (float) (Math.log10(effectiveVolume) * 20.0f);
+                gainControl.setValue(Math.max(gainControl.getMinimum(), Math.min(gainControl.getMaximum(), dB)));
+            }
+        }
+    }
+
+    private boolean isMusic(String soundId) {
+        // Add any background music sound IDs here
+        return soundId.equals(SOUND_EERIE) ||
+                soundId.equals(SOUND_CHASER) ||
+                soundId.equals(SOUND_INVISIBILITY);
     }
 }
