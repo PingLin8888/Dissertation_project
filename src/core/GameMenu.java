@@ -229,7 +229,7 @@ public class GameMenu implements EventListener {
                 drawLoginMenu();
                 break;
             case MAIN_MENU:
-                drawPostMainMenu(player);
+                drawMainMenu(player);
                 break;
             case IN_GAME:
                 renderGameScreen();
@@ -342,7 +342,7 @@ public class GameMenu implements EventListener {
         StdDraw.show();
     }
 
-    private void drawPostMainMenu(Player player) {
+    private void drawMainMenu(Player player) {
         if (menuItems.isEmpty()) {
             hasSavedGame = checkSavedGameExists(player.getUsername());
 
@@ -359,10 +359,10 @@ public class GameMenu implements EventListener {
                     startY - spacing * 2, false, baseDelay + delayIncrement * 2));
             menuItems.add(new AnimatedMenuItem("Level: " + currentLevel,
                     startY - spacing * 3, false, baseDelay + delayIncrement * 3));
-            menuItems.add(new AnimatedMenuItem("1 - New Game from Scratch",
-                    startY - spacing * 4, false, baseDelay + delayIncrement * 4));
-            menuItems.add(new AnimatedMenuItem("2 - Continue",
-                    startY - spacing * 5, true, baseDelay + delayIncrement * 5));
+            menuItems.add(new AnimatedMenuItem("1 - Continue",
+                    startY - spacing * 4, true, baseDelay + delayIncrement * 4));
+            menuItems.add(new AnimatedMenuItem("2 - New Game from Scratch",
+                    startY - spacing * 5, false, baseDelay + delayIncrement * 5));
             menuItems.add(new AnimatedMenuItem("3 - Change Avatar",
                     startY - spacing * 6, false, baseDelay + delayIncrement * 6));
             menuItems.add(new AnimatedMenuItem("4 - Quit",
@@ -504,21 +504,13 @@ public class GameMenu implements EventListener {
                 }
 
                 // Load player data from first few lines of save file
-                System.out.println("Attempting to parse points: " + lines[1]);
                 int points = Integer.parseInt(lines[1]);
-                System.out.println("Attempting to parse avatarChoice: " + lines[2]);
                 int avatarChoice = Integer.parseInt(lines[2]);
-                System.out.println("Attempting to parse seed: " + lines[3]);
                 long seed = Long.parseLong(lines[3]);
-                System.out.println("Attempting to parse avatarX: " + lines[4]);
                 int avatarX = Integer.parseInt(lines[4]);
-                System.out.println("Attempting to parse avatarY: " + lines[5]);
                 int avatarY = Integer.parseInt(lines[5]);
-                System.out.println("Attempting to parse chaserX: " + lines[6]);
                 int chaserX = Integer.parseInt(lines[6]);
-                System.out.println("Attempting to parse chaserY: " + lines[7]);
                 int chaserY = Integer.parseInt(lines[7]);
-                System.out.println("Attempting to parse currentLevel: " + lines[8]);
                 int currentLevelFromFile = Integer.parseInt(lines[8]);
                 currentLevel = currentLevelFromFile;
 
@@ -1021,13 +1013,6 @@ public class GameMenu implements EventListener {
     private void handleMainMenuInput(char key) {
         switch (key) {
             case '1':
-                if (confirmNewGame()) {
-                    createNewGame();
-                    AudioManager.getInstance().playSound("gamestart");
-                    currentState = GameState.IN_GAME;
-                }
-                break;
-            case '2':
                 if (hasSavedGame) {
                     loadGame(player);
                     drawWorld();
@@ -1039,6 +1024,13 @@ public class GameMenu implements EventListener {
                     StdDraw.text(40, 24, translationManager.getTranslation("no_saved_game"));
                     StdDraw.show();
                     StdDraw.pause(2000);
+                }
+                break;
+            case '2':
+                if (confirmNewGame()) {
+                    createNewGame();
+                    AudioManager.getInstance().playSound("gamestart");
+                    currentState = GameState.IN_GAME;
                 }
                 break;
             case '3':
