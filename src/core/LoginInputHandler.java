@@ -9,14 +9,13 @@ public class LoginInputHandler implements InputHandler {
 
     @Override
     public boolean handleInput(char key) {
+        AudioManager.getInstance().playSound("menu");
         switch (key) {
             case 'p':
-                AudioManager.getInstance().playSound("menu");
                 gameMenu.player = gameMenu.loginOrCreateProfile();
                 gameMenu.currentState = GameMenu.GameState.MAIN_MENU;
                 break;
             case 'q':
-                AudioManager.getInstance().playSound("menu");
                 System.exit(0);
                 break;
         }

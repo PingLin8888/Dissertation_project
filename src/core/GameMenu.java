@@ -241,15 +241,16 @@ public class GameMenu implements EventListener {
                 drawLoginMenu();
                 break;
             case MAIN_MENU:
-                drawMainMenu(player);
+                if (settingsMenu.isVisible()) {
+                    settingsMenu.render();
+                } else {
+                    drawMainMenu(player);
+                }
                 break;
             case IN_GAME:
                 renderInGameScreen();
                 if (isPaused) {
                     drawPauseOverlay();
-                }
-                if (settingsMenu.isVisible()) {
-                    settingsMenu.render();
                 }
                 break;
         }
@@ -376,6 +377,8 @@ public class GameMenu implements EventListener {
                     startY - spacing * 6, false, baseDelay + delayIncrement * 6));
             menuItems.add(new AnimatedMenuItem("4 - Quit",
                     startY - spacing * 7, false, baseDelay + delayIncrement * 7));
+            menuItems.add(new AnimatedMenuItem("5 - Settings",
+                    startY - spacing * 8, false, baseDelay + delayIncrement * 8));
         }
 
         StdDraw.clear(new Color(0.1f, 0.1f, 0.1f));
@@ -393,7 +396,6 @@ public class GameMenu implements EventListener {
         String saveFile = SAVES_DIR + "/" + username + SAVE_FILE_SUFFIX;
         return new File(saveFile).exists();
     }
-
 
     private boolean hasMouseMoved(double currentMouseX, double currentMouseY) {
         // Add a small threshold to prevent tiny movements from triggering updates
@@ -982,6 +984,7 @@ public class GameMenu implements EventListener {
     public void handlePause() {
         // Toggle pause state
         isPaused = !isPaused;
+
         AudioManager.getInstance().playSound("menu");
         if (isPaused) {
             AudioManager.getInstance().stopAllSounds();
@@ -1048,8 +1051,44 @@ public class GameMenu implements EventListener {
         StdDraw.text(40, 28, translationManager.getTranslation("press_p_resume"));
         StdDraw.text(40, 21, translationManager.getTranslation("press_n_restart"));
         StdDraw.text(40, 14, ":Q - " + translationManager.getTranslation("save_and_quit"));
-        StdDraw.text(40, 7, "O - " + translationManager.getTranslation("open_settings"));
         StdDraw.show();
+    }
+
+    // Add a new method to draw semi-transparent pause overlay
+    private void drawPauseOverlay() {
+        // Draw semi-transparent dark overlay
+        StdDraw.setPenColor(new Color(0, 0, 0, 0.5f));
+        StdDraw.filledRectangle(World.getWIDTH() / 2.0, World.getHEIGHT() / 2.0,
+                World.getWIDTH() / 2.0, World.getHEIGHT() / 2.0);
+
+        // Draw pause menu
+        StdDraw.setPenColor(Color.WHITE);
+        double centerY = World.getHEIGHT() / 2.0;
+
+        StdDraw.text(40, centerY + 5, translationManager.getTranslation("game_paused"));
+        StdDraw.text(40, centerY, translationManager.getTranslation("press_p_resume"));
+        StdDraw.text(40, centerY - 5, translationManager.getTranslation("press_n_restart"));
+        StdDraw.text(40, centerY - 10, ":Q - " + translationManager.getTranslation("save_and_quit"));
+    }
+
+    // Add confirmation prompt for new game
+    public boolean confirmNewGame() {
+        StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(Color.WHITE);
+        StdDraw.text(40, 24, "Starting a new game will reset your progress.");
+        StdDraw.text(40, 22, "Are you sure you want to continue? (Y/N)");
+        StdDraw.show();
+
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char key = Character.toLowerCase(StdDraw.nextKeyTyped());
+                if (key == 'y') {
+                    return true; // Confirm new game
+                } else if (key == 'n') {
+                    return false; // Cancel new game
+                }
+            }
+        }
     }
 
     // Add this method to handle auto-saves
@@ -1142,43 +1181,6 @@ public class GameMenu implements EventListener {
             data.append(p.x).append(",")
                     .append(p.y).append(",")
                     .append(entry.getValue().name()).append("\n");
-        }
-    }
-
-    // Add a new method to draw semi-transparent pause overlay
-    private void drawPauseOverlay() {
-        // Draw semi-transparent dark overlay
-        StdDraw.setPenColor(new Color(0, 0, 0, 0.5f));
-        StdDraw.filledRectangle(World.getWIDTH() / 2.0, World.getHEIGHT() / 2.0,
-                World.getWIDTH() / 2.0, World.getHEIGHT() / 2.0);
-
-        // Draw pause menu
-        StdDraw.setPenColor(Color.WHITE);
-        double centerY = World.getHEIGHT() / 2.0;
-
-        StdDraw.text(40, centerY + 5, translationManager.getTranslation("game_paused"));
-        StdDraw.text(40, centerY, translationManager.getTranslation("press_p_resume"));
-        StdDraw.text(40, centerY - 5, translationManager.getTranslation("press_n_restart"));
-        StdDraw.text(40, centerY - 10, ":Q - " + translationManager.getTranslation("save_and_quit"));
-    }
-
-    // Add confirmation prompt for new game
-    public boolean confirmNewGame() {
-        StdDraw.clear(StdDraw.BLACK);
-        StdDraw.setPenColor(Color.WHITE);
-        StdDraw.text(40, 24, "Starting a new game will reset your progress.");
-        StdDraw.text(40, 22, "Are you sure you want to continue? (Y/N)");
-        StdDraw.show();
-
-        while (true) {
-            if (StdDraw.hasNextKeyTyped()) {
-                char key = Character.toLowerCase(StdDraw.nextKeyTyped());
-                if (key == 'y') {
-                    return true; // Confirm new game
-                } else if (key == 'n') {
-                    return false; // Cancel new game
-                }
-            }
         }
     }
 }

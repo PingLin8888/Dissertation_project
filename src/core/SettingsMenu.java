@@ -31,14 +31,20 @@ public class SettingsMenu {
     }
 
     public void handleInput(char key) {
+        boolean needsRender = true;
         switch (key) {
             case 'w' -> moveSelection(-1);
             case 's' -> moveSelection(1);
             case 'a' -> adjustSetting(-1);
             case 'd' -> adjustSetting(1);
-            case '\u001B' -> hide(); // ESC to exit
+            case '\u001B' -> {
+                hide(); // ESC to exit
+                needsRender = false;
+            }
         }
-        render();
+        if (needsRender) {
+            render();
+        }
     }
 
     private void moveSelection(int direction) {

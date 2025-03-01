@@ -11,6 +11,15 @@ public class MainMenuInputHandler implements InputHandler {
 
     @Override
     public boolean handleInput(char key) {
+        // If settings menu is visible, handle its input first
+        if (gameMenu.settingsMenu.isVisible()) {
+            gameMenu.settingsMenu.handleInput(key);
+            gameMenu.redraw = true;
+            return true;
+        }
+
+        AudioManager.getInstance().playSound("menu");
+
         switch (key) {
             case '1':
                 if (gameMenu.hasSavedGame) {
@@ -34,7 +43,6 @@ public class MainMenuInputHandler implements InputHandler {
                 }
                 break;
             case '3':
-                AudioManager.getInstance().playSound("menu");
                 int newAvatarChoice = gameMenu.showAvatarSelection();
                 gameMenu.player.setAvatarChoice(newAvatarChoice);
                 if (gameMenu.world != null) {
@@ -47,14 +55,17 @@ public class MainMenuInputHandler implements InputHandler {
                 gameMenu.redraw = true;
                 break;
             case '4':
-                AudioManager.getInstance().playSound("menu");
                 gameMenu.saveGame(gameMenu.player);
                 AudioManager.getInstance().stopAllSoundsExcept("menu");
                 System.exit(0);
+                break;
+            case '5':
+                gameMenu.menuItems.clear(); // Clear menu items
+                gameMenu.settingsMenu.show();
+                gameMenu.redraw = true;
                 break;
         }
         return true;
     }
 
-   
 }

@@ -27,8 +27,6 @@ public class InGameInputHandler implements InputHandler {
             gameMenu.quitSignBuilder.setLength(0);
         } else if (key == 'p') {
             gameMenu.handlePause();
-        } else if (key == 'o') { // New key for settings
-            gameMenu.settingsMenu.show();
         } else if (key == 'n') {
             gameMenu.handleRestart();
         } else if (!gameMenu.isPaused) {
@@ -49,6 +47,5 @@ public class InGameInputHandler implements InputHandler {
         }
         return true;
     }
-
 
 }
