@@ -7,7 +7,7 @@ public class SettingsMenu {
     private Settings settings;
     private boolean isVisible;
     private int selectedOption;
-    private static final int NUM_OPTIONS = 4;
+    private static final int NUM_OPTIONS = 2;
     private TranslationManager translationManager;
 
     public SettingsMenu(TranslationManager translationManager) {
@@ -56,9 +56,7 @@ public class SettingsMenu {
         AudioManager.getInstance().playSound("menu");
         switch (selectedOption) {
             case 0 -> adjustVolume("masterVolume", direction);
-            case 1 -> adjustVolume("musicVolume", direction);
-            case 2 -> adjustVolume("sfxVolume", direction);
-            case 3 -> adjustDifficulty(direction);
+            case 1 -> adjustDifficulty(direction);
         }
         settings.saveSettings();
     }
@@ -88,9 +86,7 @@ public class SettingsMenu {
 
         // Draw settings options
         drawSettingOption(35, "Master Volume", "masterVolume", 0);
-        drawSettingOption(31, "Music Volume", "musicVolume", 1);
-        drawSettingOption(27, "SFX Volume", "sfxVolume", 2);
-        drawSettingOption(23, "Difficulty", "difficulty", 3);
+        drawSettingOption(31, "Difficulty", "difficulty", 1);
 
         // Draw controls help box
         StdDraw.setPenColor(new Color(40, 40, 40));
