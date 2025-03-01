@@ -37,7 +37,7 @@ public class GameMenu implements EventListener {
 
     Player player = null;
     public Language currentLanguage = Language.ENGLISH; // Default language
-    private TranslationManager translationManager;
+    public TranslationManager translationManager;
     List<Notification> notifications = new ArrayList<>();
 
     // Add this class to cache HUD information
@@ -68,7 +68,7 @@ public class GameMenu implements EventListener {
 
     GameState currentState = GameState.LANGUAGE_SELECT;
 
-    private boolean hasSavedGame = false; // Add this field to track if saved game exists
+    public boolean hasSavedGame = false; // Add this field to track if saved game exists
 
     private int currentLevel = 1;
     private static final int MAX_LEVEL = 5;
@@ -152,6 +152,7 @@ public class GameMenu implements EventListener {
     private InGameInputHandler inGameInputHandler;
     private LanguageSelectionInputHandler languageSelectionInputHandler;
     private LoginInputHandler loginInputHandler;
+    private MainMenuInputHandler mainMenuInputHandler;
 
     public GameMenu() {
         initializeTranslations();
@@ -160,6 +161,7 @@ public class GameMenu implements EventListener {
         inGameInputHandler = new InGameInputHandler(this);
         languageSelectionInputHandler = new LanguageSelectionInputHandler(this);
         loginInputHandler = new LoginInputHandler(this);
+        mainMenuInputHandler = new MainMenuInputHandler(this);
     }
 
     public void initializeTranslations() {
@@ -310,8 +312,7 @@ public class GameMenu implements EventListener {
                 return loginInputHandler.handleInput(key);
             }
             case MAIN_MENU -> {
-                handleMainMenuInput(key);
-                return true;
+                return mainMenuInputHandler.handleInput(key);
             }
         }
         return true;
@@ -584,7 +585,7 @@ public class GameMenu implements EventListener {
         return usernameBuilder.toString().trim();
     }
 
-    private int showAvatarSelection() {
+    int showAvatarSelection() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(Color.white);
         StdDraw.text(40, 30, translationManager.getTranslation("choose_avatar"));
@@ -635,7 +636,7 @@ public class GameMenu implements EventListener {
         }
     }
 
-    private void createNewGame() {
+    public void createNewGame() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(Color.white);
 
@@ -686,7 +687,7 @@ public class GameMenu implements EventListener {
         drawWorld();
     }
 
-    private void drawWorld() {
+    public void drawWorld() {
         System.out.println("before drawing world");
         try {
             int width = world.getMap().length;
@@ -992,51 +993,6 @@ public class GameMenu implements EventListener {
         }
     }
 
-    private void handleMainMenuInput(char key) {
-        switch (key) {
-            case '1':
-                if (hasSavedGame) {
-                    loadGame(player);
-                    drawWorld();
-                    AudioManager.getInstance().playSound("gamestart");
-                    currentState = GameState.IN_GAME;
-                } else {
-                    // Handle case where no saved game exists
-                    StdDraw.clear(StdDraw.BLACK);
-                    StdDraw.text(40, 24, translationManager.getTranslation("no_saved_game"));
-                    StdDraw.show();
-                    StdDraw.pause(2000);
-                }
-                break;
-            case '2':
-                if (confirmNewGame()) {
-                    createNewGame();
-                    AudioManager.getInstance().playSound("gamestart");
-                    currentState = GameState.IN_GAME;
-                }
-                break;
-            case '3':
-                AudioManager.getInstance().playSound("menu");
-                int newAvatarChoice = showAvatarSelection();
-                player.setAvatarChoice(newAvatarChoice);
-                if (world != null) {
-                    world.updateAvatarTile();
-                }
-                // Save game after avatar change to persist the choice
-                if (hasSavedGame) {
-                    saveGame(player);
-                }
-                redraw = true;
-                break;
-            case '4':
-                AudioManager.getInstance().playSound("menu");
-                saveGame(player);
-                AudioManager.getInstance().stopAllSoundsExcept("menu");
-                System.exit(0);
-                break;
-        }
-    }
-
     public void handlePause() {
         // Toggle pause state
         isPaused = !isPaused;
@@ -1221,7 +1177,7 @@ public class GameMenu implements EventListener {
     }
 
     // Add confirmation prompt for new game
-    private boolean confirmNewGame() {
+    public boolean confirmNewGame() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(Color.WHITE);
         StdDraw.text(40, 24, "Starting a new game will reset your progress.");
