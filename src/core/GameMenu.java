@@ -25,20 +25,20 @@ enum Language {
 }
 
 public class GameMenu implements EventListener {
-    private World world;
+    World world;
     private TERenderer ter;
-    private StringBuilder quitSignBuilder = new StringBuilder();
+    StringBuilder quitSignBuilder = new StringBuilder();
     private boolean gameStarted = false;
-    private boolean redraw = true;
+    boolean redraw = true;
     private double prevMouseX = 0;
     private double prevMouseY = 0;
     private long lastChaserMoveTime = 0; // Variable to track the last time the chaser moved
     private long CHASER_MOVE_INTERVAL = 500; // Reduced interval for faster chaser movement
 
-    private Player player = null;
+    Player player = null;
     private Language currentLanguage = Language.ENGLISH; // Default language
     private TranslationManager translationManager;
-    private List<Notification> notifications = new ArrayList<>();
+    List<Notification> notifications = new ArrayList<>();
 
     // Add this class to cache HUD information
     private static class HUDInfo {
@@ -59,14 +59,14 @@ public class GameMenu implements EventListener {
     private HUDInfo hudCache;
     private boolean hudNeedsUpdate = true;
 
-    private enum GameState {
+    enum GameState {
         LANGUAGE_SELECT,
         LOGIN,
         MAIN_MENU,
         IN_GAME
     }
 
-    private GameState currentState = GameState.LANGUAGE_SELECT;
+    GameState currentState = GameState.LANGUAGE_SELECT;
 
     private boolean hasSavedGame = false; // Add this field to track if saved game exists
 
@@ -78,10 +78,10 @@ public class GameMenu implements EventListener {
     private char lastDirection = 's'; // Default facing down
 
     // Add new field
-    private boolean isPaused = false;
+    boolean isPaused = false;
 
     // Add these fields at the top of GameMenu class
-    private List<AnimatedMenuItem> menuItems = new ArrayList<>();
+    List<AnimatedMenuItem> menuItems = new ArrayList<>();
     private boolean animationInProgress = false;
 
     // Replace both AnimatedText and MenuText with this unified class
@@ -148,12 +148,14 @@ public class GameMenu implements EventListener {
     private static final long AUTO_SAVE_INTERVAL = 300000; // 5 minutes in milliseconds
     private long lastAutoSaveTime = 0;
 
-    private SettingsMenu settingsMenu;
+    public SettingsMenu settingsMenu;
+    private InGameInputHandler inGameInputHandler;
 
     public GameMenu() {
         initializeTranslations();
         settingsMenu = new SettingsMenu(translationManager);
         Settings.getInstance().loadSettings(); // Load saved settings
+        inGameInputHandler = new InGameInputHandler(this);
     }
 
     private void initializeTranslations() {
@@ -292,15 +294,9 @@ public class GameMenu implements EventListener {
         char key = Character.toLowerCase(StdDraw.nextKeyTyped());
         redraw = true;
 
-        // Handle movement keys first for faster response
+        // Delegate in-game input handling to InGameInputHandler
         if (currentState == GameState.IN_GAME) {
-            switch (key) {
-                case 'w', 'a', 's', 'd' -> {
-                    handleMovement(key);
-                    return true;
-                }
-            }
-            handleGameInput(key);
+            return inGameInputHandler.handleInput(key);
         } else {
             // Handle other states...
             switch (currentState) {
@@ -694,7 +690,7 @@ public class GameMenu implements EventListener {
         }
     }
 
-    private void handleMovement(char key) {
+    public void handleMovement(char key) {
         lastDirection = key; // Update last direction before moving
         if (world.moveAvatar(key)) {
             AudioManager.getInstance().playSound("walk");
@@ -950,7 +946,7 @@ public class GameMenu implements EventListener {
         }
     }
 
-    private void handleRestart() throws InterruptedException {
+    public void handleRestart() throws InterruptedException {
         // Pause the game if it wasn't already paused
         boolean wasPaused = isPaused;
         if (!wasPaused) {
@@ -1062,47 +1058,7 @@ public class GameMenu implements EventListener {
         }
     }
 
-    private void handleGameInput(char key) throws InterruptedException {
-        if (settingsMenu.isVisible()) {
-            settingsMenu.handleInput(key);
-            return;
-        }
-
-        if (key == ':') {
-            quitSignBuilder.setLength(0);
-            quitSignBuilder.append(key);
-        } else if (key == 'q' && quitSignBuilder.toString().equals(":")) {
-            AudioManager.getInstance().playSound("menu");
-            saveGame(player);
-            AudioManager.getInstance().stopAllSoundsExcept("menu");
-            currentState = GameState.MAIN_MENU;
-            menuItems.clear(); // Clear menu items to force refresh
-            redraw = true;
-            quitSignBuilder.setLength(0);
-        } else if (key == 'p') {
-            handlePause();
-        } else if (key == 'o') { // New key for settings
-            settingsMenu.show();
-        } else if (key == 'n') {
-            handleRestart();
-        } else if (!isPaused) {
-            if (key == 'v') {
-                if (player.purchaseInvisibilityCure()) {
-                    world.updateAvatarTile();
-                    AudioManager.getInstance().setWalkVolume(0.1f);
-                    notifications.add(new Notification("Invisibility activated!", System.currentTimeMillis() + 2000));
-                } else {
-                    notifications
-                            .add(new Notification("Cannot activate invisibility!", System.currentTimeMillis() + 2000));
-                }
-                redraw = true;
-            } else if (key == 'w' || key == 'a' || key == 's' || key == 'd') {
-                handleMovement(key);
-            }
-        }
-    }
-
-    private void handlePause() {
+    public void handlePause() {
         // Toggle pause state
         isPaused = !isPaused;
         AudioManager.getInstance().playSound("menu");
