@@ -50,8 +50,5 @@ public class InGameInputHandler implements InputHandler {
         return true;
     }
 
-    @Override
-    public int getPriority() {
-        return 1; // Priority can be adjusted as needed
-    }
+
 }

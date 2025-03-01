@@ -244,7 +244,7 @@ public class GameMenu implements EventListener {
                 drawMainMenu(player);
                 break;
             case IN_GAME:
-                renderGameScreen();
+                renderInGameScreen();
                 if (isPaused) {
                     drawPauseOverlay();
                 }
@@ -282,13 +282,9 @@ public class GameMenu implements EventListener {
         StdDraw.show();
     }
 
-    private void renderGameScreen() {
+    private void renderInGameScreen() {
         ter.renderFrame(world.getVisibleMap());
         updateHUD();
-        // if (world.isShowPath() && world.getPathToAvatar() != null) {
-        // drawPath();
-        // }
-        // StdDraw.show();
         renderNotifications();
     }
 
@@ -398,12 +394,6 @@ public class GameMenu implements EventListener {
         return new File(saveFile).exists();
     }
 
-    private void drawPath() {
-        StdDraw.setPenColor(StdDraw.BOOK_RED);
-        for (Point p : world.getPathToAvatar()) {
-            StdDraw.filledSquare(p.x + 0.5, p.y + 0.5, 0.5);
-        }
-    }
 
     private boolean hasMouseMoved(double currentMouseX, double currentMouseY) {
         // Add a small threshold to prevent tiny movements from triggering updates
@@ -519,11 +509,7 @@ public class GameMenu implements EventListener {
                 // Load player data from first few lines of save file
                 int points = Integer.parseInt(lines[1]);
                 int avatarChoice = Integer.parseInt(lines[2]);
-                long seed = Long.parseLong(lines[3]);
-                int avatarX = Integer.parseInt(lines[4]);
-                int avatarY = Integer.parseInt(lines[5]);
-                int chaserX = Integer.parseInt(lines[6]);
-                int chaserY = Integer.parseInt(lines[7]);
+
                 int currentLevelFromFile = Integer.parseInt(lines[8]);
                 currentLevel = currentLevelFromFile;
 

@@ -13,5 +13,4 @@ public interface InputHandler {
      * Get the priority of this input handler.
      * Higher priority handlers get to process input first.
      */
-    int getPriority();
 }
