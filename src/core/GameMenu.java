@@ -36,7 +36,7 @@ public class GameMenu implements EventListener {
     private long CHASER_MOVE_INTERVAL = 500; // Reduced interval for faster chaser movement
 
     Player player = null;
-    private Language currentLanguage = Language.ENGLISH; // Default language
+    public Language currentLanguage = Language.ENGLISH; // Default language
     private TranslationManager translationManager;
     List<Notification> notifications = new ArrayList<>();
 
@@ -137,7 +137,7 @@ public class GameMenu implements EventListener {
     }
 
     // Update the menu item lists to use the new class
-    private List<AnimatedMenuItem> languageMenuItems = new ArrayList<>();
+    public List<AnimatedMenuItem> languageMenuItems = new ArrayList<>();
     private List<AnimatedMenuItem> loginMenuItems = new ArrayList<>();
 
     // Add these constants at the top of GameMenu class
@@ -150,15 +150,17 @@ public class GameMenu implements EventListener {
 
     public SettingsMenu settingsMenu;
     private InGameInputHandler inGameInputHandler;
+    private LanguageSelectionInputHandler languageSelectionInputHandler;
 
     public GameMenu() {
         initializeTranslations();
         settingsMenu = new SettingsMenu(translationManager);
         Settings.getInstance().loadSettings(); // Load saved settings
         inGameInputHandler = new InGameInputHandler(this);
+        languageSelectionInputHandler = new LanguageSelectionInputHandler(this);
     }
 
-    private void initializeTranslations() {
+    public void initializeTranslations() {
         translationManager = new TranslationManager(currentLanguage);
     }
 
@@ -294,15 +296,21 @@ public class GameMenu implements EventListener {
         char key = Character.toLowerCase(StdDraw.nextKeyTyped());
         redraw = true;
 
-        // Delegate in-game input handling to InGameInputHandler
-        if (currentState == GameState.IN_GAME) {
-            return inGameInputHandler.handleInput(key);
-        } else {
-            // Handle other states...
-            switch (currentState) {
-                case LANGUAGE_SELECT -> handleLanguageSelection(key);
-                case LOGIN -> handleLoginInput(key);
-                case MAIN_MENU -> handleMainMenuInput(key);
+        // Delegate input handling based on current state
+        switch (currentState) {
+            case IN_GAME -> {
+                return inGameInputHandler.handleInput(key);
+            }
+            case LANGUAGE_SELECT -> {
+                return languageSelectionInputHandler.handleInput(key);
+            }
+            case LOGIN -> {
+                handleLoginInput(key);
+                return true;
+            }
+            case MAIN_MENU -> {
+                handleMainMenuInput(key);
+                return true;
             }
         }
         return true;
@@ -980,22 +988,6 @@ public class GameMenu implements EventListener {
                 }
             }
             StdDraw.pause(10);
-        }
-    }
-
-    private void handleLanguageSelection(char key) {
-        if (key == 'e') {
-            AudioManager.getInstance().playSound("menu");
-            currentLanguage = Language.ENGLISH;
-            currentState = GameState.LOGIN;
-            languageMenuItems.clear(); // Clear animations
-            initializeTranslations();
-        } else if (key == 'c') {
-            AudioManager.getInstance().playSound("menu");
-            currentLanguage = Language.CHINESE;
-            currentState = GameState.LOGIN;
-            languageMenuItems.clear(); // Clear animations
-            initializeTranslations();
         }
     }
 
