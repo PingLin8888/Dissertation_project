@@ -151,6 +151,7 @@ public class GameMenu implements EventListener {
     public SettingsMenu settingsMenu;
     private InGameInputHandler inGameInputHandler;
     private LanguageSelectionInputHandler languageSelectionInputHandler;
+    private LoginInputHandler loginInputHandler;
 
     public GameMenu() {
         initializeTranslations();
@@ -158,6 +159,7 @@ public class GameMenu implements EventListener {
         Settings.getInstance().loadSettings(); // Load saved settings
         inGameInputHandler = new InGameInputHandler(this);
         languageSelectionInputHandler = new LanguageSelectionInputHandler(this);
+        loginInputHandler = new LoginInputHandler(this);
     }
 
     public void initializeTranslations() {
@@ -305,8 +307,7 @@ public class GameMenu implements EventListener {
                 return languageSelectionInputHandler.handleInput(key);
             }
             case LOGIN -> {
-                handleLoginInput(key);
-                return true;
+                return loginInputHandler.handleInput(key);
             }
             case MAIN_MENU -> {
                 handleMainMenuInput(key);
@@ -493,7 +494,7 @@ public class GameMenu implements EventListener {
         StdDraw.text(40, 44, hudCache.instructions);
     }
 
-    private Player loginOrCreateProfile() {
+    public Player loginOrCreateProfile() {
         StdDraw.clear(StdDraw.BLACK);
         StdDraw.setPenColor(StdDraw.WHITE);
 
@@ -988,20 +989,6 @@ public class GameMenu implements EventListener {
                 }
             }
             StdDraw.pause(10);
-        }
-    }
-
-    private void handleLoginInput(char key) {
-        switch (key) {
-            case 'p':
-                AudioManager.getInstance().playSound("menu");
-                player = loginOrCreateProfile();
-                currentState = GameState.MAIN_MENU;
-                break;
-            case 'q':
-                AudioManager.getInstance().playSound("menu");
-                System.exit(0);
-                break;
         }
     }
 
