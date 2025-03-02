@@ -65,6 +65,18 @@ public class SettingsMenu {
         float currentVolume = (float) settings.getSetting(volumeType);
         float newVolume = Math.max(0.0f, Math.min(1.0f, currentVolume + direction * 0.1f));
         settings.setSetting(volumeType, newVolume);
+
+        // Directly set the volume on AudioManager to ensure it takes effect
+        AudioManager audioManager = AudioManager.getInstance();
+        if (volumeType.equals("masterVolume")) {
+            audioManager.setMasterVolume(newVolume);
+
+            // Update all currently playing sounds
+            audioManager.updateAllPlayingSoundVolumes();
+
+            // Play a test sound to hear the volume change
+            audioManager.playSound("menu");
+        }
     }
 
     private void adjustDifficulty(int direction) {
