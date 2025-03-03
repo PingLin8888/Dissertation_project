@@ -60,7 +60,6 @@ public class Settings {
         // Apply volume settings
         AudioManager audioManager = AudioManager.getInstance();
         audioManager.setMasterVolume((float) settings.get("masterVolume"));
-        audioManager.setMusicVolume((float) settings.get("musicVolume"));
-        audioManager.setSFXVolume((float) settings.get("sfxVolume"));
+
     }
 }
