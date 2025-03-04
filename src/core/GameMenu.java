@@ -166,6 +166,9 @@ public class GameMenu implements EventListener {
 
     public void initializeTranslations() {
         translationManager = new TranslationManager(currentLanguage);
+        if (settingsMenu != null) {
+            settingsMenu.updateTranslationManager(translationManager);
+        }
     }
 
     public void createGameMenu() throws InterruptedException {
@@ -598,9 +601,9 @@ public class GameMenu implements EventListener {
 
             // Draw name and highlight current selection if changing avatar
             StdDraw.setPenColor(StdDraw.WHITE);
-            String label = (i + 1) + ": " + avatar.getName();
+            String label = translationManager.getTranslation("avatar_label", i + 1, avatar.getName());
             if (player != null && player.getAvatarChoice() == avatar.getIndex()) {
-                label += " (Current)";
+                label += " " + translationManager.getTranslation("avatar_current");
             }
             StdDraw.text(x, textY, label);
         }

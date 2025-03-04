@@ -97,14 +97,14 @@ public class SettingsMenu {
         StdDraw.text(40, 40, translationManager.getTranslation("settings_title"));
 
         // Draw settings options
-        drawSettingOption(35, "Master Volume", "masterVolume", 0);
-        drawSettingOption(31, "Difficulty", "difficulty", 1);
+        drawSettingOption(35, translationManager.getTranslation("settings_master_volume"), "masterVolume", 0);
+        drawSettingOption(31, translationManager.getTranslation("settings_difficulty"), "difficulty", 1);
 
         // Draw controls help box
         StdDraw.setPenColor(new Color(40, 40, 40));
         StdDraw.filledRectangle(40, 10, 25, 2);
         StdDraw.setPenColor(new Color(200, 200, 200));
-        StdDraw.text(40, 10, "W/S - Navigate | A/D - Adjust | ESC - Back");
+        StdDraw.text(40, 10, translationManager.getTranslation("settings_controls_help"));
 
         StdDraw.show();
     }
@@ -137,12 +137,16 @@ public class SettingsMenu {
         } else if (key.equals("difficulty")) {
             int diff = (int) value;
             return switch (diff) {
-                case 1 -> "Easy";
-                case 2 -> "Normal";
-                case 3 -> "Hard";
-                default -> "Unknown";
+                case 1 -> translationManager.getTranslation("settings_easy");
+                case 2 -> translationManager.getTranslation("settings_normal");
+                case 3 -> translationManager.getTranslation("settings_hard");
+                default -> translationManager.getTranslation("settings_unknown");
             };
         }
         return value.toString();
+    }
+
+    public void updateTranslationManager(TranslationManager translationManager) {
+        this.translationManager = translationManager;
     }
 }

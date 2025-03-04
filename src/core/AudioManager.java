@@ -374,7 +374,6 @@ public class AudioManager {
                     float dB;
                     if (effectiveVolume <= 0.001f) {
                         dB = gainControl.getMinimum();
-                        System.out.println("Setting " + soundId + " to minimum volume (silent)");
                     } else {
                         dB = (float) (Math.log10(Math.max(0.01f, effectiveVolume)) * 20.0f);
                         dB = Math.max(gainControl.getMinimum(), Math.min(gainControl.getMaximum(), dB));
