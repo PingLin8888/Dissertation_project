@@ -500,6 +500,7 @@ public class GameMenu implements EventListener {
             try {
                 // Load basic player info from save file
                 String contents = FileUtils.readFile(saveFile);
+                System.out.println("Contents of save file: " + contents);
                 String[] lines = contents.split("\n");
 
                 // Verify username

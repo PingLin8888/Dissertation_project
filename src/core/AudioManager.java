@@ -10,13 +10,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class AudioManager {
     private static AudioManager instance;
     private final Map<String, Clip> soundCache;
     private final Set<String> activeSounds; // Track currently active sounds
-    private final Map<String, Timer> loopTimers; // Track timers for manually looped sounds
 
     // Sound type constants
     private static final String SOUND_EERIE = "eerie";
@@ -37,11 +35,12 @@ public class AudioManager {
     private static final float WALK_VOLUME = 0.3f;
 
     private float masterVolume = 1.0f;
+    private float musicVolume = 0.7f;
+    private float sfxVolume = 0.5f;
 
     private AudioManager() {
         soundCache = new HashMap<>();
         activeSounds = new HashSet<>();
-        loopTimers = new ConcurrentHashMap<>(); // Thread-safe map for loop timers
         initializeSounds();
     }
 
@@ -66,36 +65,11 @@ public class AudioManager {
         loadSound(SOUND_EERIE, "/sounds/near_dark.wav");
         loadSound(SOUND_CHASER, "/sounds/chaser.wav");
         loadSound(SOUND_INVISIBILITY, "/sounds/invisibility_loop.wav");
-
-        // Add specific listeners for looping sounds
-        setupLoopingSoundListeners();
-    }
-
-    private void setupLoopingSoundListeners() {
-        // Add listeners to the two looping sounds to ensure seamless playback
-        if (soundCache.containsKey(SOUND_INVISIBILITY)) {
-            Clip clip = soundCache.get(SOUND_INVISIBILITY);
-            clip.addLineListener(event -> {
-                if (event.getType() == LineEvent.Type.STOP && activeSounds.contains(SOUND_INVISIBILITY)) {
-                    // If clip stopped but is still meant to be looping, restart it
-                    restartLoopingSound(SOUND_INVISIBILITY);
-                }
-            });
-        }
-
-        if (soundCache.containsKey(SOUND_CHASER)) {
-            Clip clip = soundCache.get(SOUND_CHASER);
-            clip.addLineListener(event -> {
-                if (event.getType() == LineEvent.Type.STOP && activeSounds.contains(SOUND_CHASER)) {
-                    // If clip stopped but is still meant to be looping, restart it
-                    restartLoopingSound(SOUND_CHASER);
-                }
-            });
-        }
     }
 
     private void loadSound(String soundId, String resourcePath) {
         try {
+
             var resource = getClass().getResource(resourcePath);
             if (resource == null) {
                 System.err.println("Could not find sound resource: " + resourcePath);
@@ -129,14 +103,12 @@ public class AudioManager {
             Clip clip = AudioSystem.getClip();
             clip.open(audioInputStream);
 
-            // Add listener to reset clip position for non-looping sounds
-            if (!isLoopingSound(soundId)) {
-                clip.addLineListener(event -> {
-                    if (event.getType() == LineEvent.Type.STOP) {
-                        clip.setFramePosition(0);
-                    }
-                });
-            }
+            // Add listener to reset clip position
+            clip.addLineListener(event -> {
+                if (event.getType() == LineEvent.Type.STOP) {
+                    clip.setFramePosition(0);
+                }
+            });
 
             soundCache.put(soundId, clip);
             audioInputStream.close();
@@ -148,62 +120,49 @@ public class AudioManager {
 
     // Helper method to check if a sound should loop
     private boolean isLoopingSound(String soundId) {
-        return soundId.equals(SOUND_CHASER) || soundId.equals(SOUND_INVISIBILITY);
+        return soundId.equals(SOUND_EERIE) ||
+                soundId.equals(SOUND_CHASER) ||
+                soundId.equals(SOUND_INVISIBILITY);
     }
 
     public void playSound(String soundId) {
-        // For looping sounds, use the improved looping mechanism
-        if (isLoopingSound(soundId)) {
-            playLoopingSound(soundId);
-            return;
-        }
-
         Clip clip = soundCache.get(soundId);
         if (clip != null && !clip.isRunning()) { // Only play if not already playing
             try {
                 clip.setFramePosition(0);
 
                 // Apply volume settings before playing
-                applyVolume(clip);
+                if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                    FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                    float effectiveVolume = masterVolume * (isMusic(soundId) ? musicVolume : sfxVolume);
+
+                    // Handle 0 volume correctly by setting to minimum gain (silent)
+                    if (effectiveVolume <= 0.001f) {
+                        gainControl.setValue(gainControl.getMinimum());
+                    } else {
+                        float dB = (float) (Math.log10(Math.max(0.01f, effectiveVolume)) * 20.0f);
+                        gainControl
+                                .setValue(Math.max(gainControl.getMinimum(), Math.min(gainControl.getMaximum(), dB)));
+                    }
+                }
 
                 clip.start();
+                // Only add to activeSounds if it's a looping sound
+                if (isLoopingSound(soundId)) {
+                    activeSounds.add(soundId);
+                }
             } catch (Exception e) {
                 System.err.println("Error playing sound " + soundId + ": " + e.getMessage());
             }
         }
     }
 
-    private void applyVolume(Clip clip) {
-        if (clip != null && clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
-            try {
-                FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-                float effectiveVolume = masterVolume;
-
-                // Handle 0 volume correctly
-                if (effectiveVolume <= 0.001f) {
-                    gainControl.setValue(gainControl.getMinimum());
-                } else {
-                    float dB = (float) (Math.log10(Math.max(0.01f, effectiveVolume)) * 20.0f);
-                    gainControl.setValue(Math.max(gainControl.getMinimum(),
-                            Math.min(gainControl.getMaximum(), dB)));
-                }
-            } catch (Exception e) {
-                System.err.println("Error applying volume: " + e.getMessage());
-            }
-        }
-    }
-
     public void stopSound(String soundId) {
-        // For looping sounds, use the dedicated stop method
-        if (isLoopingSound(soundId)) {
-            stopLoopingSound(soundId);
-            return;
-        }
-
         Clip clip = soundCache.get(soundId);
         if (clip != null && clip.isRunning()) {
             clip.stop();
             clip.setFramePosition(0);
+            activeSounds.remove(soundId);
         }
     }
 
@@ -262,18 +221,10 @@ public class AudioManager {
     }
 
     public void cleanup() {
-        // Cancel all loop timers
-        for (Timer timer : loopTimers.values()) {
-            timer.cancel();
-        }
-        loopTimers.clear();
-
-        // Close all clip resources
         for (Clip clip : soundCache.values()) {
             clip.close();
         }
         soundCache.clear();
-        activeSounds.clear();
     }
 
     public void setWalkVolume(float volume) {
@@ -294,109 +245,215 @@ public class AudioManager {
             System.err.println("Warning: Attempting to loop non-looping sound: " + soundId);
             return;
         }
-
         Clip clip = soundCache.get(soundId);
         if (clip != null) {
-            // If already playing, don't restart
-            if (activeSounds.contains(soundId)) {
-                return;
-            }
-
-            // Stop the clip if it's already running
-            if (clip.isRunning()) {
-                clip.stop();
-            }
-
             clip.setFramePosition(0);
-            applyVolume(clip);
-            clip.start();
 
-            // Add to active sounds
-            activeSounds.add(soundId);
-            System.out.println("Started looping sound: " + soundId);
-        }
-    }
+            // Apply volume settings for all looping sounds
+            if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                float effectiveVolume = masterVolume * (isMusic(soundId) ? musicVolume : sfxVolume);
 
-    private void restartLoopingSound(String soundId) {
-        // This is called when a clip stops naturally but needs to loop
-        if (!activeSounds.contains(soundId)) {
-            return; // Sound has been stopped intentionally, don't restart
-        }
-
-        // Cancel any existing timer for this sound
-        Timer existingTimer = loopTimers.get(soundId);
-        if (existingTimer != null) {
-            existingTimer.cancel();
-        }
-
-        // Create a new timer to restart the sound immediately
-        Timer timer = new Timer(true); // daemon timer
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                Clip clip = soundCache.get(soundId);
-                if (clip != null && activeSounds.contains(soundId)) {
-                    clip.setFramePosition(0);
-                    applyVolume(clip); // Ensure volume is correct on loop
-                    clip.start();
+                // Handle 0 volume correctly by setting to minimum gain (silent)
+                float dB;
+                if (effectiveVolume <= 0.001f) {
+                    dB = gainControl.getMinimum();
+                } else {
+                    dB = (float) (Math.log10(Math.max(0.01f, effectiveVolume)) * 20.0f);
+                    dB = Math.max(gainControl.getMinimum(), Math.min(gainControl.getMaximum(), dB));
                 }
+                gainControl.setValue(dB);
+                System.out.println("Starting looping sound: " + soundId + " with volume: " + effectiveVolume + " (dB: "
+                        + dB + ")");
             }
-        }, 0); // Schedule immediately
 
-        // Store the timer
-        loopTimers.put(soundId, timer);
+            clip.loop(Clip.LOOP_CONTINUOUSLY);
+            activeSounds.add(soundId);
+        }
     }
 
     public void stopLoopingSound(String soundId) {
-        // First cancel any pending loop timer
-        Timer timer = loopTimers.get(soundId);
-        if (timer != null) {
-            timer.cancel();
-            loopTimers.remove(soundId);
-        }
-
-        // Then stop the sound
         Clip clip = soundCache.get(soundId);
         if (clip != null) {
             clip.stop();
             clip.setFramePosition(0);
-            activeSounds.remove(soundId);
-            System.out.println("Stopped looping sound: " + soundId);
+            boolean wasRemoved = activeSounds.remove(soundId); // Remove from active sounds
+            System.out.println("Stopped looping sound: " + soundId + ", was in active sounds: " + wasRemoved);
+        } else {
+            System.out.println("Cannot stop looping sound: " + soundId + " - not found in cache");
         }
     }
 
-    public void stopAllSounds() {
-        // Cancel all loop timers first
-        for (Timer timer : loopTimers.values()) {
-            timer.cancel();
-        }
-        loopTimers.clear();
-
-        // Then stop all clips
-        for (String soundId : new HashSet<>(activeSounds)) {
+    // New method to pause all active sounds
+    public void pauseAllSounds() {
+        for (String soundId : activeSounds) {
             Clip clip = soundCache.get(soundId);
-            if (clip != null) {
+            if (clip != null && clip.isRunning()) {
                 clip.stop();
-                clip.setFramePosition(0);
             }
         }
+    }
 
+    // New method to resume all active sounds
+    public void resumeAllSounds() {
+        for (String soundId : activeSounds) {
+            Clip clip = soundCache.get(soundId);
+            if (clip != null && isLoopingSound(soundId)) {
+                clip.loop(Clip.LOOP_CONTINUOUSLY);
+            }
+        }
+    }
+
+    // Add a method to stop all currently playing sounds
+    public void stopAllSounds() {
+        // Create a copy of the activeSounds set to avoid
+        // ConcurrentModificationException
+        Set<String> soundsToStop = new HashSet<>(activeSounds);
+        for (String soundId : soundsToStop) {
+            stopSound(soundId);
+        }
         activeSounds.clear();
     }
 
     public void setMasterVolume(float volume) {
         this.masterVolume = volume;
         updateAllVolumes();
+
+        // Ensure the invisibility sound is properly updated
+        Clip invisibilityClip = soundCache.get(SOUND_INVISIBILITY);
+        if (invisibilityClip != null && invisibilityClip.isRunning()) {
+            if (!activeSounds.contains(SOUND_INVISIBILITY)) {
+                System.out.println("Re-adding invisibility sound to active sounds list");
+                activeSounds.add(SOUND_INVISIBILITY);
+            }
+            updateInvisibilitySoundVolume();
+        }
+    }
+
+    public void setMusicVolume(float volume) {
+        this.musicVolume = volume;
+        updateAllVolumes();
+    }
+
+    public void setSFXVolume(float volume) {
+        this.sfxVolume = volume;
+        updateAllVolumes();
     }
 
     private void updateAllVolumes() {
-        // Update volumes for all playing sounds
-        for (String soundId : activeSounds) {
-            Clip clip = soundCache.get(soundId);
-            if (clip != null && clip.isRunning()) {
-                applyVolume(clip);
+        System.out.println("Updating all volumes. Master volume: " + masterVolume);
+        for (Map.Entry<String, Clip> entry : soundCache.entrySet()) {
+            String soundId = entry.getKey();
+            Clip clip = entry.getValue();
+
+            try {
+                if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                    FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                    float effectiveVolume = masterVolume * (isMusic(soundId) ? musicVolume : sfxVolume);
+
+                    // Handle 0 volume correctly by setting to minimum gain (silent)
+                    float dB;
+                    if (effectiveVolume <= 0.001f) {
+                        dB = gainControl.getMinimum();
+                        System.out.println("Setting " + soundId + " to minimum volume (silent)");
+                    } else {
+                        dB = (float) (Math.log10(Math.max(0.01f, effectiveVolume)) * 20.0f);
+                        dB = Math.max(gainControl.getMinimum(), Math.min(gainControl.getMaximum(), dB));
+                        System.out.println(
+                                "Setting volume for " + soundId + " to " + effectiveVolume + " (dB: " + dB + ")");
+                    }
+                    gainControl.setValue(dB);
+                }
+            } catch (Exception e) {
+                System.err.println("Error setting volume for " + soundId + ": " + e.getMessage());
             }
         }
+
+        // Make sure all active sounds respect the new volume settings
+        updateActiveLoopingSounds();
+    }
+
+    /**
+     * Updates the volume for all currently active looping sounds
+     */
+    private void updateActiveLoopingSounds() {
+        System.out.println("Updating active looping sounds. Active sounds: " + activeSounds);
+        for (String soundId : activeSounds) {
+            if (isLoopingSound(soundId)) {
+                Clip clip = soundCache.get(soundId);
+                if (clip != null && clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                    try {
+                        FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                        float effectiveVolume = masterVolume * (isMusic(soundId) ? musicVolume : sfxVolume);
+
+                        // Handle 0 volume correctly by setting to minimum gain (silent)
+                        float dB;
+                        if (effectiveVolume <= 0.001f) {
+                            dB = gainControl.getMinimum();
+                        } else {
+                            dB = (float) (Math.log10(Math.max(0.01f, effectiveVolume)) * 20.0f);
+                            dB = Math.max(gainControl.getMinimum(), Math.min(gainControl.getMaximum(), dB));
+                        }
+                        gainControl.setValue(dB);
+                        System.out.println(
+                                "Updating active looping sound: " + soundId + " to volume: " + effectiveVolume
+                                        + " (dB: " + dB + ")");
+                    } catch (Exception e) {
+                        System.err.println("Error updating volume for active sound " + soundId + ": " + e.getMessage());
+                    }
+                } else {
+                    System.out.println("Warning: Cannot update volume for " + soundId +
+                            (clip == null ? " - clip is null" : " - no gain control support"));
+                }
+            }
+        }
+    }
+
+    /**
+     * Specifically updates the volume for the invisibility sound effect
+     * to ensure it respects the master volume setting even while looping.
+     */
+    public void updateInvisibilitySoundVolume() {
+        Clip clip = soundCache.get(SOUND_INVISIBILITY);
+        if (clip != null) {
+            // Add to active sounds if it's running but not in the list
+            if (clip.isRunning() && !activeSounds.contains(SOUND_INVISIBILITY)) {
+                System.out.println("Adding running invisibility sound to active sounds list");
+                activeSounds.add(SOUND_INVISIBILITY);
+            }
+
+            if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                try {
+                    FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                    float effectiveVolume = masterVolume * sfxVolume;
+
+                    // Handle 0 volume correctly by setting to minimum gain (silent)
+                    float dB;
+                    if (effectiveVolume <= 0.001f) {
+                        dB = gainControl.getMinimum();
+                    } else {
+                        dB = (float) (Math.log10(Math.max(0.01f, effectiveVolume)) * 20.0f);
+                        dB = Math.max(gainControl.getMinimum(), Math.min(gainControl.getMaximum(), dB));
+                    }
+                    gainControl.setValue(dB);
+                    System.out.println("Updated invisibility sound volume to: " + effectiveVolume +
+                            " (dB: " + dB + "), isRunning: " + clip.isRunning());
+                } catch (Exception e) {
+                    System.err.println("Error updating invisibility volume: " + e.getMessage());
+                }
+            } else {
+                System.out.println("Invisibility sound does not support volume control");
+            }
+        } else {
+            System.out.println("Invisibility sound clip not found in cache");
+        }
+    }
+
+    private boolean isMusic(String soundId) {
+        // Add any background music sound IDs here
+        return soundId.equals(SOUND_EERIE) ||
+                soundId.equals(SOUND_CHASER) ||
+                soundId.equals(SOUND_INVISIBILITY);
     }
 
     /**
@@ -404,6 +461,6 @@ public class AudioManager {
      * This is useful when volume settings change while sounds are playing.
      */
     public void updateAllPlayingSoundVolumes() {
-        updateAllVolumes();
+        updateActiveLoopingSounds();
     }
 }
