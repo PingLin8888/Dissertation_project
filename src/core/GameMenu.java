@@ -367,19 +367,19 @@ public class GameMenu implements EventListener {
                     startY - spacing, false, baseDelay + delayIncrement));
             menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("points", player.getPoints()),
                     startY - spacing * 2, false, baseDelay + delayIncrement * 2));
-            menuItems.add(new AnimatedMenuItem("Level: " + currentLevel,
+            menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("current_level", currentLevel),
                     startY - spacing * 3, false, baseDelay + delayIncrement * 3));
-            menuItems.add(new AnimatedMenuItem("1 - Continue",
+            menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("continue_game"),
                     startY - spacing * 4, true, baseDelay + delayIncrement * 4));
-            menuItems.add(new AnimatedMenuItem("2 - New Game from Scratch",
+            menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("new_game_scratch"),
                     startY - spacing * 5, false, baseDelay + delayIncrement * 5));
-            menuItems.add(new AnimatedMenuItem("3 - Change Avatar",
+            menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("change_avatar"),
                     startY - spacing * 6, false, baseDelay + delayIncrement * 6));
-            menuItems.add(new AnimatedMenuItem("4 - Settings",
+            menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("settings"),
                     startY - spacing * 7, false, baseDelay + delayIncrement * 7));
-            menuItems.add(new AnimatedMenuItem("5 - Quit",
+            menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("quit_game"),
                     startY - spacing * 8, false, baseDelay + delayIncrement * 8));
-            menuItems.add(new AnimatedMenuItem("6 - " + translationManager.getTranslation("how_to_play"),
+            menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("tutorial"),
                     startY - spacing * 9, false, baseDelay + delayIncrement * 9));
         }
 
