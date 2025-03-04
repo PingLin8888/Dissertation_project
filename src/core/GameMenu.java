@@ -1238,32 +1238,32 @@ public class GameMenu implements EventListener {
                 {
                         translationManager.getTranslation("movement_controls"),
                         "",
-                        "Use W, A, S, D keys to move your character:",
-                        "W - Move Up",
-                        "A - Move Left",
-                        "S - Move Down",
-                        "D - Move Right"
+                        translationManager.getTranslation("tutorial_movement_intro"),
+                        translationManager.getTranslation("tutorial_move_up"),
+                        translationManager.getTranslation("tutorial_move_left"),
+                        translationManager.getTranslation("tutorial_move_down"),
+                        translationManager.getTranslation("tutorial_move_right")
                 },
                 {
                         translationManager.getTranslation("game_objective"),
                         "",
-                        "Your goal is to reach the exit door while avoiding",
-                        "the chaser that follows you.",
-                        "Collect points along the way to increase your score."
+                        translationManager.getTranslation("tutorial_goal_line1"),
+                        translationManager.getTranslation("tutorial_goal_line2"),
+                        translationManager.getTranslation("tutorial_goal_line3")
                 },
                 {
                         translationManager.getTranslation("special_abilities"),
                         "",
-                        "Press V to activate invisibility (if available)",
-                        "This will make you temporarily invisible to the chaser",
-                        "but costs points to use."
+                        translationManager.getTranslation("tutorial_special_line1"),
+                        translationManager.getTranslation("tutorial_special_line2"),
+                        translationManager.getTranslation("tutorial_special_line3")
                 },
                 {
                         translationManager.getTranslation("other_controls"),
                         "",
-                        "P - Pause the game",
-                        "N - Start a new game",
-                        ":Q - Quit to main menu (press : then Q)"
+                        translationManager.getTranslation("tutorial_other_line1"),
+                        translationManager.getTranslation("tutorial_other_line2"),
+                        translationManager.getTranslation("tutorial_other_line3")
                 }
         };
 
