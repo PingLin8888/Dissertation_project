@@ -375,9 +375,9 @@ public class GameMenu implements EventListener {
                     startY - spacing * 5, false, baseDelay + delayIncrement * 5));
             menuItems.add(new AnimatedMenuItem("3 - Change Avatar",
                     startY - spacing * 6, false, baseDelay + delayIncrement * 6));
-            menuItems.add(new AnimatedMenuItem("4 - Quit",
+            menuItems.add(new AnimatedMenuItem("4 - Settings",
                     startY - spacing * 7, false, baseDelay + delayIncrement * 7));
-            menuItems.add(new AnimatedMenuItem("5 - Settings",
+            menuItems.add(new AnimatedMenuItem("5 - Quit",
                     startY - spacing * 8, false, baseDelay + delayIncrement * 8));
         }
 
