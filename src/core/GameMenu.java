@@ -379,6 +379,8 @@ public class GameMenu implements EventListener {
                     startY - spacing * 7, false, baseDelay + delayIncrement * 7));
             menuItems.add(new AnimatedMenuItem("5 - Quit",
                     startY - spacing * 8, false, baseDelay + delayIncrement * 8));
+            menuItems.add(new AnimatedMenuItem("6 - " + translationManager.getTranslation("how_to_play"),
+                    startY - spacing * 9, false, baseDelay + delayIncrement * 9));
         }
 
         StdDraw.clear(new Color(0.1f, 0.1f, 0.1f));
@@ -500,7 +502,6 @@ public class GameMenu implements EventListener {
             try {
                 // Load basic player info from save file
                 String contents = FileUtils.readFile(saveFile);
-                System.out.println("Contents of save file: " + contents);
                 String[] lines = contents.split("\n");
 
                 // Verify username
@@ -1224,5 +1225,109 @@ public class GameMenu implements EventListener {
                     .append(p.y).append(",")
                     .append(entry.getValue().name()).append("\n");
         }
+    }
+
+    public void showTutorial() {
+        String[][] tutorialPages = {
+                {
+                        translationManager.getTranslation("how_to_play"),
+                        "",
+                        translationManager.getTranslation("tutorial_intro"),
+                        translationManager.getTranslation("tutorial_nav")
+                },
+                {
+                        translationManager.getTranslation("movement_controls"),
+                        "",
+                        "Use W, A, S, D keys to move your character:",
+                        "W - Move Up",
+                        "A - Move Left",
+                        "S - Move Down",
+                        "D - Move Right"
+                },
+                {
+                        translationManager.getTranslation("game_objective"),
+                        "",
+                        "Your goal is to reach the exit door while avoiding",
+                        "the chaser that follows you.",
+                        "Collect points along the way to increase your score."
+                },
+                {
+                        translationManager.getTranslation("special_abilities"),
+                        "",
+                        "Press V to activate invisibility (if available)",
+                        "This will make you temporarily invisible to the chaser",
+                        "but costs points to use."
+                },
+                {
+                        translationManager.getTranslation("other_controls"),
+                        "",
+                        "P - Pause the game",
+                        "N - Start a new game",
+                        ":Q - Quit to main menu (press : then Q)"
+                }
+        };
+
+        int currentPage = 0;
+        boolean inTutorial = true;
+
+        while (inTutorial) {
+            // Clear the screen
+            StdDraw.clear(StdDraw.BLACK);
+            StdDraw.setPenColor(StdDraw.WHITE);
+
+            // Draw the current tutorial page
+            String[] currentPageContent = tutorialPages[currentPage];
+            double yPosition = 35;
+            for (String line : currentPageContent) {
+                StdDraw.text(40, yPosition, line);
+                yPosition -= 2;
+            }
+
+            // Draw navigation instructions
+            StdDraw.text(40, 10, String.format(translationManager.getTranslation("tutorial_page"),
+                    currentPage + 1, tutorialPages.length));
+
+            // Update navigation instructions based on current page
+            if (currentPage == 0) {
+                StdDraw.text(40, 8, translationManager.getTranslation("tutorial_next"));
+            } else if (currentPage == tutorialPages.length - 1) {
+                StdDraw.text(40, 8, translationManager.getTranslation("tutorial_prev"));
+            } else {
+                StdDraw.text(40, 8, translationManager.getTranslation("tutorial_nav_both"));
+            }
+
+            StdDraw.show();
+
+            // Wait for input
+            while (!StdDraw.hasNextKeyTyped()) {
+                // Just wait for input
+                StdDraw.pause(50);
+            }
+
+            char key = StdDraw.nextKeyTyped();
+            // Handle navigation - space or right arrow (d) for next page
+            if (key == ' ' || key == 'd') {
+                // Next page
+                currentPage++;
+                if (currentPage >= tutorialPages.length) {
+                    inTutorial = false;
+                }
+            }
+            // Handle navigation - left arrow (a) for previous page
+            else if (key == 'a') {
+                // Previous page
+                currentPage--;
+                if (currentPage < 0) {
+                    currentPage = 0; // Stay on first page
+                }
+            }
+            // ESC key to exit
+            else if (key == 27) { // ESC key
+                inTutorial = false;
+            }
+        }
+
+        // Return to main menu
+        redraw = true;
     }
 }

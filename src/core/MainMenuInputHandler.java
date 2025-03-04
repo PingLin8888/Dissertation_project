@@ -64,6 +64,11 @@ public class MainMenuInputHandler implements InputHandler {
                 AudioManager.getInstance().stopAllSoundsExcept("menu");
                 System.exit(0);
                 break;
+            case '6':
+                // Show tutorial
+                gameMenu.showTutorial();
+                gameMenu.redraw = true;
+                break;
         }
         return true;
     }
