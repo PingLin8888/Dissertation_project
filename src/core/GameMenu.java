@@ -706,16 +706,58 @@ public class GameMenu implements EventListener {
         // Play game over sound
         AudioManager.getInstance().playSound("gameover");
         StdDraw.clear(StdDraw.BLACK);
+
         // Clear the screen and display the message
         StdDraw.setPenColor(Color.white);
-        StdDraw.text(40, 24, translationManager.getTranslation("game_over"));
+        StdDraw.text(40, 28, translationManager.getTranslation("game_over"));
+        StdDraw.text(40, 24, "1 - " + translationManager.getTranslation("retry_level"));
+        StdDraw.text(40, 22, "2 - " + translationManager.getTranslation("return_to_menu"));
         StdDraw.show();
-        StdDraw.pause(2000); // Pause for 2 seconds to allow the user to read the message
 
-        // Reset game state to show the post-login menu
-        gameStarted = false;
-        currentState = GameState.MAIN_MENU; // Update the game state
+        // Wait for user input
+        boolean validInput = false;
+        while (!validInput) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char key = StdDraw.nextKeyTyped();
+                if (key == '1') {
+                    // Retry current level
+                    AudioManager.getInstance().playSound("menu");
+                    retryCurrentLevel();
+                    validInput = true;
+                } else if (key == '2') {
+                    // Return to main menu
+                    AudioManager.getInstance().playSound("menu");
+                    gameStarted = false;
+                    currentState = GameState.MAIN_MENU;
+                    redraw = true;
+                    validInput = true;
+                }
+            }
+            StdDraw.pause(10);
+        }
+    }
+
+    // Add a new method to retry the current level
+    private void retryCurrentLevel() {
+        // Create a new world with the same level
+        long seed = System.currentTimeMillis();
+        int numConsumables = 10 + (currentLevel - 1) * 2; // Scale consumables with level
+        int numObstacles = 5 + (currentLevel - 1); // Scale obstacles with level
+
+        // Create a new world with the current level settings
+        world = new World(player, seed, numConsumables, numObstacles);
+        world.getEventDispatcher().addListener(this);
+
+        // Reset game state
+        gameStarted = true;
+        currentState = GameState.IN_GAME;
         redraw = true;
+
+        // Play game start sound
+        AudioManager.getInstance().playSound("gamestart");
+
+        // Draw the new world
+        drawWorld();
     }
 
     private void exitDoor() {

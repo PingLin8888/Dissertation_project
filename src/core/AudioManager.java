@@ -428,7 +428,7 @@ public class AudioManager {
                             dB = Math.max(gainControl.getMinimum(), Math.min(gainControl.getMaximum(), dB));
                         }
                         gainControl.setValue(dB);
-                        } catch (Exception e) {
+                    } catch (Exception e) {
                         System.err.println("Error updating volume for active sound " + soundId + ": " + e.getMessage());
                     }
                 } else {
