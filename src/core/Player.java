@@ -49,9 +49,14 @@ public class Player {
             // Set invisibility expiration timestamp
             invisibilityEndTime = System.currentTimeMillis() + INVISIBILITY_DURATION;
             // Immediately reduce walk volume
-            AudioManager.getInstance().setWalkVolume(0.1f);
-            // Start playing invisibility sound effect
-            AudioManager.getInstance().playLoopingSound("invisibility");
+            AudioManager audioManager = AudioManager.getInstance();
+            audioManager.setWalkVolume(0.1f);
+
+            // Only play invisibility sound if master volume is not 0
+            if (audioManager.getMasterVolume() > 0.001f) {
+                // Start playing invisibility sound effect
+                audioManager.playLoopingSound("invisibility");
+            }
             return true;
         }
         return false;

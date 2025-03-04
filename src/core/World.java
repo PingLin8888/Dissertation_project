@@ -1260,6 +1260,18 @@ public class World {
     }
 
     public void checkDarkModeProximity() {
+        // Get the AudioManager instance
+        AudioManager audioManager = AudioManager.getInstance();
+
+        // If master volume is 0, don't play any sounds
+        if (audioManager.getMasterVolume() <= 0.001f) {
+            if (isEerieSoundPlaying) {
+                audioManager.stopSound("eerie");
+                isEerieSoundPlaying = false;
+            }
+            return;
+        }
+
         boolean isNear = false;
         Point avatarPos = new Point(avatarX, avatarY);
 
@@ -1276,12 +1288,12 @@ public class World {
 
         if (isNear) {
             if (!isEerieSoundPlaying) {
-                AudioManager.getInstance().playSound("eerie");
+                audioManager.playSound("eerie");
                 isEerieSoundPlaying = true;
             }
         } else {
             if (isEerieSoundPlaying) {
-                AudioManager.getInstance().fadeOutSound("eerie", 2000);
+                audioManager.fadeOutSound("eerie", 2000);
                 isEerieSoundPlaying = false;
             }
         }
@@ -1289,10 +1301,22 @@ public class World {
 
     // Update the checkChaserProximity method to consider invisibility sound effect
     void checkChaserProximity() {
+        // Get the AudioManager instance
+        AudioManager audioManager = AudioManager.getInstance();
+
+        // If master volume is 0, don't play any sounds
+        if (audioManager.getMasterVolume() <= 0.001f) {
+            if (isChaserSoundPlaying) {
+                audioManager.stopSound("chaser");
+                isChaserSoundPlaying = false;
+            }
+            return;
+        }
+
         // If player is invisible, stop chaser sound regardless of proximity
         if (player.isInvisible()) {
             if (isChaserSoundPlaying) {
-                AudioManager.getInstance().fadeOutSound("chaser", 2000);
+                audioManager.fadeOutSound("chaser", 2000);
                 isChaserSoundPlaying = false;
             }
             return;
@@ -1303,7 +1327,7 @@ public class World {
 
         if (path == null || path.isEmpty()) {
             if (isChaserSoundPlaying) {
-                AudioManager.getInstance().fadeOutSound("chaser", 2000);
+                audioManager.fadeOutSound("chaser", 2000);
                 isChaserSoundPlaying = false;
             }
             return;
@@ -1313,12 +1337,12 @@ public class World {
 
         if (pathDistance <= 8) {
             if (!isChaserSoundPlaying) {
-                AudioManager.getInstance().playSound("chaser");
+                audioManager.playSound("chaser");
                 isChaserSoundPlaying = true;
             }
         } else {
             if (isChaserSoundPlaying) {
-                AudioManager.getInstance().fadeOutSound("chaser", 2000);
+                audioManager.fadeOutSound("chaser", 2000);
                 isChaserSoundPlaying = false;
             }
         }
