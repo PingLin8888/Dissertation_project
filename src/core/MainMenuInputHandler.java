@@ -60,14 +60,14 @@ public class MainMenuInputHandler implements InputHandler {
                 gameMenu.redraw = true;
                 break;
             case '5':
-                gameMenu.saveGame(gameMenu.player);
-                AudioManager.getInstance().stopAllSoundsExcept("menu");
-                System.exit(0);
-                break;
-            case '6':
                 // Show tutorial
                 gameMenu.showTutorial();
                 gameMenu.redraw = true;
+                break;
+            case '6':
+                gameMenu.saveGame(gameMenu.player);
+                AudioManager.getInstance().stopAllSoundsExcept("menu");
+                System.exit(0);
                 break;
         }
         return true;

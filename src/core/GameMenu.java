@@ -360,7 +360,7 @@ public class GameMenu implements EventListener {
             hasSavedGame = checkSavedGameExists(player.getUsername());
 
             double startY = 42;
-            double spacing = 4;
+            double spacing = 3; // Reduced from 4 to make spacing narrower
             long baseDelay = 0;
             long delayIncrement = 100;
 
@@ -380,9 +380,9 @@ public class GameMenu implements EventListener {
                     startY - spacing * 6, false, baseDelay + delayIncrement * 6));
             menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("settings"),
                     startY - spacing * 7, false, baseDelay + delayIncrement * 7));
-            menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("quit_game"),
-                    startY - spacing * 8, false, baseDelay + delayIncrement * 8));
             menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("tutorial"),
+                    startY - spacing * 8, false, baseDelay + delayIncrement * 8));
+            menuItems.add(new AnimatedMenuItem(translationManager.getTranslation("quit_game"),
                     startY - spacing * 9, false, baseDelay + delayIncrement * 9));
         }
 
